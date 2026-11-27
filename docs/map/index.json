@@ -13684,6 +13684,9 @@
     "0738-qemu-camcore-f3c04-f2912-register-models-boot-score.md": [
       "qemu-a6400"
     ],
+    "0751-qemu-touch-int-repeat.md": [
+      "qemu-a6400"
+    ],
     "0743-qemu-camcore-f302-0800-window-boot-score.md": [
       "qemu-a6400"
     ],

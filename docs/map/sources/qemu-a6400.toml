@@ -80,6 +80,7 @@ records = [
   "E0736",
   "E0743",
   "external-a6000-emulator/*",
+  "E0751",
 ]
 
 [[entity]]

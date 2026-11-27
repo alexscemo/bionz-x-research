@@ -19,9 +19,15 @@ config SONY_A6700
     select ARM_GIC
     select PL011
     select PL330
+    select SDHCI
+    select SD
 """
 open(path, "w").write(text)
 PY
 grep -q "sony-a6700.c" "$SRC/hw/arm/meson.build" || \
   sed -i "/arm_ss.add(when: 'CONFIG_ARM_VIRT'/a arm_ss.add(when: ['CONFIG_SONY_A6700', 'TARGET_AARCH64'], if_true: files('sony-a6700.c'))" "$SRC/hw/arm/meson.build"
+# Settable EXT_CSD revision in QEMU's eMMC model (see patch_sd_emmc.py).
+python3 "$HERE/patch_sd_emmc.py" "$SRC"
+python3 "$HERE/patch_pl330_log.py" "$SRC"
+python3 "$HERE/patch_sdhci_adma_log.py" "$SRC"
 echo installed

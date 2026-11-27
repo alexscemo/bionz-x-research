@@ -4,7 +4,7 @@
 
 - **Scope:** The QEMU sony-a6400 board: captured four-core boot, av-cam and CamCore sequencing, SIO/sub-micro, display/rear panel, Ydet/CamPig, live-view frame, contributor scores, Custom OS handover guards and DMA engines.
 - **Evidence span:** see record index; last reviewed 2026-11-26.
-- **Deep review:** 64 of 94 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 64 of 95 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -120,7 +120,7 @@ Do not rely on:
 
 - ~~The LIRO ram section filled through 0xF30A is a separate sub-core firmware image.~~ **R01** `RETRACTED` ([E0642](../evidence/0642-a6400-f30a-fill-engine-and-liro-ram-section.md)); see C13: The LIRO ram section copied by the work DMA is av-cam's own initialised RW data (1,878 references from av-cam code), not a sub-core image.
 
-## Record index (94 files)
+## Record index (95 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -220,3 +220,4 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0736](../evidence/0736-qemu-camcore-unlisted-access-logging.md) | 2026-11-27 | CamCore rule windows log unlisted reads and writes as unmodelled accesses |  |  |
 | [E0738](../evidence/0738-qemu-camcore-f3c04-f2912-register-models-boot-score.md) | 2026-11-21 | Boot score for the register models at 0xF3C04000 and 0xF2912000-0xF2915FFF |  |  |
 | [E0743](../evidence/0743-qemu-camcore-f302-0800-window-boot-score.md) | 2026-11-21 | Boot score for the CamCore `0xF3020800` window at `0xF3020000` |  | The red team corrected the original prose, which said "89 write-only + 1 read-modify-write", |
+| [E0744](../evidence/0744-qemu-camcore-f302-c00-window-boot-score.md) | 2026-11-21 | Boot score for the CamCore `0xF3020C00` window at `0xF3020000` |  | The finding notes state that the first red-team pass **refuted the claim's scope**: "0 page / 73. The wording was corrected, including in `STATUS.md`, and the re-check **upheld** it on |

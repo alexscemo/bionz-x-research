@@ -35,12 +35,28 @@ AV_BASE  = 0x20000000  # mock /dev/mem mmap region
 STACK_TOP = 0x30010000
 STOP_LR  = 0x70000000
 
-AV_PATCHES = [
-    (0x03E25444, 4, 472), (0x03E2544C, 6000, 5064), (0x03E25454, 20, 488),
-    (0x03E25490, 4, 472), (0x03E25498, 6000, 5064), (0x03E254A0, 20, 488),
-    (0x03E1979A, 16, 484), (0x03E1979C, 6000, 5064), (0x03E197AC, 4, 472), (0x03E197AE, 6024, 5088),
-]
-VU_CELLS = [0x77D110, 0x77D150, 0x77D230, 0x77D270, 0x77D470, 0x77D4B0, 0x77D590, 0x77D5D0]
+import re
+
+def load_av_patches():
+    src = Path("mods/opengate_a1/opengate_a1.c").read_text(encoding="utf-8")
+    m = re.search(r"AV_PATCHES\[AV_PATCH_COUNT\]\s*=\s*\{(.*?)\};", src, re.S)
+    assert m, "AV_PATCHES not found in opengate_a1.c"
+    rows = []
+    for pa, st, pt in re.findall(r"\{\s*(0x[0-9A-Fa-f]+)u\s*,\s*(\d+)u\s*,\s*(\d+)u\s*\}", m.group(1)):
+        rows.append((int(pa, 16), int(st), int(pt)))
+    assert len(rows) == 337, f"expected 337 patches, got {len(rows)}"
+    return rows
+
+AV_PATCHES = load_av_patches()
+AV_PAGE_MAP = {
+    0x03E14: 0x0000,
+    0x03E15: 0x1000,
+    0x03E16: 0x2000,
+    0x03E19: 0x3000,
+    0x03E25: 0x4000,
+    0x04201: 0x5000,
+}
+VU_CELLS = [0x77D0F0, 0x77D130, 0x77D210, 0x77D250, 0x77D450, 0x77D490, 0x77D570, 0x77D5B0]
 
 uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
 uc.mem_map(MOD_BASE, 0x10000)
@@ -50,9 +66,9 @@ for off in VU_CELLS:
     uc.mem_write(VU_BASE + off + 0x0C, struct.pack("<I", 0x404E0000))
     uc.mem_write(VU_BASE + off + 0x1C, struct.pack("<I", 0x40768000))
 
-uc.mem_map(AV_BASE, 0x20000)  # 0x03E19xxx -> AV_BASE+0x0000, 0x03E25xxx -> AV_BASE+0x1000
+uc.mem_map(AV_BASE, 0x20000)
 for pa, st, _ in AV_PATCHES:
-    m_off = (0x0000 if (pa & 0xFFFFF000) == 0x03E19000 else 0x1000) + (pa & 0xFFF)
+    m_off = AV_PAGE_MAP[pa >> 12] + (pa & 0xFFF)
     uc.mem_write(AV_BASE + m_off, struct.pack("<H", st))
 
 uc.mem_map(0x30000000, 0x20000)  # stack + scratch
@@ -132,7 +148,7 @@ def svc_hook2(u, intno, user_data):
         u.reg_write(UC_ARM_REG_R0, 0)
     elif r7 == 192:
         pgoff = u.reg_read(UC_ARM_REG_R5)
-        u.reg_write(UC_ARM_REG_R0, AV_BASE + (0x0000 if pgoff == 0x03E19 else 0x1000))
+        u.reg_write(UC_ARM_REG_R0, AV_BASE + AV_PAGE_MAP[pgoff])
     elif r7 in (91, 125):
         u.reg_write(UC_ARM_REG_R0, 0)
 
@@ -152,17 +168,17 @@ def call_thumb(addr, r0=0, r1=0, r2=0, r3=0):
 # 1. Test oga1_on
 call_thumb(MOD_BASE + on_off)
 for pa, _, pt in AV_PATCHES:
-    m_off = (0x0000 if (pa & 0xFFFFF000) == 0x03E19000 else 0x1000) + (pa & 0xFFF)
+    m_off = AV_PAGE_MAP[pa >> 12] + (pa & 0xFFF)
     got = struct.unpack("<H", uc.mem_read(AV_BASE + m_off, 2))[0]
     assert got == pt, f"ON av {hex(pa)}: {got} != {pt}"
 for off in VU_CELLS:
     assert struct.unpack("<I", uc.mem_read(VU_BASE + off + 0x0C, 4))[0] == 0x403A0000
-    assert struct.unpack("<I", uc.mem_read(VU_BASE + off + 0x1C, 4))[0] == 0x407A8000
+    assert struct.unpack("<I", uc.mem_read(VU_BASE + off + 0x1C, 4))[0] == 0x407AC000
 
 # 2. Test oga1_off
 call_thumb(MOD_BASE + off_off)
 for pa, st, _ in AV_PATCHES:
-    m_off = (0x0000 if (pa & 0xFFFFF000) == 0x03E19000 else 0x1000) + (pa & 0xFFF)
+    m_off = AV_PAGE_MAP[pa >> 12] + (pa & 0xFFF)
     got = struct.unpack("<H", uc.mem_read(AV_BASE + m_off, 2))[0]
     assert got == st, f"OFF av {hex(pa)}: {got} != {st}"
 for off in VU_CELLS:

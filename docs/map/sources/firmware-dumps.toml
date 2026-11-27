@@ -127,7 +127,7 @@ evidence = ["E9201"]
 id = "C11"
 entities = ["source.a6700-camera-dump"]
 status = "verified-offline"
-text = "The ILCE-6700 2.00 Linux 4.9.337 kernel boots on a new sony-a6700 QEMU machine built from the camera's device tree (EL3 hand-off, GIC-400, 2 MHz timer, five PL011, initrd ext2 root, real /sbin/init) and stops when dma330 needs the unmodelled PL330; the image's EL3 code passes the device tree at RAM_BASE+0x2000. No UI, USB or TCP debugger exists for this body."
+text = "The ILCE-6700 2.00 Linux 4.9.337 kernel boots on a new sony-a6700 QEMU machine built from the camera's device tree (EL3 hand-off, GIC-400, 2 MHz timer, five PL011, initrd ext2 root, real /sbin/init) then loads devno, dma330, crypt-emmc and emmc.ko; with stub contracts for the crypt-emmc OTP window, engine status and data window, an SDHCI at 0xF10D6000 and a replayed eMMC hand-off the eMMC is detected (4096 MiB) and the boot stops at 'partition table invalid' because the emulated eMMC has no Sony partition table. The image's EL3 code passes the device tree at RAM_BASE+0x2000. No UI, USB or TCP debugger exists for this body."
 evidence = ["E9202"]
 
 [[frontier]]

@@ -30,8 +30,8 @@
 | `nflasha18` | LensData | 20,971,520 | `99a7cca5...f8b4` | FAT |
 | `nflasha22` | AiDictionary | 68,157,440 | `865b341e...dedf7` | FAT |
 
-Full 64-hex hashes are in `artifacts/dumps/a6700-live/full-04/SHA256SUMS.txt` and
-`full-05/SHA256SUMS.txt` (gitignored). Total 547,291,136 bytes (521.9 MiB).
+Full 64-hex hashes are in the `SHA256SUMS.txt` file of each local capture directory
+(gitignored). Total 547,291,136 bytes (521.9 MiB).
 Sizes equal the `partinf.conf` sizes and the live `/proc/partitions` blocks.
 
 **Cross-check against the update.** The first 2,097,152 bytes of live `nflasha7`

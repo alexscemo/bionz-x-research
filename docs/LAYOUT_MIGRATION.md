@@ -41,3 +41,23 @@ were. Move them yourself if you still use them:
 - `camera-daemon/build/`, `probes/build/` → `apps/camera-daemon/build/`, `research/probes/build/`.
 
 `tests/test_repository_layout.py` fails if a moved directory is tracked at its old place again.
+
+## Documentation moves (2026-11-28)
+
+Plans and dated notes left the top of `docs/`. Notes with findings moved under
+`docs/evidence/notes/` and are listed in the knowledge map.
+
+| Before | After |
+| :--- | :--- |
+| `docs/OPENCODE_SWARM_OPEN_GATE_PLAN.md`, `…_ROUND2.md` … `…_ROUND6.md` | `docs/plans/open-gate/round-1.md` … `round-6.md` |
+| `docs/QEMU_UNICORN_BLOCKER_PLAN.md` | `docs/plans/qemu-unicorn-blocker-plan.md` |
+| `docs/EMULATOR_GUI_MENU_TOUCH_PLAN.md` | `docs/plans/emulator-gui-menu-touch-plan.md` |
+| `docs/FILM_SIM_QUALITY_PLAN.md` | `docs/plans/film-sim-quality-plan.md` |
+| `docs/BOOT_TO_GUI_PHASES.md` | `docs/plans/boot-to-gui-phases.md` |
+| `docs/SILENT_SHUTTER_MOD_IDEAS.md` | `docs/plans/silent-shutter-mod-ideas.md` |
+| `docs/MOTION_SENSOR_FINDINGS.md` | `docs/evidence/notes/2026-11-06-motion-sensor-findings.md` |
+| `docs/l3-osd-progress-2026-11-21.md` | `docs/evidence/notes/2026-11-21-l3-osd-progress.md` |
+| `docs/a6100-picture-profiles.md` | `docs/evidence/notes/a6100-picture-profiles.md` |
+| `docs/sony_a6400_menu_inventory.md` | `docs/evidence/notes/a6400-menu-inventory.md` |
+| `docs/ILCE6400_FW200_8257_MACOS_PATCH_NOTES.md` | `docs/evidence/notes/ilce6400-fw200-8257-macos-patch-notes.md` |
+| `docs/PHASE0_PROGRESS.md` | `docs/archives/2026-10-18-phase0-progress.md` |

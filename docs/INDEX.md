@@ -24,6 +24,8 @@ For subject lookups (an address, symbol, device, or "is E0xxx still valid?") use
 | [DEVELOPERS.md](DEVELOPERS.md) | Developer entry point: quick start, the two emulators, what does not work yet, and where to go next |
 | [REPOSITORY.md](REPOSITORY.md) | Repository layout, module launch paths, and structural CI checks |
 | [LAYOUT_MIGRATION.md](LAYOUT_MIGRATION.md) | 2026-11-28 move to `apps/`, `emulators/`, `research/`: old path to new path, local untracked files |
+| [plans/](plans/) | Research and feature plans, including the [open-gate rounds](plans/open-gate/README.md); plans are not evidence |
+| [evidence/notes/](evidence/notes/README.md) | Unnumbered dated notes with findings (motion sensor, L3 OSD progress, a6100 Picture Profiles, FW 2.00 builds, menu inventory), listed in the knowledge map |
 | [STATUS_LABELS.md](STATUS_LABELS.md) | The three status labels for mods, kits and cameras, and the standard mod README header |
 | [porting/PORT_NOTES_TEMPLATE.md](porting/PORT_NOTES_TEMPLATE.md) | Record to fill when porting a mod or kit to another body |
 | [RELATED_REPOSITORIES.md](RELATED_REPOSITORIES.md) | Agent-facing catalog of related Sony research repositories, starting points, provenance rules and cross-model transfer limits |

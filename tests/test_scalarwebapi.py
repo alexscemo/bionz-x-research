@@ -166,7 +166,9 @@ class TranscriptTests(unittest.TestCase):
 
     def setUp(self) -> None:
         import tempfile
+        import shutil
         self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir, ignore_errors=True)
         self.path = self.dir / "session.jsonl"
 
     def _api(self, raw: bytes) -> "_StubApi":

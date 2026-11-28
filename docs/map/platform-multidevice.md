@@ -4,7 +4,7 @@
 
 - **Scope:** Thirteen official updaters, nine kernels, command tables, IPC and call graphs, update-chain integrity, firmware signatures, additional bodies (ILCE-7RM4A) and the project checkpoint inventory.
 - **Evidence span:** see record index; last reviewed 2026-11-22.
-- **Deep review:** 0 of 21 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 24 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -88,7 +88,7 @@ Current knowledge:
 
 - **C12** `PHYSICAL` The ILCE-7RM4A GetModelInfo extcmd chain is byte-identical to the a6400A; physically, firmware 1.13 enumerates as Mass Storage 054C:0D9D and answers native GetModelInfo. ([E0645](../evidence/0645-ilce-7rm4a-getmodelinfo-extcmd-chain-identical.md), [E0646](../evidence/0646-ilce-7rm4a-physical-usb-identity-and-getmodelinfo.md))
 
-## Record index (32 files)
+## Record index (35 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -126,6 +126,9 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [uvc-modules.tsv](../evidence/cross_model/uvc-modules.tsv) |  | attachment |  |  |
 | [README.md](../evidence/external-ilce7c-usb-ids/README.md) | 2026-11-21 | External ILCE-7C USB identity receipt (Issue #60) |  |  |
 | [0110-local-evidence-inventory.json](../evidence/manifests/0110-local-evidence-inventory.json) |  | attachment |  |  |
+| [README.md](../evidence/notes/README.md) | 2026-11-06 | Unnumbered notes |  | that area's record index. A numbered record supersedes a note on the same subject. |
+| [a6100-picture-profiles.md](../evidence/notes/a6100-picture-profiles.md) |  | a6100 Picture Profiles — status |  |  |
+| [ilce6400-fw200-8257-macos-patch-notes.md](../evidence/notes/ilce6400-fw200-8257-macos-patch-notes.md) | 2026-11-19 | Sony ILCE-6400 FW 2.00 (`8.2.5.7`) on macOS — Setup Post-Mortem & Patch Notes |  |  |
 
 ## Documentation drift
 

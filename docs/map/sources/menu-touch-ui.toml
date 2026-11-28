@@ -10,6 +10,7 @@ Camera menu tree, WidgetSystem, original selection/activation, resource and spri
 evidence_span = "see record index"
 reviewed = "2026-11-22"
 records = [
+  "notes/a6400-menu-inventory.md",
   "E0085-E0089",
   "E0093",
   "E0094",

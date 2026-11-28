@@ -2,7 +2,7 @@
 
 ## 1. Root Cause Summary: Two Different "Firmware 2.00" Builds
 
-Although Sony displays both builds as **Firmware 2.00** on the camera, `ILCE-6400` shipped with two distinct internal Sony CE Linux library builds (see [2026-11-19-firmware-qualification.md](evidence/mods/2026-11-19-firmware-qualification.md)):
+Although Sony displays both builds as **Firmware 2.00** on the camera, `ILCE-6400` shipped with two distinct internal Sony CE Linux library builds (see [2026-11-19-firmware-qualification.md](../mods/2026-11-19-firmware-qualification.md)):
 
 | Property | Captured FW 2.00 (`8.2.6.0`) | Retail FW 2.00 (`8.2.5.7`) | Impact |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +30,7 @@ Every mod therefore had to be built as a **relocatable `SMOD v2`** module with a
 
 - **Prepare Tools** downloaded the pinned GitHub release `mlv2-layout-build-4` into `.cache/mlv2-layout-build-4/build.json`, which places the shim at `0x05662760` (`libtestcmd.so + 0x2760`).
 - On retail `8.2.5.7`, `libtestcmd.so` contains real library bytes up to `+0x2790`. When `mlv2_guard` froze `im.elf` and inspected `0x05662760 + testcmd_bias`, the first 48 bytes were non-zero, so it reported `shim=other`, refused to write (`MLV2_RESULT=-12 changed=0`), and resumed all 177 threads cleanly.
-- Although the repository sources ([shim.ld](../tools/native_camera/mlv2/shim.ld), [mlv2_guard.c](../tools/native_camera/mlv2/mlv2_guard.c)) already moved `SHIM_ADDR` to `0x05662800` and added `RECT_TBL*_SLOT6_FW200`, `resolve_mlv2_build()` in [tools_bundle.py](../src/a6400/mod_manager/tools_bundle.py) fell back to `.cache/mlv2-layout-build-4` because no compiled `>= 0x05662790` build existed locally on macOS.
+- Although the repository sources ([shim.ld](../../../tools/native_camera/mlv2/shim.ld), [mlv2_guard.c](../../../tools/native_camera/mlv2/mlv2_guard.c)) already moved `SHIM_ADDR` to `0x05662800` and added `RECT_TBL*_SLOT6_FW200`, `resolve_mlv2_build()` in [tools_bundle.py](../../../src/a6400/mod_manager/tools_bundle.py) fell back to `.cache/mlv2-layout-build-4` because no compiled `>= 0x05662790` build existed locally on macOS.
 
 ### 2.2 `Camera Offline / GenericUsbException:` on macOS
 
@@ -40,7 +40,7 @@ Every mod therefore had to be built as a **relocatable `SMOD v2`** module with a
 ### 2.3 `Menu Touch Full` Displayed `ERR` in `MENU -> Mods`
 
 - Two issues prevented it from enabling:
-  1. The shipped [MenuTouchFull.mod](../mods/menu_touch_full/MenuTouchFull.mod) on disk is an **SMOD v1** fixed-address binary (`has_reloc=False`), which cannot relocate to the camera's runtime `libObj.so` / `viewUnified2.so` / `CautionConfig.so` addresses.
+  1. The shipped [MenuTouchFull.mod](../../../mods/menu_touch_full/MenuTouchFull.mod) on disk is an **SMOD v1** fixed-address binary (`has_reloc=False`), which cannot relocate to the camera's runtime `libObj.so` / `viewUnified2.so` / `CautionConfig.so` addresses.
   2. Even rebuilt as `SMOD v2`, the default `8.2.6.0` offsets pointed 120 bytes (`0x78`) too early in `libObj.so`, so `core.bin` checked the 12-byte hook prologues, saw a mismatch, and safely failed closed with `ERR`.
 - By contrast, `Arrivederci` worked immediately because it modifies physical LIRO ISP tables without hooking `libObj.so` code.
 
@@ -62,18 +62,18 @@ Installed via Homebrew (`brew install zig`, which also provides `llvm@22` and `l
   - Flags: `--target=thumbv7-linux-gnueabi -mthumb -mcpu=cortex-a5 -mfpu=vfpv4-d16 -mfloat-abi=softfp -mno-movt -Os -ffreestanding -fno-builtin -nostdlib -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-stack-protector -fomit-frame-pointer`
   - **Key macOS/Clang flags that mattered:**
     - `-mfpu=vfpv4-d16`: prevents NEON code generation (the CXD90045 Cortex-A5 has VFPv4-D16 without NEON).
-    - `-mno-movt`: keeps 32-bit firmware addresses in aligned literal pools instead of `movw`/`movt` pairs so [package.py](../tools/native_camera/mlv2/package.py) and [pack_mod_v2.py](../tools/research/pack_mod_v2.py) can relocate every 32-bit word cleanly.
+    - `-mno-movt`: keeps 32-bit firmware addresses in aligned literal pools instead of `movw`/`movt` pairs so [package.py](../../../tools/native_camera/mlv2/package.py) and [pack_mod_v2.py](../../../tools/research/pack_mod_v2.py) can relocate every 32-bit word cleanly.
     - Linking `.o` files directly via `ld.lld -T <script>` avoids Clang's default `-pie` flag on non-PIC `shim.elf`.
 - **Static camera guard (`mlv2_guard_arm`):** compiled with `zig cc -target arm-linux-musleabi -mcpu=cortex_a5 -mfloat-abi=softfp -static -O2 -Wall -Wextra -Werror` and stripped with `llvm-strip -s` down to **65 KiB** (well within the camera's 4 MiB `/tmp_bt` tmpfs, with zero glibc minimum-kernel checks).
 
 ### 3.2 Mod Loader v2 (`0x05662800` + Dual `ModsTabLook` Detection)
 
-- **Code change:** [core.c](../tools/native_camera/mlv2/core.c) and [mods_tab_look_layout.h](../tools/native_camera/mods_tab_look_layout.h) — added `MTL_HOOK_ADDR_FW200` (`0x064b5526`) so `mtl_present()` detects an active `ModsTabLook` hook on both `8.2.6.0` and `8.2.5.7`.
+- **Code change:** [core.c](../../../tools/native_camera/mlv2/core.c) and [mods_tab_look_layout.h](../../../tools/native_camera/mods_tab_look_layout.h) — added `MTL_HOOK_ADDR_FW200` (`0x064b5526`) so `mtl_present()` detects an active `ModsTabLook` hook on both `8.2.6.0` and `8.2.5.7`.
 - **Output directory:** `artifacts/tests/mlv2-fw200-build-1/` (automatically preferred by `resolve_mlv2_build()` over `.cache/mlv2-layout-build-4` because `0x05662800 >= FW200_SAFE_MIN_SHIM_ADDR` `0x05662790`):
   - `mlv2.req`: `1,448` B, `shim_addr = 0x05662800`, 23 ASLR relocations, SHA-256 `285a2df4dd4cba0108c643deb58cb7073077d877300f63462aa2867dc71427d5`
   - `core.bin`: `14,980` B (`CTX_VERSION=4`), SHA-256 `fabbf4204469…`
   - `mlv2_guard_arm`: `65` KiB stripped static ARMv7 musl binary, SHA-256 `7fbeb06a1169fc8c1c145c00354a88e51dc647c08628ecacecc342232798a386`
-- **Verification:** Passed all 18 scenarios in [test_mlv2_unicorn.py](../tools/native_camera/mlv2/test_mlv2_unicorn.py) and installed cleanly on the physical `ILCE-6400`.
+- **Verification:** Passed all 18 scenarios in [test_mlv2_unicorn.py](../../../tools/native_camera/mlv2/test_mlv2_unicorn.py) and installed cleanly on the physical `ILCE-6400`.
 
 ### 3.3 `MenuTouchFull` (`MTF2`) Ported to `8.2.5.7`
 
@@ -97,14 +97,14 @@ Using read-only camera probes (`artifacts/tests/mtf-8257-probe.json` and `artifa
 | `MT_NODE_SEL_INDEX` / `IDX_CHILD` / `SET_SEL_IDX` | `CautionConfig.so` | `0x7c6c17` / `0x7c6bc7` / `0x7c70db` | unchanged | `0` |
 | All 2 vtables + 11 functions | `viewUnified2.so` | unchanged | unchanged | `0` |
 
-- **Code changes:** Added `#elif defined(TARGET_ILCE6400_8257)` in [menu_touch_full.c](../mods/menu_touch_full/menu_touch_full.c) (plus single-deref `rd32(MT_EVMGR_SLOT, 0u)` in `push_async_event()`) and [menu_touch_full_trampoline.S](../mods/menu_touch_full/menu_touch_full_trampoline.S).
-- **Output:** `artifacts/tests/mtf-v2-build-2/MenuTouchFull.mod` (`3,452` B, `SMOD v2` with 36 `RLC1` relocated words, SHA-256 `05014fb0337aa3fbaaa3e7cbac0e67142c0ac546b996391d68a2f5175990875e`), automatically selected ahead of the v1 file by [catalog.py](../src/a6400/mod_manager/catalog.py)'s `artifact_globs`.
+- **Code changes:** Added `#elif defined(TARGET_ILCE6400_8257)` in [menu_touch_full.c](../../../mods/menu_touch_full/menu_touch_full.c) (plus single-deref `rd32(MT_EVMGR_SLOT, 0u)` in `push_async_event()`) and [menu_touch_full_trampoline.S](../../../mods/menu_touch_full/menu_touch_full_trampoline.S).
+- **Output:** `artifacts/tests/mtf-v2-build-2/MenuTouchFull.mod` (`3,452` B, `SMOD v2` with 36 `RLC1` relocated words, SHA-256 `05014fb0337aa3fbaaa3e7cbac0e67142c0ac546b996391d68a2f5175990875e`), automatically selected ahead of the v1 file by [catalog.py](../../../src/a6400/mod_manager/catalog.py)'s `artifact_globs`.
 
 ### 3.4 `ModsTabLook` Ported to `8.2.5.7`
 
 - Read-only camera probe (`artifacts/tests/mtl-8257-probe.json`) located the exact prologue `f8b500af0d460446fff7e2ff` at `libObj.so + 0x79d526` (`+0x70` from `8.2.6.0`).
-- **Code changes:** Added `#elif defined(TARGET_ILCE6400_8257)` return targets (`0x064b54f7` and `0x064b5533`) in [mods_tab_look_trampoline.S](../tools/native_camera/mods_tab_look_trampoline.S).
-- **Clang/LLD mapping-symbol fix:** Added an explicit `$d:` label right before `mtl_icon_rle:` in [mods_tab_look_trampoline.S](../tools/native_camera/mods_tab_look_trampoline.S). Without it, `ld.lld` merged the 8-byte literal pool (`0x150..0x157`) with `mtl_icon_rle` (`0x158+`), causing `pack_mod_v2.py --data-symbol mtl_icon_rle` to skip both literal pool words (`"reloc_words": []`). With `$d:`, both `libObj.so` trampoline addresses are properly emitted in `RLC1`.
+- **Code changes:** Added `#elif defined(TARGET_ILCE6400_8257)` return targets (`0x064b54f7` and `0x064b5533`) in [mods_tab_look_trampoline.S](../../../tools/native_camera/mods_tab_look_trampoline.S).
+- **Clang/LLD mapping-symbol fix:** Added an explicit `$d:` label right before `mtl_icon_rle:` in [mods_tab_look_trampoline.S](../../../tools/native_camera/mods_tab_look_trampoline.S). Without it, `ld.lld` merged the 8-byte literal pool (`0x150..0x157`) with `mtl_icon_rle` (`0x158+`), causing `pack_mod_v2.py --data-symbol mtl_icon_rle` to skip both literal pool words (`"reloc_words": []`). With `$d:`, both `libObj.so` trampoline addresses are properly emitted in `RLC1`.
 - **Output:** `artifacts/tests/mtl-v2-build-2/ModsTabLook.mod` (`1,992` B, `--auto-on` + `RLC1`, SHA-256 `0637c11ec6cc58003a2f05cf8181fdb5c728d09569c187b514ba84aefa5b768f`).
 
 ---
@@ -112,11 +112,11 @@ Using read-only camera probes (`artifacts/tests/mtf-8257-probe.json` and `artifa
 ## 4. Operational Notes & Files Changed
 
 - **Tracked source files modified (all gated behind `#ifdef TARGET_ILCE6400_8257` or backward-compatible fallback, leaving `8.2.6.0` and `ILCE-6400A` intact):**
-  - [mods/menu_touch_full/menu_touch_full.c](../mods/menu_touch_full/menu_touch_full.c)
-  - [mods/menu_touch_full/menu_touch_full_trampoline.S](../mods/menu_touch_full/menu_touch_full_trampoline.S)
-  - [tools/native_camera/mods_tab_look_layout.h](../tools/native_camera/mods_tab_look_layout.h)
-  - [tools/native_camera/mods_tab_look_trampoline.S](../tools/native_camera/mods_tab_look_trampoline.S)
-  - [tools/native_camera/mlv2/core.c](../tools/native_camera/mlv2/core.c)
+  - [mods/menu_touch_full/menu_touch_full.c](../../../mods/menu_touch_full/menu_touch_full.c)
+  - [mods/menu_touch_full/menu_touch_full_trampoline.S](../../../mods/menu_touch_full/menu_touch_full_trampoline.S)
+  - [tools/native_camera/mods_tab_look_layout.h](../../../tools/native_camera/mods_tab_look_layout.h)
+  - [tools/native_camera/mods_tab_look_trampoline.S](../../../tools/native_camera/mods_tab_look_trampoline.S)
+  - [tools/native_camera/mlv2/core.c](../../../tools/native_camera/mlv2/core.c)
 - **Local gitignored artifacts picked up automatically by Mod Manager:**
   - `artifacts/tests/mlv2-fw200-build-1/` (Mod Loader v2 `0x05662800`)
   - `artifacts/tests/mtf-v2-build-2/MenuTouchFull.mod` (`8.2.5.7` relocatable `SMOD v2`)

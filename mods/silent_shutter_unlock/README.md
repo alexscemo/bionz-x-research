@@ -23,7 +23,7 @@ Clears all 5 Silent Shooting `FactorId`s (`0x0a83`, `0x0de2`, `0x114f`, `0x1296`
 - **Physical `ILCE-6400` (`2.00` captured layout, RAM-only):** Verified live via Mod Loader v2 (`SilentShutterUnlock.mod` `1916` B, SHA-256 `951e7417197bcd609fdd7515e1eb8fb14e23f5d5919c4e974d150be8bc540d0e`). Picture Profile (+ sub-items, main menu & C1), Picture Effect, Auto HDR/DRO, and Multi Frame NR are all un-greyed and functional with Silent Shooting ON; Silent Shooting can be enabled and shot in Auto mode.
 - **Offline Unicorn:** `16` unlocked pairs / `5` stock-preserved pairs pass, `425` `DefInh::sm_refTbl` bits cleared on `ON` and restored byte-for-byte on `OFF`.
 
-See [docs/SILENT_SHUTTER_MOD_IDEAS.md](../../docs/SILENT_SHUTTER_MOD_IDEAS.md) for the full analysis of stock limitations and potential follow-up mods.
+See [docs/plans/silent-shutter-mod-ideas.md](../../docs/plans/silent-shutter-mod-ideas.md) for the full analysis of stock limitations and potential follow-up mods.
 
 ---
 

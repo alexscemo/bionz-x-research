@@ -28,7 +28,7 @@ More mods, formats and per-build notes: [mods/README.md](mods/README.md).
 
 | Camera | Level |
 | :--- | :--- |
-| `ILCE-6400` | Mods verified on camera; full QEMU + Unicorn emulation |
+| `ILCE-6400` | Mods and SD auto-boot verified on camera; full QEMU + Unicorn emulation |
 | `ILCE-6400A` | Mods and SD auto-boot verified in QEMU ([`mods/ilce_6400a/`](mods/ilce_6400a/README.md)) |
 | `ILCE-6100` | PhotonBin 6MP and Mod Loader v2 SD boot verified on camera |
 | `ZV-E10` | Touch menu by direct RAM injection verified on camera; Mod Loader untested |
@@ -87,7 +87,7 @@ python -m unittest discover -s tests -q
 
 The last recorded full offline suite had 2091 tests (2026-11-18, [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md)); skips are never counted as passes.
 
-![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=e470b3d667ef)
+![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=093b9d21b11a)
 
 [Test suite growth over time](docs/images/test-growth.svg) · [Current technical state](docs/CURRENT_STATE.md) · [Knowledge map](docs/map/README.md)
 

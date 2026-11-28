@@ -21,12 +21,12 @@
         <div class="brand-mark" aria-hidden="true"><span>&alpha;</span></div>
         <div class="brand-copy">
           <div class="brand-title">BIONZ X Mod Manager</div>
-          <div class="brand-sub">CXD90045 · Toggle ON/OFF &amp; 1-Click Install</div>
+          <div class="brand-sub">Add features to your Sony camera</div>
         </div>
       </div>
 
       <div class="topbar-right">
-        <label class="target-picker" for="target-profile-select" title="Active camera/firmware catalog profile">
+        <label class="target-picker advanced-only" for="target-profile-select" title="Active camera/firmware catalog profile">
           <span class="target-picker-label">Target</span>
           <select id="target-profile-select" aria-label="Target camera profile">
             <option value="ilce_6400">ILCE-6400 (FW 2.00)</option>
@@ -40,7 +40,7 @@
             <span id="camera-pill-sub" class="camera-pill-sub">Connect camera in Mass Storage mode</span>
           </div>
         </div>
-        <button id="btn-scan-camera" class="btn btn-secondary" type="button">
+        <button id="btn-scan-camera" class="btn btn-secondary advanced-only" type="button">
           <span class="btn-icon" aria-hidden="true">&#x21BB;</span>
           <span>Scan Camera</span>
         </button>
@@ -49,15 +49,19 @@
 
     <div class="workspace">
       <nav class="sidebar" aria-label="Main navigation">
-        <button class="nav-item active" data-tab="mods" type="button">
+        <button class="nav-item active" data-tab="guided" type="button">
+          <span class="nav-glyph" aria-hidden="true">&#x2714;</span>
+          <span class="nav-label">Guided Setup</span>
+        </button>
+        <button class="nav-item advanced-only" data-tab="mods" type="button">
           <span class="nav-glyph" aria-hidden="true">&#x25A6;</span>
           <span class="nav-label">Mods &amp; Tweaks</span>
         </button>
-        <button class="nav-item" data-tab="sd" type="button">
+        <button class="nav-item advanced-only" data-tab="sd" type="button">
           <span class="nav-glyph" aria-hidden="true">&#x25AF;</span>
           <span class="nav-label">SD Card Sync</span>
         </button>
-        <button class="nav-item" data-tab="tools" type="button">
+        <button class="nav-item advanced-only" data-tab="tools" type="button">
           <span class="nav-glyph" aria-hidden="true">&#x2699;</span>
           <span class="nav-label">Tools &amp; Setup</span>
           <span id="tools-badge" class="nav-dot hidden" title="Tools need attention"></span>
@@ -65,15 +69,94 @@
 
         <div class="sidebar-footer">
           <div class="safety-card">
-            <div class="safety-title">RAM-First Safety</div>
-            <p>Runtime <code>.mod</code> files run in RAM via Mod Loader v2. Rebooting restores stock code. Permanent PMCA tweaks always confirm first.</p>
+            <div class="safety-title">Safe by default</div>
+            <p>The Recommended mods only live in the camera's memory: turn the camera off and it is back to normal. Anything saved in the camera asks you first and can be undone here.</p>
           </div>
+          <label class="advanced-toggle">
+            <input id="chk-advanced" type="checkbox">
+            <span>Show advanced options</span>
+          </label>
         </div>
       </nav>
 
       <main class="content">
+        <!-- GUIDED SETUP (default) -->
+        <section id="tab-guided" class="tab-panel active">
+          <div id="practice-banner" class="practice-banner hidden">
+            <span><strong>Practice mode.</strong> This is a pretend camera, so you can click through everything safely. Nothing real is changed.</span>
+            <button id="btn-leave-practice" class="btn btn-secondary" type="button">Use my real camera</button>
+          </div>
+          <div id="driver-restore-banner" class="alert-banner hidden"></div>
+
+          <div class="section-header">
+            <div>
+              <h2>Set up your camera</h2>
+              <p class="section-desc">Three steps. Everything this app changes can be undone with one click.</p>
+            </div>
+          </div>
+
+          <div class="wizard-step panel-card" id="wiz-step-connect">
+            <div class="wizard-step-head"><span class="wizard-num">1</span><span>Connect your camera</span></div>
+            <ol class="wizard-checklist">
+              <li>Charge the camera battery (at least half full).</li>
+              <li>On the camera: <strong>MENU &rarr; Setup &rarr; USB Connection &rarr; Auto</strong>.</li>
+              <li>On the camera: turn <strong>Airplane Mode OFF</strong>.</li>
+              <li>Turn the camera on and plug it into this PC with the USB cable.</li>
+            </ol>
+            <div id="wiz-connect-status" class="wizard-status wizard-status-big"><span class="spinner" aria-hidden="true"></span>Looking for your camera...</div>
+            <details id="wiz-help" class="wizard-help">
+              <summary>Camera not found?</summary>
+              <ul>
+                <li>Use the cable that came with the camera. Some cables only charge and cannot carry data.</li>
+                <li>Plug straight into the PC, not into a USB hub or keyboard. Try another USB port.</li>
+                <li>Close other camera apps (Imaging Edge, Lightroom import, phone sync tools).</li>
+                <li>Unplug the cable, wait 5 seconds, and plug it back in. This app keeps looking by itself.</li>
+              </ul>
+            </details>
+            <div class="wizard-actions">
+              <button id="btn-wiz-detect" class="btn btn-secondary" type="button">Look again</button>
+              <button id="btn-wiz-practice" class="btn btn-ghost" type="button">Try it without a camera</button>
+              <button id="btn-wiz-diagnostics" class="btn btn-ghost hidden" type="button">Send diagnostics (read-only)</button>
+            </div>
+          </div>
+
+          <div class="wizard-step panel-card" id="wiz-step-choose">
+            <div class="wizard-step-head"><span class="wizard-num">2</span><span>Choose what to install</span></div>
+            <p class="wizard-lock-note">Connect your camera first (step 1).</p>
+            <div id="wiz-presets" class="wizard-presets"></div>
+            <p class="section-desc">Not sure? Keep <strong>Recommended</strong>. It disappears when the camera turns off.</p>
+          </div>
+
+          <div class="wizard-step panel-card" id="wiz-step-install">
+            <div class="wizard-step-head"><span class="wizard-num">3</span><span>Install</span></div>
+            <p class="wizard-lock-note">Connect your camera first (step 1).</p>
+            <p class="section-desc">Windows may ask <strong>"Do you want to allow this app to make changes?"</strong> Click <strong>Yes</strong>. Don't unplug the camera until this app says it is done.</p>
+            <div id="wiz-arri-warning" class="alert-banner hidden">Arrivederci is ON: always turn it OFF in the camera's MENU &rarr; Mods before powering off, or the color change is saved.</div>
+            <button id="btn-wiz-install" class="btn btn-hero" type="button" disabled>Install on my camera</button>
+          </div>
+
+          <div id="wiz-done" class="wizard-done hidden" role="status">
+            <div class="wizard-done-title">&#x2714; All done!</div>
+            <ol>
+              <li>On the camera, press <strong>MENU</strong> and open the <strong>Mods</strong> tab to switch features on or off.</li>
+              <li>Memory-only mods go away when the camera turns off. Next time, plug in and click <strong>Install on my camera</strong> again.</li>
+              <li>You can unplug the camera now.</li>
+            </ol>
+          </div>
+
+          <div class="wizard-step panel-card" id="wiz-step-undo">
+            <div class="wizard-step-head"><span class="wizard-num">&#x21BA;</span><span>What changed &amp; undo</span></div>
+            <div id="wiz-ledger" class="wizard-status">Connect the camera to see what this app changed on it.</div>
+            <div class="wizard-actions">
+              <button id="btn-wiz-undo-last" class="btn btn-secondary" type="button" disabled>Undo last install</button>
+              <button id="btn-wiz-restore-stock" class="btn btn-secondary" type="button" disabled>Restore camera to stock</button>
+            </div>
+            <div id="wiz-log" class="panel-card diag-output hidden"></div>
+          </div>
+        </section>
+
         <!-- MODS TAB -->
-        <section id="tab-mods" class="tab-panel active">
+        <section id="tab-mods" class="tab-panel">
           <div id="mlv2-banner" class="alert-banner hidden"></div>
 
           <div class="section-header">
@@ -139,6 +222,7 @@
               <p class="section-desc">Everything needed for PMCA, USB transport, debugger bootstrap, and Mod Loader v2.</p>
             </div>
             <div class="section-actions">
+              <button id="btn-usb-driver" class="btn btn-secondary" type="button">Camera USB Driver...</button>
               <button id="btn-prepare-tools" class="btn btn-primary" type="button">Download / Prepare Tools</button>
             </div>
           </div>
@@ -171,7 +255,7 @@
       </main>
     </div>
 
-    <footer class="action-bar">
+    <footer class="action-bar advanced-only">
       <div class="action-summary">
         <div id="action-summary-title" class="action-summary-title">Ready</div>
         <div id="action-summary-sub" class="action-summary-sub">Select mods above, then click 1-Click Install.</div>
@@ -187,17 +271,45 @@
   <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 id="confirm-title">Confirm Camera Changes</h3>
+        <h3 id="confirm-title">Before we start</h3>
         <button class="icon-close" data-close="confirm-modal" type="button" aria-label="Close">&times;</button>
       </div>
       <div id="confirm-body" class="modal-body"></div>
       <label class="confirm-check">
         <input id="confirm-checkbox" type="checkbox">
-        <span>I have read the notices above and want to proceed with these changes on the connected camera.</span>
+        <span>I understand. Go ahead.</span>
       </label>
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="confirm-modal" type="button">Cancel</button>
-        <button id="btn-confirm-proceed" class="btn btn-hero" type="button" disabled>Confirm &amp; Install Now</button>
+        <button id="btn-confirm-proceed" class="btn btn-hero" type="button" disabled>Install</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMERA USB DRIVER MODAL -->
+  <div id="driver-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="driver-title">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-header">
+        <h3 id="driver-title">Camera USB Driver (Service Mode)</h3>
+        <button class="icon-close" data-close="driver-modal" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="section-desc">
+          PMCA tweaks, the debugger bootstrap, and onboarding use Sony service mode. Windows must bind
+          <strong>WinUSB</strong> to the camera's mass-storage device and to its service-mode device
+          (054C:0336). This replaces the manual Zadig step. Each install asks for administrator approval
+          and writes a receipt. While WinUSB is bound, the camera no longer appears as a drive in Explorer
+          (use a card reader for SD Card Sync).
+        </p>
+        <p class="section-desc">Set the camera's <strong>USB Connection</strong> to <strong>Auto</strong>, not permanent Mass Storage.</p>
+        <div id="driver-helper" class="tool-card-detail"></div>
+        <div id="driver-devices" class="driver-devices"></div>
+        <div id="driver-log" class="panel-card diag-output hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-driver-refresh" class="btn btn-ghost" type="button">Rescan USB</button>
+        <button id="btn-driver-preinstall" class="btn btn-secondary" type="button">Pre-install service-mode driver (054C:0336)</button>
+        <button class="btn btn-primary" data-close="driver-modal" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -206,13 +318,18 @@
   <div id="progress-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="progress-title">
     <div class="modal-card modal-card-wide">
       <div class="modal-header">
-        <h3 id="progress-title">Installing to Camera</h3>
+        <h3 id="progress-title">Installing... don't unplug the camera</h3>
         <button id="btn-progress-close" class="icon-close hidden" data-close="progress-modal" type="button" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <div id="power-cycle-callout" class="power-cycle-callout hidden">
-          <div class="callout-title">Power-Cycle Your Camera Once</div>
-          <p>Native USB debugger was written to <code>/setting</code> and verified. On <code>ILCE-6400</code>, make sure <strong>Bluetooth is ON</strong> (<strong>Airplane Mode OFF</strong>) so <code>/tmp_bt</code> mounts writable, then turn the camera <strong>OFF</strong>, unplug USB, wait <strong>3 seconds</strong>, turn it <strong>ON</strong>, and reconnect USB in <strong>Mass Storage</strong> mode. Waiting automatically...</p>
+          <div class="callout-title">Now restart the camera (first time only)</div>
+          <ol>
+            <li>Turn the camera <strong>OFF</strong> and unplug the USB cable.</li>
+            <li>Make sure <strong>Airplane Mode is OFF</strong>.</li>
+            <li>Wait 3 seconds, turn the camera <strong>ON</strong>, and plug the cable back in.</li>
+          </ol>
+          <p>This window continues by itself when the camera is back.</p>
         </div>
         <div id="progress-steps" class="progress-steps"></div>
         <div id="progress-result" class="progress-result hidden"></div>

@@ -1,7 +1,7 @@
 """Sony CXD90045 MMC/SD and MemoryStick character driver contracts.
 
 Derived from /usr/kmod/mmc_drv.ko, /usr/kmod/ms_drv.ko, /usr/lib/libInfraMediaCommon.so,
-and live ILCE-6400 hardware telemetry (reports/a6400_hw_dump.txt lines 198-204, 292-320):
+and live ILCE-6400 hardware telemetry (research/reports/a6400_hw_dump.txt lines 198-204, 292-320):
 - Character device nodes registered in /proc/devices:
   - /dev/mmca-char (major 250, minor 0, hwid 0)
   - /dev/mmcb-char (major 250, minor 1, hwid 1)

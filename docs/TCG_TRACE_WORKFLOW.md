@@ -22,9 +22,9 @@ Every `sony-a6400` peripheral device model implements deterministic `VMStateDesc
     --guest-command "echo OK"
   ```
 - **Warm mod-dev & interactive UI:**
-  - `python3 qemu-a6400/tools/warm.py save ready` / `warm.py load ready` / `warm.py start --from-snapshot ...`
+  - `python3 emulators/qemu-a6400/tools/warm.py save ready` / `warm.py load ready` / `warm.py start --from-snapshot ...`
   - `rear_panel.html` exposes **Save** (`/emu/savevm`) and **Restore** (`/emu/loadvm`) toolbar buttons alongside `--from-snapshot` / `--loadvm`.
-  - Direct launcher overrides in `qemu-a6400/run.sh`: `SNAPSHOT_OVERLAY=<qcow2>` and `LOADVM=<tag>`.
+  - Direct launcher overrides in `emulators/qemu-a6400/run.sh`: `SNAPSHOT_OVERLAY=<qcow2>` and `LOADVM=<tag>`.
 
 ## 2. Tier-1 SQLite Index & Tier-2 Persistent WSL2 Headless Ghidra (`symbol_index`)
 
@@ -47,7 +47,7 @@ Static lookups use an indexed WAL SQLite database (default `/home/administrator/
 
 ## 3. Targeted TCG Trace Plugin (`tcg_trace.c` + `qemu_tcg_trace.py`)
 
-`qemu-a6400/tools/tcg_trace.c` is a parameterized QEMU Plugin API v7 observer emitting structured JSONL with zero guest modification:
+`emulators/qemu-a6400/tools/tcg_trace.c` is a parameterized QEMU Plugin API v7 observer emitting structured JSONL with zero guest modification:
 
 - Supported plugin parameters: `out=`, `ring=<N>`, `ring_range=<lo>:<hi>`, `probe=<id>:<va>[+<base>]`, `deref=<id>:r<0-14>+<off>:<len>`, `mem=<pa_lo>:<pa_hi>` (poll-loop coalesced), `vmem=<va_lo>:<va_hi>`, `max_events=<N>`, `dump_ring=1`, `exit_on_hit=1`.
 - **Single-shot snapshot + probe + MMIO capture + auto-symbolization (WSL2):**

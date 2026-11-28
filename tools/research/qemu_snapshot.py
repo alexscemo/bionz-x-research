@@ -260,7 +260,7 @@ def create_snapshot_bundle(args: argparse.Namespace) -> dict:
     if args.submicro_frames_sha is not None:
         machine_env["SUBMICRO_FRAMES_SHA"] = args.submicro_frames_sha
 
-    run_script = PROJECT_ROOT / "qemu-a6400" / "run.sh"
+    run_script = PROJECT_ROOT / "emulators/qemu-a6400" / "run.sh"
     qemu_bin = default_qemu_dir() / "build" / "qemu-system-arm"
     with tempfile.TemporaryDirectory(prefix="a6400-snap-create-") as tmp:
         tmp_path = Path(tmp)
@@ -350,7 +350,7 @@ def resume_snapshot_bundle(args: argparse.Namespace) -> dict:
     machine_env = dict(manifest.get("machine_env", {}))
     inputs_str = manifest.get("inputs_dir") or ""
     inputs_path = Path(inputs_str) if inputs_str else None
-    run_script = PROJECT_ROOT / "qemu-a6400" / "run.sh"
+    run_script = PROJECT_ROOT / "emulators/qemu-a6400" / "run.sh"
 
     with tempfile.TemporaryDirectory(prefix="a6400-snap-resume-") as tmp:
         tmp_path = Path(tmp)

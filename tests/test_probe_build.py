@@ -3,7 +3,7 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from probes import build_probe
+from research.probes import build_probe
 
 
 class ProbeBuildRoutingTests(unittest.TestCase):

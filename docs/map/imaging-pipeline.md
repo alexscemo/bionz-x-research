@@ -4,7 +4,7 @@
 
 - **Scope:** av-cam CC 3D LUT and gamma, the Arrivederci/ARRI color work, debayer/PSF/detail stages, RAW develop, IMX284, Open Gate and high-bit-depth paths, AIF DMA, the RCRAW probes, and the candidate mobile GPU 36-exposure ARW roll pipelines (SpektraFilm and fotufilm-engine).
 - **Evidence span:** see record index; last reviewed 2026-11-27.
-- **Deep review:** 0 of 57 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 61 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -15,12 +15,12 @@ The evidence records are authoritative; follow the links before acting on a clai
 
 - **State:** `open`
 - **Next:** Static and Unicorn proofs rule out RCRAW_EN (FOPD/W0), SyncGetPrcFlow/AIF0 W2 (CalcSdevOutSize <= 640x480, E9105), and SET_RAW_EXTERNAL_OUTPUT (0x40BD unwired 3G-SDI FS-RAW stub, E0739). Next: qualify Movie-mode CamPig/IDT (0xF3000200..0xF3000422, idt_opdtop_set_intn_capdat @ 0x63B3BD1C) + 0xF3030000 cRAW2 frame-by-frame capture into DDR-B (0x80000000, for 2K SD streaming and 4K-6K RAM bursts) and VPH ch52 (0xF3441280) 3840x2160 UYVY HDMI byte transparency in QEMU before any supervised camera test.
-- **Evidence:** [E0634](../evidence/0634-a6400-hardware-rcraw-post-recording-check.md), [E0635](../evidence/0635-a6400-rcraw-fopd-vs-full-pipeline.md), [E0621](../evidence/0621-a6400-10bit-and-raw-video-paths.md), [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md), [E0739](../evidence/0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md)
+- **Evidence:** [E0634](../evidence/0634-a6400-hardware-rcraw-post-recording-check.md), [E0635](../evidence/0635-a6400-rcraw-fopd-vs-full-pipeline.md), [E0621](../evidence/0621-a6400-10bit-and-raw-video-paths.md), [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md), [E0739](../evidence/0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md), [E0755](../evidence/0755-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md)
 
 ### <a id="f02"></a>F02 - Android Vulkan SpektraFilm darkroom prototype in CinemaHUD
 
 - **State:** `not-started`
-- **Next:** Implement a clean-room NDK Vulkan / Rust compute prototype in android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750).
+- **Next:** Implement a clean-room NDK Vulkan / Rust compute prototype in apps/android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750).
 - **Evidence:** [E0688](../evidence/0688-android-gpu-spektrafilm-film-roll-architecture.md)
 
 ### <a id="f03"></a>F03 - Mobile fotufilm-engine Metal & batched-Vulkan 36-exposure ARW2 roll prototype
@@ -115,7 +115,7 @@ Current knowledge:
 
 `app.android-spektrafilm` | host
 
-Two-tier Android film simulation architecture: live-view 3D .cube preview in android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model.
+Two-tier Android film simulation architecture: live-view 3D .cube preview in apps/android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model.
 
 Aliases: `SpektraFilm`, `CinemaHUD Android`, `ARW2 GPU`, `film roll`
 
@@ -142,7 +142,7 @@ Current knowledge:
 
 Related: [av-cam CC 3D LUT, color matrix and EC gamma](#img-cc-lut), [Debayer, dcv_psf / spica and detail stages](#img-detail-psf), [CinemaHUD Android SpektraFilm engine (candidate)](#app-android-spektrafilm)
 
-## Record index (57 files)
+## Record index (61 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -204,4 +204,8 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0739](../evidence/0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md) | 2026-11-27 | ILCE-6400 10-bit RAW video feasibility, `SET_RAW_EXTERNAL_OUTPUT` (`0x40BD`) 3G-SDI stub proof, `DDR-B` `SHS` ring buffer, and `QFHD` HDMI `UYVY` transport |  | Note correction to [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md) §2.3's tentative IPC label: `0x2044` and `0x2042` at `av-cam.bin` `0x63BDFDA8` / `0x63BDFDD6` (`bl 0x63D403E0(4, 0x2044/0x2042, ...)`) are |
 | [E0741](../evidence/0741-open-gate-32-mode10-smod-v2.md) | 2026-11-27 | 3-Tier 4K & HD 3:2 Open Gate (`5.1K True 4K`, `6K Reg01 Full`, `Full-FOV 2K`) and `OpenGate32` / `OpenGateSensor` (`SMOD v2` + `SMNU`) |  |  |
 | [E0752](../evidence/0752-a6400-open-gate-a12-to-a19-dual-pipe-live.md) | 2026-11-27 | ILCE-6400 Open Gate: Live `A12`–`A19` Dual-Pipe, `tbl_0x34` / `desc_0xAC` `.bss` Baseline, and `0x63761C64` Discovery |  |  |
+| [E0753](../evidence/0753-a6400-open-gate-rec-format-id-contract-and-a12.md) | 2026-11-28 | ILCE-6400 Open Gate: `rec_fmt_tbl` Id Contract, Per-Id Geometry Descriptors, and the Step `A12` Patch Rule |  | \| userspace `libmpr.so` -> message -> av-cam request struct \| **not verified, and the stated mechanism is refuted** (below) \| / coming from Linux user-space (`im.elf`) over UIPC" is **refuted as stated** for |
+| [E0754](../evidence/0754-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md) | 2026-11-28 | ILCE-6400 Open Gate Round 6: `avlog` Read Recipe, `pasp`/`tkhd` Findings, and the `3200`/`3264` Candidate Patch Sets |  | results and the `.bss` baseline). This record supersedes specific `E0753` statements, listed in / Correction to `E0753`:** the table *is* statically referenced. `0x6371B764` `add r3,pc` with |
+| [E0755](../evidence/0755-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md) | 2026-11-28 | Live `ILCE-6400` TCP Read-Only Check: HEVC / 10-Bit Absence, Movie vs. Still `CamPig` / `cRAW2` DDR Buffers, and `0xF3031164` Allocation |  |  |
+| [E0756](../evidence/0756-opengate-a1-libmpr-hook-sites-and-guarded-test-kit.md) | 2026-11-28 | OpenGateA1 `libmpr.so` hook sites match the updater build, not the camera; guarded test kit |  |  |
 | [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md) | 2026-11-26 | ILCE-6100 `RCRAW` / `AIF0 W2` (`0xF3002480`) and `S_SetFOPD` Gate Chain |  |  |

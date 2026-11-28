@@ -1,5 +1,14 @@
 # WiFiSync — camera-side `.JPG` / `.ARW` background transfer
 
+| | |
+| :--- | :--- |
+| **Status** | **Not run on a camera yet:** camera half verified offline (72 core assertions, 93 Unicorn checks, 62 end-to-end TCP checks; [E0698](../../docs/evidence/0698-wifisync-camera-side-mod.md)) |
+| **Tested on** | Nothing yet on hardware |
+| **Known issues** | None reported; the physical 5 GHz AP gate is open |
+| **Not tested yet** | The 5 GHz access point on a camera, transfer speed, battery drain |
+| **How to revert** | Turn it OFF in `MENU → Mods`, or power off (RAM-only) |
+| **What to send back** | The `/status` JSON, the AP channel, files transferred and time taken, via a [physical test report](../../.github/ISSUE_TEMPLATE/physical-test-report.yml) |
+
 A RAM-only `SMOD v2` mod for the Sony **ILCE-6400** (`CXD90045`, firmware 2.00)
 that turns the camera into a 5 GHz Wi-Fi access point and serves newly captured
 photos over an HTTP/1.1 subset on TCP `:8765`, so a phone can fetch them in the

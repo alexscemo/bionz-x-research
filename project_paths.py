@@ -7,13 +7,21 @@ import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 LEGACY_ARTIFACTS = PROJECT_ROOT / "artifacts" / "legacy"
-REFERENCE_ASSETS = PROJECT_ROOT / "assets" / "reference"
+REFERENCE_ASSETS = PROJECT_ROOT / "research" / "reference"
+# Local capture configuration; docs/LAYOUT_MIGRATION.md records the pre-2026-11-28 location.
+QEMU_INPUTS_CONFIG = Path("emulators") / "qemu-a6400" / "inputs.local.json"
+LEGACY_QEMU_INPUTS_CONFIG = Path("qemu-a6400") / "inputs.local.json"
 
 
 def a6400_dump_dir(root=PROJECT_ROOT):
     """Resolve the declared capture, retaining legacy paths on unconfigured clones."""
     root = Path(root)
-    config_path = root / 'qemu-a6400' / 'inputs.local.json'
+    config_path = root / QEMU_INPUTS_CONFIG
+    legacy_path = root / LEGACY_QEMU_INPUTS_CONFIG
+    if not config_path.is_file() and legacy_path.is_file():
+        print(f"warning: reading {legacy_path}; move it to {config_path} (docs/LAYOUT_MIGRATION.md)",
+              file=sys.stderr)
+        config_path = legacy_path
     if not config_path.is_file():
         return root / 'artifacts' / 'dumps' / 'a6400-nflasha-readonly'
     config = json.loads(config_path.read_text(encoding='utf-8-sig'))

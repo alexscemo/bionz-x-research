@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "kit": "opengate_a6400",
+  "model": "ILCE-6400",
+  "firmware": "2.00 (captured camera layout)",
+  "libraries": {
+    "/usr/lib/viewUnified2.so": {
+      "bytes": 11530508,
+      "sha256": "fa534aa2160fc3e9c93119a85bdd9f1988b5f9f64b62c43fad178fabe4fa823d",
+      "source": "artifacts/hardware/live-libs/viewUnified2.so, captured from the camera"
+    },
+    "/usr/lib/libmpr.so": {
+      "bytes": 12665872,
+      "sha256": "bb31351cbd546d88e8ff9bef006db75bd1dabfe3d2f67f359f04155cff9ab8af",
+      "source": "artifacts/dumps/a6400-live-lib/libmpr.so, captured from the camera; its size matches the libmpr.so mappings in tools/native_camera/mlv2/reference_layout_ilce6400.txt"
+    }
+  },
+  "avcam": {
+    "sha256": "dd8f8d0cc74ad4b70100e5728cf8b159b5155e7fb50eaf1147b99c9054740209",
+    "source": "artifacts/hardware/av-cam-camera-original.bin (ORIL RAM image, base VA 0x635C6000)",
+    "read_by_check": false,
+    "note": "tools/devmem_policy.py forbids /dev/mem reads of DRAM, so the check does not read the av-cam.bin tables. Their identity is inferred from the matching user-space libraries (same captured camera); the mod's own per-site stock guard and its log are the only av-cam checks."
+  },
+  "mod_loader": {
+    "core": "/tmp_bt/mlv2/core.bin",
+    "mods_dir": "/tmp_bt/mods",
+    "reference_layout": "tools/native_camera/mlv2/reference_layout_ilce6400.txt"
+  }
+}

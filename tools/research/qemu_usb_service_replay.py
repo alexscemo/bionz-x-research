@@ -16,7 +16,7 @@ from tools.research.qemu_usb_host_probe import read_registers
 from tools.research.qemu_ep0_host import Ep0Host
 
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'qemu-a6400/tools'))
+sys.path.insert(0,str(ROOT/'emulators/qemu-a6400/tools'))
 import moddev
 
 
@@ -85,7 +85,7 @@ def main():
         if args.strict_ep0:env['QEMU_EXTRA']+=' -global cxd90045-dwc3.strict-ep0=on'
         qmp=None;console=None;started=time.monotonic()
         with (out/'console.log').open('wb') as log:
-            proc=subprocess.Popen(['bash',str(ROOT/'qemu-a6400/run.sh')],env=env,stdout=log,stderr=log,
+            proc=subprocess.Popen(['bash',str(ROOT/'emulators/qemu-a6400/run.sh')],env=env,stdout=log,stderr=log,
                                   start_new_session=True)
             try:
                 for _ in range(300):

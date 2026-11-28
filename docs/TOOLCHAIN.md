@@ -229,7 +229,7 @@ The downloaded a6400 dumps are present and match the pinned identities; many
 tests previously checked an incomplete legacy directory instead.
 
 [The shared capture resolver](../project_paths.py) now reads the existing
-`qemu-a6400/inputs.local.json`, verifies its manifest/checksum pins, and translates
+`emulators/qemu-a6400/inputs.local.json`, verifies its manifest/checksum pins, and translates
 its Windows drive path when used in WSL. Boot-set loading, EXBL defaults and
 the corresponding test gates use that same location. Unconfigured clones retain
 the legacy directory; invalid configured inputs fail explicitly. No original
@@ -310,7 +310,7 @@ on this coverage and a stable final worktree.**
 Run the setup script from the repository root in WSL:
 
 ```bash
-bash qemu-a6400/setup-qemu.sh
+bash emulators/qemu-a6400/setup-qemu.sh
 export PATH="$HOME/a6400-rea-tools/build-tools-3.15.2/bin:$PATH"
 cd "$HOME/sony-a6400-qemu-11.1.3/build"
 ../configure --python="$HOME/a6400-rea-tools/build-tools-3.15.2/bin/python" \
@@ -455,7 +455,7 @@ from the separately recorded native compilation inputs.
 
 | Exact command/check | Result |
 | --- | --- |
-| `A6400_QEMU_DIR=/home/administrator/sony-a6400-qemu-11.1.3-rebase-20261118 bash qemu-a6400/setup-qemu.sh`, followed by the configure command above and `ninja -j2 qemu-system-arm qemu-img qemu-io` | PASS; `qemu-build-04.log`, with failed API-port attempts 01-03 retained |
+| `A6400_QEMU_DIR=/home/administrator/sony-a6400-qemu-11.1.3-rebase-20261118 bash emulators/qemu-a6400/setup-qemu.sh`, followed by the configure command above and `ninja -j2 qemu-system-arm qemu-img qemu-io` | PASS; `qemu-build-04.log`, with failed API-port attempts 01-03 retained |
 | WSL research Python: `python -m unittest tests.test_qemu_emmc -v`, with that same `A6400_QEMU_DIR` | PASS, 8/8; eMMC sector/byte addressing, 2 GiB geometry/refusals, rear-key ADC/wheel state and both synchronous display callbacks |
 | `.\.venv\Scripts\python.exe -m unittest tests.emulator.test_timer_gic_model tests.test_qemu_boot_inputs tests.test_qemu_emmc -v` | PASS, 32 run, 8 Windows-native skips; `focused-integration-02.log` |
 | Full offline discovery with unpacked-root opt-in, physical-volume denial and per-case collection, below | PASS, 2,095 discovered / 2,091 runner cases, 2,004 individual passes, 88 skip records, zero failures/errors; `full-suite-windows-02.json` and `.log` |

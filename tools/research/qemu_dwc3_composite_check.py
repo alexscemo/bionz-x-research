@@ -563,7 +563,7 @@ def main(argv=None) -> int:
         raise SystemExit("reports must stay under artifacts/")
     out.mkdir(parents=True, exist_ok=False)
     qemu = args.qemu_dir.resolve() / "build" / "qemu-system-arm"
-    source = ROOT / "qemu-a6400/qemu-overlay/hw/usb/cxd90045_dwc3.c"
+    source = ROOT / "emulators/qemu-a6400/qemu-overlay/hw/usb/cxd90045_dwc3.c"
     report = {
         "tool_sha256": digest(Path(__file__)),
         "source_sha256": digest(source),

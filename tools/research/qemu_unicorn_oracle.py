@@ -24,7 +24,7 @@ def _parse_hex(value: str | int) -> int:
 
 
 def parse_plugin_jsonl(path: Path, *, window: int | None = None) -> dict:
-    """Parse JSONL emitted by qemu-a6400/tools/unicorn_oracle_plugin.c (v1/v2/v3)."""
+    """Parse JSONL emitted by emulators/qemu-a6400/tools/unicorn_oracle_plugin.c (v1/v2/v3)."""
     insns: list[dict] = []
     mmio: list[dict] = []
     polls: list[dict] = []

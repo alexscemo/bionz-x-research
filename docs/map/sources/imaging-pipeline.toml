@@ -36,6 +36,10 @@ records = [
   "E0727",
   "E0728",
   "E0752",
+  "E0753",
+  "E0754",
+  "E0755",
+  "E0756",
   "E0739",
   "E0741",
   "E9105",
@@ -82,7 +86,7 @@ kind = "host"
 name = "CinemaHUD Android SpektraFilm engine (candidate)"
 aliases = ["SpektraFilm", "CinemaHUD Android", "ARW2 GPU", "film roll"]
 related = ["img.cc-lut", "img.detail-psf"]
-summary = "Two-tier Android film simulation architecture: live-view 3D .cube preview in android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model."
+summary = "Two-tier Android film simulation architecture: live-view 3D .cube preview in apps/android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model."
 
 [[entity]]
 id = "app.mobile-fotufilm"
@@ -237,7 +241,7 @@ id = "F01"
 title = "From RCRAW enable to an actual RAW/high-bit-depth recording"
 state = "open"
 entities = ["img.rcraw", "img.recording-paths"]
-evidence = ["E0634", "E0635", "E0621", "E9105", "E0739"]
+evidence = ["E0634", "E0635", "E0621", "E9105", "E0739", "E0755"]
 next = "Static and Unicorn proofs rule out RCRAW_EN (FOPD/W0), SyncGetPrcFlow/AIF0 W2 (CalcSdevOutSize <= 640x480, E9105), and SET_RAW_EXTERNAL_OUTPUT (0x40BD unwired 3G-SDI FS-RAW stub, E0739). Next: qualify Movie-mode CamPig/IDT (0xF3000200..0xF3000422, idt_opdtop_set_intn_capdat @ 0x63B3BD1C) + 0xF3030000 cRAW2 frame-by-frame capture into DDR-B (0x80000000, for 2K SD streaming and 4K-6K RAM bursts) and VPH ch52 (0xF3441280) 3840x2160 UYVY HDMI byte transparency in QEMU before any supervised camera test."
 
 [[frontier]]
@@ -246,7 +250,7 @@ title = "Android Vulkan SpektraFilm darkroom prototype in CinemaHUD"
 state = "not-started"
 entities = ["app.android-spektrafilm"]
 evidence = ["E0688"]
-next = "Implement a clean-room NDK Vulkan / Rust compute prototype in android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750)."
+next = "Implement a clean-room NDK Vulkan / Rust compute prototype in apps/android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750)."
 
 [[frontier]]
 id = "F03"

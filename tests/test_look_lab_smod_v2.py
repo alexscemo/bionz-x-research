@@ -32,7 +32,7 @@ from pathlib import Path
 from src.a6400.mod_manager.smod import SMOD_MAGIC, SMOD_V2_FLAG_ACTION, parse_smod
 
 ROOT = Path(__file__).resolve().parents[1]
-STUDIO = ROOT / "isp-studio"
+STUDIO = ROOT / "apps/isp-studio"
 PRESETS = ROOT / "mods" / "film_sims" / "presets"
 
 try:

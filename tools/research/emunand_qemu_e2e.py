@@ -125,7 +125,7 @@ def _resolve_submicro_fixture(repo_root: Path) -> Path:
     if env_submicro:
         return Path(os.path.expandvars(env_submicro)).expanduser()
     candidates = [
-        repo_root / "qemu-a6400" / "fixtures" / "powered-submicro.bin",
+        repo_root / "emulators/qemu-a6400" / "fixtures" / "powered-submicro.bin",
         *sorted(Path.home().glob("a6400-integrated-liveview*/fixtures/powered-submicro.bin")),
     ]
     for candidate in candidates:
@@ -238,7 +238,7 @@ def run_e2e(
     try:
         with console_log.open("wb") as log_fh:
             proc = subprocess.Popen(
-                ["bash", str(repo_root / "qemu-a6400/run.sh")],
+                ["bash", str(repo_root / "emulators/qemu-a6400/run.sh")],
                 cwd=str(repo_root),
                 env=env,
                 stdin=subprocess.PIPE,
@@ -569,7 +569,7 @@ if [ -e /tmp_bt/emunand ]; then echo WORK_LEFT=1; else echo WORK_LEFT=0; fi
     try:
         with console_log.open("wb") as log_fh:
             proc = subprocess.Popen(
-                ["bash", str(repo_root / "qemu-a6400/run.sh")],
+                ["bash", str(repo_root / "emulators/qemu-a6400/run.sh")],
                 cwd=str(repo_root),
                 env=env,
                 stdin=subprocess.PIPE,

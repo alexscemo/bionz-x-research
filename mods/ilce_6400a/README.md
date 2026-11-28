@@ -61,7 +61,7 @@ LOADER=artifacts/tests/mlv2-ilce6400a-build-2 \
 ULOGIO="" EVSEL_LATE_US=500 \
 SUBMICRO_FRAMES="$HOME/a6400-inputs/submicro-a6400a/wbi-powered-384.bin" \
 SUBMICRO_FRAMES_SHA=5effe8d44b670f71fd7b537e44276718b57f072e48a10be45e621cb73c207695 \
-bash qemu-a6400/tools/start_rear_panel.sh
+bash emulators/qemu-a6400/tools/start_rear_panel.sh
 ```
 
 Or select **`ILCE-6400A (FW 1.01)`** in the **[BIONZ X Mod Manager GUI](../../docs/MOD_MANAGER_GUI.md)** target selector to inspect/stage `ILCE-6400A` mods to SD card or deploy over an active native debugger session.

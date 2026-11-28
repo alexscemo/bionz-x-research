@@ -5,9 +5,9 @@ import struct
 import unittest
 from unittest.mock import patch
 
-from legacy.elf_layout import load_span, symbol_relocation
-from legacy.cxd90045_hle_emulator import CXD90045_HLE_Emulator, RAM_BASE
-from legacy.execution_audit import UnsupportedBehavior
+from research.legacy.elf_layout import load_span, symbol_relocation
+from research.legacy.cxd90045_hle_emulator import CXD90045_HLE_Emulator, RAM_BASE
+from research.legacy.execution_audit import UnsupportedBehavior
 from tools.research.elf_inventory import inspect_elf, summarize
 from project_paths import PROJECT_ROOT
 

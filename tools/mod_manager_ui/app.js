@@ -16,12 +16,23 @@
     preview_sd_sync: ["drive_root", "runtime_selection"],
     start_sd_sync: ["drive_root", "runtime_selection"],
     prepare_tools: [],
+    usb_driver_status: [],
+    restore_windows_drivers: [],
+    detect_and_prepare: [],
+    check_for_update: [],
+    open_release_page: [],
+    get_ledger: [],
+    start_restore_stock: [],
+    start_undo_last: [],
+    install_usb_driver: ["pid"],
     set_mlv2_folder: ["folder_path"],
     pick_mlv2_folder: [],
     run_debugger_check_only: [],
     collect_onboarding: [],
     open_folder: ["which"],
     poll_events: ["after_seq"],
+    enter_practice_mode: [],
+    exit_practice_mode: [],
   };
 
   const state = {
@@ -38,7 +49,12 @@
     pollTimer: null,
     stepMap: {},
     pendingInstallSelection: null,
+    usbDriver: null,
+    wizard: { preset: "ram", detectTimer: null, ready: false },
+    practice: false,
   };
+
+  const DRIVER_ERROR_PREFIX = "Camera USB driver required";
 
   function webToken() {
     const meta = document.querySelector('meta[name="mm-token"]');
@@ -84,6 +100,23 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  const FRIENDLY_ERRORS = [
+    [/Administrator approval was declined/i, "Windows asked for permission and it was not given. Click Install again and choose Yes."],
+    [/No Sony camera detected/i, "The camera is not connected. Check the cable and that the camera is on, then try again."],
+    [/power-cycle reconnect/i, "The camera did not come back after the restart. Turn it on, plug it in, and click Install again. Nothing is half-installed."],
+    [/did not finish within|timed out/i, "The camera stopped answering. Unplug it, turn it off and on, plug it back in, and try again."],
+    [/Another operation .* is already running|Wait until the current operation/i, "Please wait: the app is still busy with the last step."],
+    [/not yet qualified|not supported yet|not qualified/i, "This camera model is not supported yet. Nothing was changed."],
+  ];
+
+  function friendly(message) {
+    const text = String(message || "Something went wrong.");
+    for (const [re, plain] of FRIENDLY_ERRORS) {
+      if (re.test(text)) return plain;
+    }
+    return text;
   }
 
   function toast(message, kind = "ok") {
@@ -132,8 +165,13 @@
 
     pill.className = `camera-pill state-${cam.state || "offline"}`;
     if (!cam.connected) {
-      titleEl.textContent = "Camera Offline";
-      subEl.textContent = cam.detail || "Connect Sony camera in Mass Storage mode";
+      titleEl.textContent = state.practice ? "Practice camera" : "No camera";
+      subEl.textContent = state.practice ? "Plugging in..." : "Plug in your camera";
+      return;
+    }
+    if (state.practice) {
+      titleEl.textContent = "Practice camera";
+      subEl.textContent = "Pretend ILCE-6400 · nothing real";
       return;
     }
     const fw = cam.firmware_version ? ` · FW ${cam.firmware_version}` : "";
@@ -157,6 +195,15 @@
     }
   }
 
+  // Standalone (frozen) builds ship every tool and never download; point users at a reinstall.
+  function isOfflineBuild() {
+    return Boolean(state.toolchain?.offline_only);
+  }
+
+  function missingToolHint(onlineHint) {
+    return isOfflineBuild() ? "Missing or damaged in this install. Reinstall the Mod Manager." : onlineHint;
+  }
+
   function renderMlv2Banner() {
     const banner = document.getElementById("mlv2-banner");
     const mlv2 = state.toolchain?.mlv2;
@@ -167,14 +214,14 @@
     const is6400a = state.catalog?.target_id === "ilce_6400a";
     const defaultHint = is6400a
       ? "Build Mod Loader v2 with --target ilce_6400a or select your local ILCE-6400A build folder."
-      : "Download the official mlv2-layout-build-4 release or select a local build folder.";
+      : missingToolHint("Download the official mlv2-layout-build-4 release or select a local build folder.");
     banner.innerHTML = `
       <div>
         <strong>Mod Loader v2 build not found:</strong>
         <span>${esc(mlv2.error || defaultHint)}</span>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
-        ${is6400a ? "" : `<button id="btn-banner-download-release" class="btn btn-primary" type="button">Download Official Release</button>`}
+        ${is6400a || isOfflineBuild() ? "" : `<button id="btn-banner-download-release" class="btn btn-primary" type="button">Download Official Release</button>`}
         <button id="btn-banner-pick-mlv2" class="btn btn-secondary" type="button">Select MLv2 Folder...</button>
       </div>
     `;
@@ -313,7 +360,7 @@
       {
         title: "Sony-PMCA-RE",
         ok: tc.pmca?.ready,
-        detail: tc.pmca?.ready ? tc.pmca.path : "Not yet cached. Click Download / Prepare Tools.",
+        detail: tc.pmca?.ready ? tc.pmca.path : missingToolHint("Not yet cached. Click Download / Prepare Tools."),
       },
       {
         title: "USB / libusb Driver",
@@ -321,11 +368,22 @@
         detail: tc.usb?.detail || "Unavailable",
       },
       {
+        title: "Camera USB Driver (WinUSB)",
+        ok: !state.usbDriver || !state.usbDriver.platform_supported || (state.usbDriver.blocking || []).length === 0,
+        detail: !state.usbDriver
+          ? "Click 'Camera USB Driver...' to check the service-mode driver (replaces Zadig)."
+          : (!state.usbDriver.platform_supported
+            ? "Not needed on this OS."
+            : ((state.usbDriver.blocking || []).length
+              ? `Needs WinUSB: ${(state.usbDriver.blocking || []).map((d) => d.vid_pid).join(", ")}`
+              : "No connected Sony device is blocking service mode.")),
+      },
+      {
         title: "USB Debugger Payloads",
         ok: tc.debugger_payloads?.ready,
         detail: tc.debugger_payloads?.ready
           ? "a6400_usb_debugd.elf & usb_debug_launcher.so verified (SHA-256)."
-          : "Missing or unverified. Click Download / Prepare Tools.",
+          : missingToolHint("Missing or unverified. Click Download / Prepare Tools."),
       },
       {
         title: "Mod Loader v2 Build",
@@ -339,9 +397,12 @@
         ok: tc.arrivederci_v5?.ready,
         detail: tc.arrivederci_v5?.ready
           ? `Official ${tc.arrivederci_v5.release_tag} SMOD v2 (SHA-256 ${tc.arrivederci_v5.sha256.slice(0, 12)}...)`
-          : "Not cached yet (using local copy). Click Download / Prepare Tools.",
+          : missingToolHint("Not cached yet (using local copy). Click Download / Prepare Tools."),
       },
     ];
+
+    const prepareBtn = document.getElementById("btn-prepare-tools");
+    if (prepareBtn) prepareBtn.textContent = isOfflineBuild() ? "Verify Bundled Tools" : "Download / Prepare Tools";
 
     const needsAttention = cards.some((c) => !c.ok);
     document.getElementById("tools-badge").classList.toggle("hidden", !needsAttention);
@@ -355,6 +416,120 @@
         <div class="tool-card-detail">${esc(c.detail)}</div>
       </div>
     `).join("");
+  }
+
+  // ---- Camera USB driver (WinUSB via bundled libwdi) ----
+  function isDriverError(err, ev) {
+    if (ev && ev.error_code === "driver_missing") return true;
+    return Boolean(err && String(err.message || "").startsWith(DRIVER_ERROR_PREFIX));
+  }
+
+  function renderDriverModal() {
+    const st = state.usbDriver;
+    const helperEl = document.getElementById("driver-helper");
+    const listEl = document.getElementById("driver-devices");
+    const preBtn = document.getElementById("btn-driver-preinstall");
+    if (!st) {
+      helperEl.textContent = "Scanning USB devices...";
+      listEl.innerHTML = "";
+      return;
+    }
+    if (!st.platform_supported) {
+      helperEl.textContent = "Driver binding is only needed on Windows; macOS and Linux use libusb directly.";
+      listEl.innerHTML = "";
+      preBtn.disabled = true;
+      return;
+    }
+    const helperOk = Boolean(st.helper && st.helper.verified);
+    helperEl.textContent = helperOk
+      ? `Driver helper: libwdi wdi-simple.exe verified (SHA-256 ${String(st.helper.sha256 || "").slice(0, 12)}...).`
+      : `Driver helper unavailable: ${st.helper?.detail || "not bundled"}. Bind WinUSB with Zadig manually for the devices below.`;
+    preBtn.disabled = !helperOk;
+    const devices = st.devices || [];
+    if (!devices.length) {
+      listEl.innerHTML = '<div class="tool-card-detail">No Sony USB device is connected. Connect the camera (USB Connection: Auto) and click Rescan USB.</div>';
+      return;
+    }
+    const roleLabels = { service_mode: "Service mode", mass_storage: "Mass storage", libusb_bound: "WinUSB/libusbK", other: "Other" };
+    listEl.innerHTML = devices.map((d) => {
+      const roleLabel = roleLabels[d.role] || d.role;
+      const pill = d.libusb_ok
+        ? '<span class="pill pill-verified">WinUSB ready</span>'
+        : (d.needs_driver ? '<span class="pill pill-experimental">Needs WinUSB</span>' : '<span class="pill">Not used</span>');
+      const btn = d.needs_driver && d.eligible && helperOk
+        ? `<button class="btn btn-primary" type="button" data-install-pid="${esc(d.pid)}">Install WinUSB (admin)</button>`
+        : "";
+      return `
+        <div class="driver-row">
+          <div class="driver-row-text">
+            <strong>${esc(d.vid_pid)} · ${esc(roleLabel)}</strong>
+            <span class="tool-card-detail">${esc(d.description || "")} · driver: ${esc(d.service || "none")}</span>
+          </div>
+          <div>${pill} ${btn}</div>
+        </div>`;
+    }).join("");
+    listEl.querySelectorAll("[data-install-pid]").forEach((el) => {
+      el.addEventListener("click", () => handleInstallDriver(Number(el.getAttribute("data-install-pid"))));
+    });
+  }
+
+  async function refreshDriverStatus() {
+    try {
+      state.usbDriver = await apiCall("usb_driver_status");
+    } catch (err) {
+      state.usbDriver = null;
+      toast(err.message, "err");
+    }
+    renderDriverModal();
+    renderToolsPanel();
+  }
+
+  async function openDriverModal() {
+    openModal("driver-modal");
+    state.usbDriver = null;
+    renderDriverModal();
+    await refreshDriverStatus();
+  }
+
+  function driverLog(line) {
+    const box = document.getElementById("driver-log");
+    box.classList.remove("hidden");
+    box.textContent += `${line}\n`;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function handleInstallDriver(pid) {
+    const hex = Number(pid).toString(16).toUpperCase().padStart(4, "0");
+    document.getElementById("driver-log").textContent = "";
+    driverLog(`Installing WinUSB for 054C:${hex}. Approve the Windows administrator prompt...`);
+    try {
+      await apiCall("install_usb_driver", { pid });
+    } catch (err) {
+      driverLog(`[ERROR] ${err.message}`);
+      return;
+    }
+    startPolling((err, ev) => {
+      if (err) {
+        driverLog(`[ERROR] ${err.message}`);
+      } else {
+        const r = ev.result || {};
+        driverLog(`Result: ${r.status} (receipt ${r.receipt_path})`);
+        if (ev.usb_driver) state.usbDriver = ev.usb_driver;
+        if (ev.receipts) state.receipts = ev.receipts;
+        toast(r.status === "bound" || r.status === "preinstalled"
+          ? `WinUSB ready for 054C:${hex}. Retry your last action.`
+          : `Driver installed for 054C:${hex}; replug the camera if it is not detected.`, "ok");
+        renderAll();
+      }
+      renderDriverModal();
+    }, (ev) => driverLog(`[${ev.ts}] ${ev.message}`));
+  }
+
+  function handleMaybeDriverError(err, ev) {
+    if (!isDriverError(err, ev)) return false;
+    toast("Service mode needs the camera USB driver. Opening the driver installer...", "warn");
+    openDriverModal();
+    return true;
   }
 
   function renderReceipts() {
@@ -480,6 +655,7 @@
     for (const [id, text] of stepNames) {
       state.stepMap[id] = { status: "pending", text };
     }
+    document.getElementById("progress-title").textContent = "Installing... don't unplug the camera";
     document.getElementById("power-cycle-callout").classList.add("hidden");
     document.getElementById("progress-result").classList.add("hidden");
     document.getElementById("progress-log").textContent = "";
@@ -518,14 +694,16 @@
     }
   }
 
-  function startPolling(onJobDone) {
+  function startPolling(onJobDone, onProgress = null) {
     stopPolling();
     state.pollTimer = setInterval(async () => {
       try {
         const res = await apiCall("poll_events", { after_seq: state.eventSeq });
         state.eventSeq = res.last_seq;
         for (const ev of res.events || []) {
-          if (ev.kind === "progress") {
+          if (ev.kind === "progress" && onProgress) {
+            onProgress(ev);
+          } else if (ev.kind === "progress") {
             appendLog(`[${ev.ts}] ${ev.message}`);
             if (ev.step && state.stepMap[ev.step]) {
               state.stepMap[ev.step] = { status: ev.status || "running", text: ev.message };
@@ -581,7 +759,7 @@
       renderActionBar();
       toast("Read live PMCA tweak status from camera.", "ok");
     } catch (err) {
-      toast(err.message, "err");
+      if (!handleMaybeDriverError(err)) toast(err.message, "err");
     } finally {
       btn.disabled = false;
     }
@@ -613,12 +791,15 @@
       state.pendingInstallSelection = { plan, selection: buildSelectionPayload() };
       if (plan.requires_confirmation) {
         const body = document.getElementById("confirm-body");
-        body.innerHTML = plan.confirmation_items.map((item) => `
+        body.innerHTML = plan.confirmation_items.map((item) => {
+          const plain = plainConfirmation(item);
+          return `
           <div class="confirm-item">
-            <div class="confirm-item-title">${esc(item.title)}</div>
-            <div class="confirm-item-msg">${esc(item.message)}</div>
-          </div>
-        `).join("");
+            <div class="confirm-item-title">${esc(plain.title)}</div>
+            <div class="confirm-item-msg">${esc(plain.message)}</div>
+            ${plain.tech ? `<div class="confirm-item-tech">${esc(plain.tech)}</div>` : ""}
+          </div>`;
+        }).join("");
         const chk = document.getElementById("confirm-checkbox");
         chk.checked = false;
         document.getElementById("btn-confirm-proceed").disabled = true;
@@ -628,13 +809,35 @@
 
       await launchInstallJob(plan, buildSelectionPayload(), false);
     } catch (err) {
-      toast(err.message, "err");
+      toast(friendly(err.message), "err");
     } finally {
       btn.disabled = false;
     }
   }
 
+  function plainConfirmation(item) {
+    if (item.kind === "permanent_flash") {
+      const m = /^PMCA Flash Tweak: (.*) -> (ENABLE|DISABLE)$/.exec(item.title || "");
+      const name = m ? m[1] : item.title;
+      const verb = m && m[2] === "DISABLE" ? "Turn off" : "Turn on";
+      return {
+        title: `Saved in the camera: ${verb.toLowerCase()} ${name}`,
+        message: "This setting stays after the camera turns off. \"Restore camera to stock\" in this app undoes it.",
+        tech: `${item.title}. ${item.message}`,
+      };
+    }
+    if (item.kind === "debugger_bootstrap") {
+      return {
+        title: "First-time camera setup",
+        message: "The app puts a small helper on the camera so mods can load, then asks you to restart the camera once. \"Restore camera to stock\" removes it again.",
+        tech: `${item.title}. ${item.message}`,
+      };
+    }
+    return { title: item.title, message: item.message, tech: "" };
+  }
+
   async function launchInstallJob(plan, selection, confirmed) {
+    document.getElementById("wiz-done")?.classList.add("hidden");
     resetProgressModal(plan);
     await apiCall("start_install", {
       selection,
@@ -656,9 +859,14 @@
           }
         }
         renderProgressSteps();
+        document.getElementById("progress-title").textContent = "Stopped";
         resBox.classList.add("err");
-        resBox.textContent = err.message;
+        resBox.textContent = friendly(err.message);
         appendLog(`[ERROR] ${err.message}`);
+        if (isDriverError(err, ev)) {
+          closeModal("progress-modal");
+          handleMaybeDriverError(err, ev);
+        }
         return;
       }
 
@@ -688,8 +896,11 @@
         }
         renderProgressSteps();
         resBox.classList.add("ok");
-        resBox.textContent = ev.result?.message || "Install complete and verified. Open MENU -> Mods on your camera.";
-        document.getElementById("btn-progress-receipt").classList.remove("hidden");
+        resBox.textContent = ev.result?.message || "Done! On the camera, press MENU and open the Mods tab.";
+        document.getElementById("progress-title").textContent = "All done!";
+        document.getElementById("wiz-done")?.classList.remove("hidden");
+        refreshWizardLedger();
+        document.getElementById("btn-progress-receipt").classList.toggle("hidden", state.practice);
       }
     });
   }
@@ -765,6 +976,8 @@
         document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b === btn));
         document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
         if (tab === "sd") refreshSdDrives();
+        if (tab === "guided" && !state.wizard.ready) startWizardPolling();
+        if (tab !== "guided") stopWizardPolling();
       });
     });
 
@@ -933,6 +1146,9 @@
     document.getElementById("btn-prepare-tools").addEventListener("click", handlePrepareTools);
 
     document.getElementById("btn-pick-mlv2").addEventListener("click", handlePickMlv2Folder);
+    document.getElementById("btn-usb-driver").addEventListener("click", openDriverModal);
+    document.getElementById("btn-driver-refresh").addEventListener("click", refreshDriverStatus);
+    document.getElementById("btn-driver-preinstall").addEventListener("click", () => handleInstallDriver(0x0336));
     document.getElementById("btn-open-receipts").addEventListener("click", () => apiCall("open_folder", { which: "receipts" }));
     document.getElementById("btn-progress-receipt").addEventListener("click", () => apiCall("open_folder", { which: "receipts" }));
 
@@ -945,6 +1161,7 @@
         out.textContent = JSON.stringify(res, null, 2);
       } catch (err) {
         out.textContent = `Error: ${err.message}`;
+        handleMaybeDriverError(err);
       }
     });
 
@@ -958,6 +1175,7 @@
         toast("Read-only onboarding bundle exported.", "ok");
       } catch (err) {
         out.textContent = `Error: ${err.message}`;
+        handleMaybeDriverError(err);
       }
     });
 
@@ -986,17 +1204,286 @@
     });
   }
 
+  // ---- Guided Setup wizard ----
+  const PRESETS = {
+    ram: {
+      title: "Recommended",
+      badge: "Gone after restart",
+      describe: (c) => `${presetMods(c).map((m) => m.title).join(", ") || "Verified runtime mods"}. Runs in camera memory only; turning the camera off restores stock.`,
+      tweaks: {},
+    },
+    ram_rec: {
+      title: "Recommended + unlimited recording",
+      badge: "Permanent, undoable",
+      describe: (c) => `Everything in Recommended, plus removing the video recording time limits (normal and 4K). Saved in the camera; "Restore camera to stock" undoes it.`,
+      tweaks: { recLimit: true, recLimit4k: true },
+    },
+  };
+
+  function presetMods(catalog) {
+    return (catalog.runtime_mods || []).filter((m) => m.status === "verified" && m.default_enabled && m.available);
+  }
+
+  function applyPreset(key) {
+    const preset = PRESETS[key];
+    const verified = new Set(presetMods(state.catalog).map((m) => m.id));
+    for (const mod of state.catalog.runtime_mods || []) {
+      state.runtimeSelection[mod.id] = verified.has(mod.id);
+    }
+    for (const tw of state.catalog.pmca_tweaks || []) {
+      state.tweakSelection[tw.id] = tw.id in preset.tweaks ? preset.tweaks[tw.id] : null;
+    }
+  }
+
+  function renderWizard() {
+    const box = document.getElementById("wiz-presets");
+    if (!box) return;
+    box.innerHTML = Object.entries(PRESETS).map(([key, p]) => `
+      <button class="preset-card ${state.wizard.preset === key ? "selected" : ""}" type="button" data-preset="${key}">
+        <div class="preset-card-title">${esc(p.title)} <span class="pill ${key === "ram" ? "pill-verified" : "pill-experimental"}">${esc(p.badge)}</span></div>
+        <div class="tool-card-detail">${esc(p.describe(state.catalog))}</div>
+      </button>`).join("");
+    box.querySelectorAll("[data-preset]").forEach((el) => el.addEventListener("click", () => {
+      state.wizard.preset = el.getAttribute("data-preset");
+      renderWizard();
+    }));
+    document.getElementById("btn-wiz-install").disabled = !state.wizard.ready;
+    document.getElementById("wiz-arri-warning").classList.toggle("hidden", !state.runtimeSelection.arrivederci);
+    document.getElementById("wiz-step-connect").classList.toggle("done", state.wizard.ready);
+    for (const id of ["wiz-step-choose", "wiz-step-install"]) {
+      document.getElementById(id).classList.toggle("locked", !state.wizard.ready);
+    }
+    document.getElementById("practice-banner").classList.toggle("hidden", !state.practice);
+    document.getElementById("btn-wiz-practice").classList.toggle("hidden", state.practice || state.wizard.ready);
+  }
+
+  function setConnectStatus(text, searching) {
+    const box = document.getElementById("wiz-connect-status");
+    box.innerHTML = `${searching ? '<span class="spinner" aria-hidden="true"></span>' : ""}${esc(text)}`;
+    box.classList.toggle("ok", !searching && state.wizard.ready);
+  }
+
+  function describeCamera(cam, switched) {
+    const st = cam?.state || "offline";
+    if (st === "msc_verified" || st === "debugger_ready") {
+      const who = cam.practice ? "the practice camera" : (cam.model_name || "your Sony camera");
+      return { ready: true, text: `\u2714 Found ${who}${cam.firmware_version && !cam.practice ? ` (firmware ${cam.firmware_version})` : ""}. Go to step 2.` };
+    }
+    if (cam.practice) {
+      return { ready: false, searching: true, text: "Plugging in the practice camera..." };
+    }
+    if (st === "msc_unsupported") {
+      return { ready: false, unsupported: true, text: `${cam.model_name || "This camera"} is not supported yet. Nothing was changed. You can send a read-only diagnostics file to help add it.` };
+    }
+    if (st === "msc_blocked") {
+      return { ready: false, text: cam.detail || "This camera/firmware combination is blocked for automatic install." };
+    }
+    if (switched && switched.length) {
+      return { ready: false, searching: true, text: "Found the camera in a different USB mode and asked it to switch. If nothing happens in a few seconds, set USB Connection to Auto and replug." };
+    }
+    return { ready: false, searching: true, text: "Looking for your camera... (this keeps checking by itself)" };
+  }
+
+  async function wizardDetect() {
+    try {
+      const res = await apiCall("detect_and_prepare");
+      state.camera = res.camera;
+      state.toolchain = res.toolchain;
+      if (res.usb_driver) state.usbDriver = res.usb_driver;
+      const d = describeCamera(res.camera, res.switched);
+      state.wizard.ready = d.ready;
+      setConnectStatus(d.text, Boolean(d.searching));
+      state.wizard.misses = d.ready ? 0 : (state.wizard.misses || 0) + 1;
+      if (state.wizard.misses === 4) document.getElementById("wiz-help").open = true;
+      document.getElementById("btn-wiz-diagnostics").classList.toggle("hidden", !d.unsupported);
+      renderCameraPill();
+      renderDriverRestoreBanner();
+      renderWizard();
+      if (d.ready) {
+        stopWizardPolling();
+        refreshWizardLedger();
+      }
+    } catch (err) {
+      setConnectStatus(`Could not check the camera: ${friendly(err.message)}`, false);
+    }
+  }
+
+  function startWizardPolling() {
+    stopWizardPolling();
+    wizardDetect();
+    state.wizard.detectTimer = setInterval(() => { if (!state.pollTimer) wizardDetect(); }, 4000);
+  }
+
+  function stopWizardPolling() {
+    if (state.wizard.detectTimer) {
+      clearInterval(state.wizard.detectTimer);
+      state.wizard.detectTimer = null;
+    }
+  }
+
+  async function refreshWizardLedger() {
+    const box = document.getElementById("wiz-ledger");
+    try {
+      const led = await apiCall("get_ledger");
+      const active = led.active || [];
+      box.innerHTML = active.length
+        ? `<div>Saved changes this app made on ${esc(led.camera?.model_name || "this camera")}:</div><ul>${active.map((e) => `<li>${esc(e.label)} <span class="tool-card-detail">(${esc(e.at)})</span></li>`).join("")}</ul>`
+        : "No saved (permanent) changes from this app on this camera. Memory-only mods disappear when the camera turns off.";
+      document.getElementById("btn-wiz-undo-last").disabled = !active.length;
+      document.getElementById("btn-wiz-restore-stock").disabled = !active.length;
+    } catch (err) {
+      box.textContent = "Connect the camera to see what this app changed on it.";
+    }
+  }
+
+  function wizardLog(line) {
+    const box = document.getElementById("wiz-log");
+    box.classList.remove("hidden");
+    box.textContent += `${line}\n`;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function handleWizardInstall() {
+    applyPreset(state.wizard.preset);
+    renderAll();
+    await handleOneClickInstall();
+  }
+
+  async function handleWizardRestore(lastOnly) {
+    const question = lastOnly
+      ? "Undo the saved changes from the most recent install? The camera enters service mode for a moment."
+      : "Restore every saved change this app made on this camera (firmware tweaks and the USB debugger)? The camera enters service mode for a moment.";
+    if (!window.confirm(question)) return;
+    document.getElementById("wiz-log").textContent = "";
+    wizardLog(lastOnly ? "Undoing last install..." : "Restoring camera to stock...");
+    try {
+      await apiCall(lastOnly ? "start_undo_last" : "start_restore_stock");
+    } catch (err) {
+      wizardLog(`[ERROR] ${friendly(err.message)}`);
+      return;
+    }
+    startPolling((err, ev) => {
+      if (err) {
+        wizardLog(`[ERROR] ${friendly(err.message)}`);
+        handleMaybeDriverError(err, ev);
+        return;
+      }
+      const r = ev.result || {};
+      wizardLog(r.status === "nothing_to_restore" ? "Nothing to restore." : `Done: ${r.status}. Receipt: ${r.receipt_path}`);
+      if (ev.receipts) state.receipts = ev.receipts;
+      toast(r.status === "restored" ? "Camera restored. Power-cycle it to finish." : "Nothing to restore.", "ok");
+      refreshWizardLedger();
+      renderReceipts();
+    }, (ev) => wizardLog(`[${ev.ts}] ${ev.message}`));
+  }
+
+  function renderDriverRestoreBanner() {
+    const banner = document.getElementById("driver-restore-banner");
+    const pending = state.usbDriver?.needs_restore || [];
+    if (!pending.length) {
+      banner.classList.add("hidden");
+      return;
+    }
+    banner.classList.remove("hidden");
+    banner.innerHTML = `Windows is still using this app's WinUSB driver for ${pending.map((d) => esc(d.vid_pid)).join(", ")}, so the camera does not show up as a drive. <button id="btn-restore-win-driver" class="btn btn-secondary" type="button">Restore Windows driver</button>`;
+    document.getElementById("btn-restore-win-driver").addEventListener("click", async () => {
+      try {
+        await apiCall("restore_windows_drivers");
+      } catch (err) {
+        toast(err.message, "err");
+        return;
+      }
+      startPolling((err, ev) => {
+        if (err) {
+          toast(err.message, "err");
+          return;
+        }
+        if (ev.usb_driver) state.usbDriver = ev.usb_driver;
+        toast("Windows driver restored.", "ok");
+        renderDriverRestoreBanner();
+      }, () => {});
+    });
+  }
+
+  function applyInitialState(initData) {
+    state.catalog = initData.catalog;
+    state.toolchain = initData.toolchain;
+    state.camera = initData.camera;
+    state.receipts = initData.receipts || [];
+    state.practice = Boolean(initData.practice);
+    state.wizard.ready = false;
+    state.wizard.misses = 0;
+    state.knownTweaks = {};
+    document.getElementById("wiz-done").classList.add("hidden");
+    initializeSelections(state.catalog);
+    renderAll();
+    renderWizard();
+    refreshWizardLedger();
+  }
+
+  async function setPractice(on) {
+    try {
+      applyInitialState(await apiCall(on ? "enter_practice_mode" : "exit_practice_mode"));
+    } catch (err) {
+      toast(friendly(err.message), "err");
+      return;
+    }
+    toast(on ? "Practice mode: a pretend camera is being plugged in." : "Back to your real camera.", "ok");
+    startWizardPolling();
+  }
+
+  function readPref(key) {
+    try { return window.localStorage.getItem(key); } catch (_e) { return null; }
+  }
+
+  function writePref(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (_e) { /* storage unavailable: keep default */ }
+  }
+
+  function setAdvanced(on) {
+    document.body.classList.toggle("show-advanced", on);
+    document.getElementById("chk-advanced").checked = on;
+    writePref("bionzx-advanced", on ? "1" : "0");
+    const active = document.querySelector(".nav-item.active");
+    if (!on && active && active.classList.contains("advanced-only")) {
+      document.querySelector('.nav-item[data-tab="guided"]').click();
+    }
+  }
+
+  function wireWizard() {
+    setAdvanced(readPref("bionzx-advanced") === "1");
+    document.getElementById("chk-advanced").addEventListener("change", (ev) => setAdvanced(ev.target.checked));
+    document.getElementById("btn-wiz-practice").addEventListener("click", () => setPractice(true));
+    document.getElementById("btn-leave-practice").addEventListener("click", () => setPractice(false));
+    window.addEventListener("beforeunload", (ev) => {
+      if (!state.pollTimer) return;
+      ev.preventDefault();
+      ev.returnValue = "The camera is still being set up. Closing now could leave it half-installed.";
+    });
+    document.getElementById("btn-wiz-detect").addEventListener("click", startWizardPolling);
+    document.getElementById("btn-wiz-install").addEventListener("click", handleWizardInstall);
+    document.getElementById("btn-wiz-undo-last").addEventListener("click", () => handleWizardRestore(true));
+    document.getElementById("btn-wiz-restore-stock").addEventListener("click", () => handleWizardRestore(false));
+    document.getElementById("btn-wiz-diagnostics").addEventListener("click", () => document.getElementById("btn-collect-onboarding").click());
+  }
+
   async function init() {
     await waitForBridge();
     wireEvents();
+    wireWizard();
     try {
       const initData = await apiCall("get_initial_state");
-      state.catalog = initData.catalog;
-      state.toolchain = initData.toolchain;
-      state.camera = initData.camera;
-      state.receipts = initData.receipts || [];
-      initializeSelections(state.catalog);
-      renderAll();
+      applyInitialState(initData);
+      startWizardPolling();
+      apiCall("check_for_update").then((upd) => {
+        if (!upd || !upd.update_available) return;
+        const banner = document.getElementById("driver-restore-banner").cloneNode(false);
+        banner.id = "update-banner";
+        banner.classList.remove("hidden");
+        banner.innerHTML = `A newer Mod Manager (${esc(upd.latest)}) is available; you have ${esc(upd.current)}. <button id="btn-open-release" class="btn btn-secondary" type="button">Open download page</button>`;
+        document.getElementById("tab-guided").prepend(banner);
+        document.getElementById("btn-open-release").addEventListener("click", () => apiCall("open_release_page"));
+      }).catch(() => {});
     } catch (err) {
       toast(`Failed to initialize UI: ${err.message}`, "err");
     }

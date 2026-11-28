@@ -3,7 +3,7 @@
 # Stage the QEMU tree for the sony-a6000 machine (ILCE-6000, CXD90014), the
 # port of voxivoid/a6000-qemu (commit 62cf3bc) to the pinned QEMU 11.1.3.
 #
-# Runs qemu-a6400/setup-qemu.sh unchanged (pinned QEMU, the shared Sony patch
+# Runs emulators/qemu-a6400/setup-qemu.sh unchanged (pinned QEMU, the shared Sony patch
 # and qemu-overlay/), then layers the ILCE-6000 parts on the same tree:
 #   patches/qemu-v<VERSION>-sony-a6000.patch   build wiring, CPU/L2C/SDIO
 #                                              changes and the opt-in properties
@@ -29,7 +29,7 @@ if [ -e "$Q/.git" ]; then
         fi
     done
 fi
-bash "$R/qemu-a6400/setup-qemu.sh" > /dev/null
+bash "$R/emulators/qemu-a6400/setup-qemu.sh" > /dev/null
 
 for f in $FILES; do
     git -C "$Q" apply --include="$f" "$PATCH" || {

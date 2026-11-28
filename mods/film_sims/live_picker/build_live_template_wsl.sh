@@ -4,8 +4,8 @@
 # Compiles film_sim_live_template.c (+ the event_push trampoline) with the SMOD v2 linker script,
 # packs it exactly like mods/film_sims/live_picker/build_live_wsl.sh (ACTION flag, 48-byte bss, the
 # event_push hook and the RLC1 relocation table), and writes
-#   isp-studio/crates/bionz-preset/assets/film_sim_live_template.mod
-#   isp-studio/crates/bionz-preset/assets/film_sim_live_template.json
+#   apps/isp-studio/crates/bionz-preset/assets/film_sim_live_template.mod
+#   apps/isp-studio/crates/bionz-preset/assets/film_sim_live_template.json
 # The Rust packer clones the skeleton and only rewrites the name, the payload and the code checksum,
 # so the hook, the bss and the relocation table stay exactly as verified here.
 #
@@ -17,8 +17,8 @@ export PATH="$PWD/artifacts/toolchain/arm-linux-gnueabi/bin:$PATH"
 command -v arm-linux-gnueabi-gcc >/dev/null || { echo "arm-linux-gnueabi-gcc not found" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 not found" >&2; exit 1; }
 
-OUT=isp-studio/target/film-sim-live-template
-ASSETS=isp-studio/crates/bionz-preset/assets
+OUT=apps/isp-studio/target/film-sim-live-template
+ASSETS=apps/isp-studio/crates/bionz-preset/assets
 LP=mods/film_sims/live_picker
 HOOK_ADDR=0x0655a528
 HOOK_ORIG=2de9f04184b0044602af0846

@@ -1,6 +1,6 @@
 """Headless QEMU runner wrapper with QMP screendump, unmodelled-MMIO, and sequencer receipts.
 
-Runs qemu-a6400/run.sh in an isolated temporary run directory, captures serial
+Runs emulators/qemu-a6400/run.sh in an isolated temporary run directory, captures serial
 output, QEMU stdout/stderr, a QMP screendump, and optional `-d unimp` counts,
 and locates the mode-sequencer index in guest .bss via the startup-table
 signature in av-cam.bin (no hardcoded per-build .bss address).
@@ -190,7 +190,7 @@ def parse_logs(serial_text: str, stdout_text: str, *, d_unimp: bool = False) -> 
 
 
 def run_headless(args: argparse.Namespace) -> dict:
-    run_sh = PROJECT_ROOT / "qemu-a6400" / "run.sh"
+    run_sh = PROJECT_ROOT / "emulators/qemu-a6400" / "run.sh"
     toolchain = json.loads((PROJECT_ROOT / "tools" / "toolchain.json").read_text(encoding="utf-8"))
     qemu_dir = Path(args.qemu_dir or os.environ.get("A6400_QEMU_DIR")
                     or Path.home() / f"sony-a6400-qemu-{toolchain['qemu']['version']}")

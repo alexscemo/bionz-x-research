@@ -17,10 +17,10 @@ node_modules/
 a6400-nflasha-readonly*/
 backups/
 /artifacts
-/qemu-a6400/inputs.local.json
+/emulators/qemu-a6400/inputs.local.json
 scratch/
-assets/reference/*
-!assets/reference/README.md
+/research/reference/*
+!/research/reference/README.md
 
 # Proprietary binary formats and disk images
 *.dat
@@ -67,8 +67,8 @@ tools/read_*_dump.py
 # Keep guarded deployment tools; native source copies live in tools/native_camera.
 !tools/deploy_native_usb_debugger.py
 !tools/deploy_guarded_native_touch.py
-reports/*.png
-reports/*.bin
+/research/reports/*.png
+/research/reports/*.bin
 tests/test_modern_menu_*.py
 docs/modern_menu_overhaul_design.md
 
@@ -88,17 +88,17 @@ tools/native_camera/zve10_uvc_tree.h
 /.android-tools/
 
 # QEMU build checkout and local runtime data
-/qemu-a6400/qemu/
-/qemu-a6400/data/
+/emulators/qemu-a6400/qemu/
+/emulators/qemu-a6400/data/
 
 
 # User-owned LUT pack: bundled only in local APKs
-/android/cinemahud/assets/user_luts/
+/apps/android/cinemahud/assets/user_luts/
 # Local build outputs (reproducible from sources; never publish binaries)
-camera-daemon/build/
-probes/build/
-android/raw-usb-ref/**/build/
-android/raw-usb-ref/.gradle/
+/apps/camera-daemon/build/
+/research/probes/build/
+/apps/android/raw-usb-ref/**/build/
+/apps/android/raw-usb-ref/.gradle/
 
 # Host-specific workspace MCP config (copy from .mcp.json.example)
 /.mcp.json
@@ -110,4 +110,4 @@ android/raw-usb-ref/.gradle/
 # (random tmp<8-char> names). Test-owned fixtures belong under artifacts/tests/.
 /tmp*
 
-/qemu-a6400/zve10-menu.inputs.local.json
+/emulators/qemu-a6400/zve10-menu.inputs.local.json

@@ -724,7 +724,7 @@ entities = ["problem.get-cur-5s", "src.uvc-callback-bridge", "module.usbg-video"
 evidence = ["E0476", "E0471"]
 candidate = "artifacts/native/uvc-transport-e0472-status-prearm/usbg_video_a6400_shared_candidate.ko, 83,644 B, sha256 dcc2f64f944790dd1b8519b29ee6f6ce709a03129fb92d363fdafe14f16915cd"
 verified = "Static audit 117/8/0, Unicorn 8/8 PASS (kernel-side snippets are hand-assembled model stubs), 13 unit tests, full suite 1576 OK. No live behavior claimed."
-preflight = "Harness tools/research/run_b26_uvc_prearm.py pins the module and the daemon (a6400-lived, 632,812 B, sha256 1eda8418...). Local observation 2026-11-22, not an evidence record: camera-daemon/build/a6400-lived was 856,320 B, sha256 c92403f6..., so verify_local_artifacts() fails and tests/emulator/test_run_b26_uvc_prearm.py reports it. Restore or re-pin the daemon before any GO."
+preflight = "Harness tools/research/run_b26_uvc_prearm.py pins the module and the daemon (a6400-lived, 632,812 B, sha256 1eda8418...). Local observation 2026-11-22, not an evidence record: apps/camera-daemon/build/a6400-lived was 856,320 B, sha256 c92403f6..., so verify_local_artifacts() fails and tests/emulator/test_run_b26_uvc_prearm.py reports it. Restore or re-pin the daemon before any GO."
 next = "One supervised Run B26 after explicit user GO, same harness as B25 (wait for 054C:0322, ETW started before the PC Remote switch, one ffmpeg attempt, SD log)."
 read_in_result = "PREARM st=2 nx=3 r=1 before the GET_CUR status completion; RAMRING ... prearm=1/1/0 st=2 nx=3; ETL GET_CUR URB duration << 5 s."
 hypotheses = [

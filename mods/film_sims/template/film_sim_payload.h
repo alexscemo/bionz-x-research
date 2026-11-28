@@ -1,7 +1,7 @@
 /* Layout shared by the SMOD v2 Film Simulation template and its offset probe.
  *
  * `film_sim_template.c` places one `struct sim_payload` in `.rodata.sim_payload`; the host packer
- * (`isp-studio/crates/bionz-preset/src/smod_v2.rs`) locates it by `SIM_PAYLOAD_MAGIC` and writes the
+ * (`apps/isp-studio/crates/bionz-preset/src/smod_v2.rs`) locates it by `SIM_PAYLOAD_MAGIC` and writes the
  * fields at the offsets recorded in `assets/film_sim_template.json`. Keep every field fixed-size and
  * naturally aligned: the probe derives the offsets from the ARM ABI, never from host assumptions.
  */

@@ -68,6 +68,26 @@ def is_frozen() -> bool:
     return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
 
 
+class BundledAssetError(RuntimeError):
+    """A file that the standalone build must ship is missing or fails its pinned hash."""
+
+    def __init__(self, name: str, detail: str = "") -> None:
+        message = f"Bundled {name} is missing or damaged. Reinstall the Mod Manager."
+        if detail:
+            message = f"{message} ({detail})"
+        super().__init__(message)
+        self.asset = name
+
+
+def offline_only() -> bool:
+    """Return True when the app must never download anything (the standalone frozen build).
+
+    Every runtime asset ships inside the installer, so frozen builds verify bundled files
+    and fail closed instead of fetching replacements from the network.
+    """
+    return is_frozen()
+
+
 def bundle_root() -> Path:
     """Return the read-only resource root (PyInstaller ``_MEIPASS`` or repo root)."""
     if is_frozen():
@@ -162,6 +182,8 @@ def ensure_pmca(
     existing = find_pmca_dir(root=root, data_dir=data_dir)
     if existing is not None:
         return existing
+    if offline_only():
+        raise BundledAssetError("Sony-PMCA-RE")
     target_root = Path(data_dir) if is_frozen() and data_dir is not None else repo_root(root)
     if fetcher is None:
         return ensure_pmca_on_path(root=target_root)
@@ -441,6 +463,8 @@ def ensure_mlv2_release(
             existing = target.read_bytes()
             if len(existing) == expected_size and _sha256_bytes(existing) == expected_sha:
                 continue
+        if offline_only():
+            raise BundledAssetError(f"Mod Loader v2 ({MLV2_RELEASE_TAG}/{filename})")
         if progress_cb:
             progress_cb(f"Downloading {MLV2_RELEASE_TAG}/{filename}...")
         raw = dl(str(meta["url"]))
@@ -493,6 +517,8 @@ def ensure_arrivederci_v5(
     existing = find_arrivederci_v5(root=base_root, data_dir=d_dir)
     if existing is not None:
         return existing
+    if offline_only():
+        raise BundledAssetError("Arrivederci v5 (Arrivederci.mod)")
 
     if progress_cb:
         progress_cb(f"Downloading {MLV2_RELEASE_TAG}/Arrivederci.mod (v5)...")
@@ -593,6 +619,8 @@ def prepare_tools(
     """Download/verify PMCA, USB debugger binaries, official MLv2 release, and Arrivederci v5."""
     base_root = repo_root(root)
     d_dir = user_data_dir(data_dir, root=base_root)
+    if offline_only():
+        return verify_bundled_tools(root=base_root, data_dir=d_dir, progress_cb=progress_cb, target_id=target_id)
     if progress_cb:
         progress_cb("Ensuring Sony-PMCA-RE is available...")
     ensure_pmca(root=base_root, data_dir=d_dir, fetcher=fetcher)
@@ -614,6 +642,35 @@ def prepare_tools(
         progress_cb(f"Ensuring official Arrivederci v5 ({MLV2_RELEASE_TAG})...")
     ensure_arrivederci_v5(root=base_root, data_dir=d_dir, fetcher=fetcher, progress_cb=progress_cb)
     return get_toolchain_status(root=base_root, data_dir=d_dir, target_id=target_id)
+
+
+def verify_bundled_tools(
+    *,
+    root: Path | None = None,
+    data_dir: Path | None = None,
+    bundle_dir: Path | None = None,
+    progress_cb: Callable[[str], None] | None = None,
+    target_id: str = "ilce_6400",
+) -> dict[str, object]:
+    """Verify every bundled tool against its pinned hash without any network access.
+
+    Raises ``BundledAssetError`` naming the first missing or damaged component.
+    """
+    if progress_cb:
+        progress_cb("Verifying bundled tools (offline)...")
+    status = get_toolchain_status(root=root, data_dir=data_dir, bundle_dir=bundle_dir, target_id=target_id)
+    if not status["pmca"]["ready"]:
+        raise BundledAssetError("Sony-PMCA-RE")
+    payloads = status["debugger_payloads"]
+    if not payloads["ready"]:
+        bad = [f"{f['name']}: {f['error'] or 'missing'}" for f in payloads["files"] if not f["verified"]]
+        raise BundledAssetError("USB debugger payloads", "; ".join(bad))
+    if not status["mlv2"].get("available"):
+        raise BundledAssetError(f"Mod Loader v2 ({MLV2_RELEASE_TAG})", str(status["mlv2"].get("error") or ""))
+    if not status["arrivederci_v5"]["ready"]:
+        raise BundledAssetError("Arrivederci v5 (Arrivederci.mod)")
+    status["offline_only"] = True
+    return status
 
 
 def get_toolchain_status(
@@ -640,6 +697,7 @@ def get_toolchain_status(
     v5_path = find_arrivederci_v5(root=base_root, data_dir=d_dir, bundle_dir=bundle_dir)
     return {
         "frozen": is_frozen(),
+        "offline_only": offline_only(),
         "pmca": {
             "ready": pmca_path is not None,
             "path": str(pmca_path) if pmca_path else None,

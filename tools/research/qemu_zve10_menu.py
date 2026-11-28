@@ -19,7 +19,7 @@ from tools.research.inventory import digest
 from tools.research.qemu_boot_probe import Qmp
 
 PROFILE = 'zve10-adapted-menu-v1'
-CONFIG = PROJECT_ROOT / 'qemu-a6400' / 'zve10-menu.inputs.local.json'
+CONFIG = PROJECT_ROOT / 'emulators/qemu-a6400' / 'zve10-menu.inputs.local.json'
 CMDLINE = ('console=ttyAM0,115200n8 cfg.uart=1 mem=1G@0 '
            'memrsv=0x1A5E000@0x02E68000 memrsv=128M@0x20000000:uc '
            'rdinit=/init loglevel=8')
@@ -56,7 +56,7 @@ def load_inputs(config: Path = CONFIG, *, root: Path = PROJECT_ROOT) -> dict:
         resolved[name] = path
     if digest(resolved['source_manifest']) != data['source_manifest_sha256']:
         raise ValueError('Source manifest provenance pin does not match declared input')
-    if digest(root / 'qemu-a6400/guest/zve10_menu_osd.h') != data['guest_bridge_sha256']:
+    if digest(root / 'emulators/qemu-a6400/guest/zve10_menu_osd.h') != data['guest_bridge_sha256']:
         raise ValueError('Guest bridge pin differs from this checkout')
     # -kernel expects a raw Image, never a uImage wrapper.
     with resolved['kernel'].open('rb') as stream:
@@ -268,8 +268,8 @@ def run(qemu: Path, inputs: dict, output: Path, seconds: int, keys: list[str], *
                    source_sha256={str(p.relative_to(PROJECT_ROOT)).replace('\\', '/'): digest(p)
                        for p in [PROJECT_ROOT / 'tools/research/qemu_zve10_menu.py',
                                  PROJECT_ROOT / 'tools/research/qemu_boot_probe.py',
-                                 PROJECT_ROOT / 'qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c',
-                                 PROJECT_ROOT / 'qemu-a6400/qemu-overlay/hw/misc/cxd90014_vph.c']})
+                                 PROJECT_ROOT / 'emulators/qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c',
+                                 PROJECT_ROOT / 'emulators/qemu-a6400/qemu-overlay/hw/misc/cxd90014_vph.c']})
     deadline = time.monotonic() + seconds
     process = uart = qmp = menu = None
     try:

@@ -21,7 +21,7 @@ done
 
 OS=$(host_os)
 ARCH=$(host_arch)
-STUDIO="$REPO_ROOT/isp-studio"
+STUDIO="$REPO_ROOT/apps/isp-studio"
 DIST="$REPO_ROOT/dist"
 NAME="BIONZ-Look-Lab-$OS-$ARCH"
 BUNDLE="$DIST/$NAME"
@@ -109,7 +109,7 @@ It prints a JSON receipt with the files it wrote. Without a recognised flag the 
 
 Regenerating the ARM templates (developers)
 -------------------------------------------
-The SMOD v2 payloads are built once and committed under isp-studio/crates/bionz-preset/assets/.
+The SMOD v2 payloads are built once and committed under apps/isp-studio/crates/bionz-preset/assets/.
 With the cross toolchain from scripts/setup_arm_toolchain.sh in place:
 * film_sim_template.blob (+ .json):
     bash mods/film_sims/template/build_template_wsl.sh

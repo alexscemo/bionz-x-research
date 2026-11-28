@@ -31,6 +31,26 @@ MOVED_LAUNCHERS = {
     "launch_cinemahud_ptp.bat": ("scripts", 'cd /d "%~dp0.."'),
     "run_film_sim_studio.bat": ("scripts", "%~dp0..\\tools\\film_sim_studio.py"),
     "start_camera_shell.bat": ("scripts", '%~dp0..\\tools\\cam_live_terminal.py'),
+    "launch_custom_os_kernel.bat": ("scripts", 'cd /d "%~dp0.."'),
+    "launch_custom_os_liveview.bat": ("scripts", 'cd /d "%~dp0.."'),
+}
+
+# Top-level layout (docs/LAYOUT_MIGRATION.md): products in apps/, emulators in
+# emulators/, preserved research in research/. Old top-level homes must not return.
+TOP_LEVEL_DIRECTORIES = (
+    ".github", "apps", "docs", "emulators", "mods", "research", "scripts", "src", "tests", "tools",
+)
+MOVED_DIRECTORIES = {
+    "qemu-a6400": "emulators/qemu-a6400",
+    "qemu-a6700": "emulators/qemu-a6700",
+    "isp-studio": "apps/isp-studio",
+    "a6400-lut-converter": "apps/lut-converter",
+    "camera-daemon": "apps/camera-daemon",
+    "android": "apps/android",
+    "legacy": "research/legacy",
+    "probes": "research/probes",
+    "reports": "research/reports",
+    "assets": "research/reference",
 }
 
 MOVED_ASSETS = (
@@ -39,7 +59,7 @@ MOVED_ASSETS = (
     "docs/UVC_HANDOVER_PLAN.md",
 )
 
-SCANNED_DIRECTORIES = ("src", "tools", "tests", "legacy")
+SCANNED_DIRECTORIES = ("src", "tools", "tests", "research/legacy")
 
 
 def _read(path):
@@ -63,9 +83,24 @@ class TestRootDirectory(unittest.TestCase):
             self.assertTrue((ROOT / name).is_file(), f"missing standard root file: {name}")
 
     def test_core_directories_exist(self):
-        for name in ("src", "tools", "tests", "docs", "scripts", "legacy", "probes",
-                     ".github"):
+        for name in TOP_LEVEL_DIRECTORIES:
             self.assertTrue((ROOT / name).is_dir(), f"missing core directory: {name}")
+
+    def test_moved_directories_live_in_their_group(self):
+        for old, new in MOVED_DIRECTORIES.items():
+            self.assertTrue((ROOT / new).is_dir(), f"missing {new}")
+            self.assertFalse(self._tracked_under(old),
+                             f"{old}/ moved to {new}/; do not recreate it at the root")
+
+    @staticmethod
+    def _tracked_under(relative):
+        import subprocess
+        try:
+            out = subprocess.run(["git", "ls-files", "--", relative], cwd=ROOT,
+                                 capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return False
+        return bool(out.stdout.strip())
 
 
 class TestLaunchers(unittest.TestCase):

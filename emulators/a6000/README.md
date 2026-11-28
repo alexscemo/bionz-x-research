@@ -2,13 +2,13 @@
 
 The `sony-a6000` machine runs the official ILCE-6000 firmware **3.21** without changes. It boots from an emulated NAND in two stages, as the real camera does, and reaches the camera UI.
 
-The ILCE-6000 uses the **CXD90014** SoC (quad Cortex-A5); the `qemu-a6400/` machines use the CXD90045. Everything specific to the ILCE-6000 is in this directory:
+The ILCE-6000 uses the **CXD90014** SoC (quad Cortex-A5); the `emulators/qemu-a6400/` machines use the CXD90045. Everything specific to the ILCE-6000 is in this directory:
 
 - `qemu-overlay/`: the ILCE-6000-only device models and the `sony-a6000` board.
 - `patches/qemu-v11.1.3-sony-a6000.patch`: build wiring, CPU, L2C-310 and SDIO changes, and the opt-in properties added to the shared `cxd90014_*` models.
-- `setup-qemu.sh`: runs `qemu-a6400/setup-qemu.sh` unchanged, then applies the two above to the same QEMU 11.1.3 tree.
+- `setup-qemu.sh`: runs `emulators/qemu-a6400/setup-qemu.sh` unchanged, then applies the two above to the same QEMU 11.1.3 tree.
 
-The machine reuses the shared `cxd90014_*`, `cxd4115_timer` and `dmp_*` device models from `qemu-a6400/qemu-overlay/`. Nothing under `qemu-a6400/` is modified.
+The machine reuses the shared `cxd90014_*`, `cxd4115_timer` and `dmp_*` device models from `emulators/qemu-a6400/qemu-overlay/`. Nothing under `emulators/qemu-a6400/` is modified.
 
 It comes from [voxivoid/a6000-qemu](https://github.com/voxivoid/a6000-qemu) (commit `62cf3bc`, QEMU 10.1.0). That project is a fork of [Oein/a5000-emulator](https://github.com/Oein/a5000-emulator) (base commit `6ad36bd`). Paths under `docs/reference/` in source comments are files in voxivoid/a6000-qemu.
 
@@ -97,7 +97,7 @@ A failed boot can erase the emulated NAND, so keep the untouched copy.
 
 ## Build and run
 
-Stage the QEMU tree with `./setup-qemu.sh` (it uses the same `A6400_QEMU_DIR` and pinned QEMU as `qemu-a6400/setup-qemu.sh`, see `qemu-a6400/README.md`), then build it with the command it prints. The staged tree also builds every `qemu-a6400` machine. Re-stage it with this script, not with `qemu-a6400/setup-qemu.sh` alone, which refuses a tree that carries the ILCE-6000 patch. The Linux build also needs `gcc-arm-none-eabi`, which builds `provision/a6kcopy`, and `libslirp-dev` for Wi-Fi. Commands run from `emulators/a6000/`:
+Stage the QEMU tree with `./setup-qemu.sh` (it uses the same `A6400_QEMU_DIR` and pinned QEMU as `emulators/qemu-a6400/setup-qemu.sh`, see `emulators/qemu-a6400/README.md`), then build it with the command it prints. The staged tree also builds every `emulators/qemu-a6400` machine. Re-stage it with this script, not with `emulators/qemu-a6400/setup-qemu.sh` alone, which refuses a tree that carries the ILCE-6000 patch. The Linux build also needs `gcc-arm-none-eabi`, which builds `provision/a6kcopy`, and `libslirp-dev` for Wi-Fi. Commands run from `emulators/a6000/`:
 
 ```sh
 ./run.sh                              # QEMU window with the camera panel
@@ -142,7 +142,7 @@ HMP `sendkey ret 300` also works. Hold keys for about 300 ms. Send one key at a 
 | Path | Purpose |
 |---|---|
 | `run.sh`, `provision.sh`, `provision/` | Boot, factory-style NAND programming, stage-1 loader |
-| `tools/camui.py`, `tools/camui.html` | Camera-body web UI with live LCD (A6000 key map; `qemu-a6400/tools/rear_panel.py` is the A6400 panel) |
+| `tools/camui.py`, `tools/camui.html` | Camera-body web UI with live LCD (A6000 key map; `emulators/qemu-a6400/tools/rear_panel.py` is the A6400 panel) |
 | `tools/mkdata.py`, `tools/wbi.py` | Warm-boot-image data from the updater |
 | `tools/a6kshell.py` | Root shell on UART2 next to the stock UI (`A6K_SHELL=<port>`), with file push and pull |
 | `tools/mon.py`, `tools/klog.py` | HMP commands; kernel log from the Sony klog ring |
@@ -160,6 +160,6 @@ HMP `sendkey ret 300` also works. Hold keys for about 300 ms. Send one key at a 
 
 ## Licence and notice
 
-The code here is GPL-2.0-or-later, like `qemu-a6400/` and QEMU. The exception is `tools/pmca-socket/`, which is MIT.
+The code here is GPL-2.0-or-later, like `emulators/qemu-a6400/` and QEMU. The exception is `tools/pmca-socket/`, which is MIT.
 
 This project is not affiliated with Sony. Do not add Sony firmware, data derived from it or camera dumps to this repository or its issues. The emulator never writes to a real camera.

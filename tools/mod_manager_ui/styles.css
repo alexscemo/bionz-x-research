@@ -1128,3 +1128,231 @@ select {
 .toast.err {
   border-color: rgba(239, 68, 68, 0.55);
 }
+
+/* Camera USB driver modal */
+.driver-devices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.driver-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.driver-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Guided Setup wizard */
+.wizard-step {
+  margin-bottom: 14px;
+}
+
+.wizard-step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.wizard-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+}
+
+.wizard-step.done .wizard-num {
+  background: #2f9e62;
+}
+
+.wizard-status {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wizard-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.preset-card {
+  text-align: left;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.preset-card.selected {
+  border-color: #4c8dff;
+  box-shadow: 0 0 0 1px #4c8dff inset;
+}
+
+.preset-card-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.preset-card ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+/* Simple mode: advanced screens appear only after "Show advanced options" */
+body:not(.show-advanced) .advanced-only {
+  display: none !important;
+}
+
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.wizard-checklist {
+  margin: 6px 0 4px;
+  padding-left: 22px;
+  line-height: 1.7;
+}
+
+.wizard-status-big {
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wizard-status-big.ok {
+  color: var(--green);
+}
+
+.spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
+.wizard-help {
+  margin: 6px 0;
+  color: var(--text-secondary);
+}
+
+.wizard-help summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.wizard-help ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.wizard-lock-note {
+  display: none;
+  margin: 4px 0 8px;
+  color: var(--text-muted);
+}
+
+.wizard-step.locked {
+  opacity: 0.55;
+}
+
+.wizard-step.locked .wizard-lock-note {
+  display: block;
+}
+
+.wizard-step.locked .wizard-presets {
+  pointer-events: none;
+}
+
+.practice-banner {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  background: var(--blue-soft);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wizard-done {
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: var(--green-soft);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.wizard-done-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+
+.wizard-done ol,
+.power-cycle-callout ol {
+  margin: 4px 0;
+  padding-left: 22px;
+  line-height: 1.7;
+}
+
+.confirm-item-tech {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}

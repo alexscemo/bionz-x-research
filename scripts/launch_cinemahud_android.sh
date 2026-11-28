@@ -21,7 +21,7 @@ done
 case "$(host_os)" in macos) TOOLS_OS=darwin ;; *) TOOLS_OS=linux ;; esac
 ADB="$REPO_ROOT/.android-tools/$TOOLS_OS/platform-tools/adb"
 if [ ! -x "$ADB" ]; then
-    ADB=$(command -v adb) || die "ADB is missing. See android/cinemahud/README.md."
+    ADB=$(command -v adb) || die "ADB is missing. See apps/android/cinemahud/README.md."
 fi
 command -v curl >/dev/null || die "curl is required to probe the PTP server"
 

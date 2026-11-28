@@ -72,7 +72,7 @@ See [E0505](evidence/0505-av-cam-cc-3dlut-and-ec-gamma-pipeline.md),
 [E0601](evidence/0601-av-cam-sigitp-bayer-detail-and-pqd-stage-map.md),
 [E0602](evidence/0602-sabin-dcv-psf-and-spica-tap-mtf-vs-arri.md),
 [E0603](evidence/0603-a6400-arri-spatial-texture-emulation-synthesis.md),
-the [converter workflow](../a6400-lut-converter/README.md) and
+the [converter workflow](../apps/lut-converter/README.md) and
 [ARRI LogC4](https://www.arri.com/en/learn/camera-systems/image-science/log-c).
 
 ## Spatial, Debayer, and `/usr/sabin/` Surfaces (`E0599`–`E0603`)

@@ -8,7 +8,7 @@
 ## Current Baseline & Exact Stopping Boundary
 
 1. **Already working in QEMU (`E0580`–`E0588`):**
-   - QMP `usb-vbus=true` (`USB_VBUS_TEST=1`, `USB_CID_HIGH=1` in `qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c`) updates `0xF2920010` (`0x2 -> 0x3`) and pulses `IRQ 230`.
+   - QMP `usb-vbus=true` (`USB_VBUS_TEST=1`, `USB_CID_HIGH=1` in `emulators/qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c`) updates `0xF2920010` (`0x2 -> 0x3`) and pulses `IRQ 230`.
    - Original kernel handlers (`fusb_interrupt_usb_vbus` -> `fusb_notify_vbus` -> `event_vbus_exec` -> `usb_portMonitor` -> `/dev/usb/event`) deliver the event to `im.elf` (`libUsbControl.so`).
    - `UsbControl::SetJackStatus(1, 1)` returns `1`, sends the 16-byte message `0x07000001` (`status=1`) via `osal_snd_msg` on queue `0x007A0020` (`UsbControl::sendJackStatusToInput`), and broadcasts `0x0A400A` (`MSGID_VBUS_ON_EVT`), transitioning `libBusPower.so` FSM `0 -> 2`.
 2. **Historical boundary hypothesis (`E0589`; routing and offset assumptions superseded by E0612/E0613 below):**
@@ -79,7 +79,7 @@ initialization must reach the release path through qualified contracts.
 **Objective:** Satisfy the original firmware's real hardware/peripheral dependency in `sony_a6400.c` (strictly opt-in, no firmware patches, no fabricated UI events) so `usb-vbus=true` organically triggers `DefRootView::ActionOpenUSB`.
 
 1. **Implement only what Phase 1 proves is missing:**
-   - **Branch A (if ORIL filters `0x07000001` on a peripheral/sub-micro/power/RTC register):** Add opt-in emulation of that specific register/WBI/RTC/GPIO response in `qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c` (verified from ORIL disassembly and, if needed, a single bounded 4 KiB read-only check on the physical camera).
+   - **Branch A (if ORIL filters `0x07000001` on a peripheral/sub-micro/power/RTC register):** Add opt-in emulation of that specific register/WBI/RTC/GPIO response in `emulators/qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c` (verified from ORIL disassembly and, if needed, a single bounded 4 KiB read-only check on the physical camera).
    - **Branch B (current E0619 ModelCamera readiness boundary):** The original still-recording release paths execute but group 1 is blocked by valid `ModelCamera` (`0x0B`) readiness false; `ModelStillRec` (`0x0F`) is ready. Native setter `libObj+0x3FE020` writes `1,0,1,0`; the final clear returns to `+0x4AA0A4`. Trace the original caller's byte `this+0x61E4` and stack `[r7+4]` branch inputs and their owner/state chain before deriving a hardware contract or linking the independent E0591 step-26 wait. See [E0619](../evidence/0619-native-usb-release-model-camera-readiness.md). Only implement an opt-in hardware response supported by original instructions and state/side-effect evidence. Do not preset model readiness, ROOT readiness, alias `@M001`, init-done state, physical-key inhibition or application events.
    - **Branch C (if `Backup.bin` `0x0107001F` or `isCtrlWithSmartPhoneOn()` selects the mode):** Document the captured value in `inputs-moddev-1/Backup.bin` and test both **Mass Storage** and **PC Remote** via the camera's own Setup -> USB Connection menu (no manual `Backup.bin` patching).
 2. **Phase 2 verification:**
@@ -110,10 +110,10 @@ initialization must reach the release path through qualified contracts.
 ### Phase 4 — Interactive USB Cable Controls in `rear_panel.py` + `rear_panel.html`
 **Objective:** Provide one-click manual USB attach/detach controls and live USB mode/enumeration status at `http://127.0.0.1:8080/`.
 
-1. **Backend (`qemu-a6400/tools/rear_panel.py`):**
+1. **Backend (`emulators/qemu-a6400/tools/rear_panel.py`):**
    - Add opt-in POST `/usb/attach` and `/usb/detach` endpoints (protected by `Origin` + `X-Camera-Panel: 1`) that set `usb-vbus` via QMP and sync `CONN`/`DISC` on `usbhost.sock`.
    - Extend `GET /uvc` (or add `GET /usb`) with `vbus`, current `vid_pid`, USB class (`MSC` / `PTP` / `UVC`), and stream status.
-2. **UI (`qemu-a6400/tools/rear_panel.html`):**
+2. **UI (`emulators/qemu-a6400/tools/rear_panel.html`):**
    - Add **"Plug USB" / "Unplug USB"** toggle and compact status badge (`USB: Unplugged` / `MSC 054c:096f` / `UVC 054c:0322 — N frames`) in English.
 3. *(Optional iteration speedup)*: Add an opt-in fast staging path for `usbg_video_a6400.ko` (avoiding the ~85s serial `printf` upload) while keeping default `ModDev` behavior intact.
 

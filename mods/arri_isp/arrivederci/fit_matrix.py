@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "a6400-lut-converter"))
+sys.path.insert(0, str(ROOT / "apps/lut-converter"))
 from lut_core.arri import ArriReference, SONY_TO_AWG3, logc3_encode  # noqa: E402
 from lut_core.color import (COLORCHECKER_SRGB, delta_e00, delta_e76, display_rgb_to_lab,  # noqa: E402
                             rgb_to_xyz_matrix, slog3_decode, srgb_eotf, lin709_to_source)

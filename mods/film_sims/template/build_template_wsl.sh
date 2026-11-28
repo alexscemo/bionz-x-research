@@ -3,8 +3,8 @@
 #
 # Compiles film_sim_template.c into a Thumb, position-independent `.text` blob (linked at 0 with the
 # SMOD v2 linker script), refuses absolute relocations, and writes
-#   isp-studio/crates/bionz-preset/assets/film_sim_template.blob
-#   isp-studio/crates/bionz-preset/assets/film_sim_template.json
+#   apps/isp-studio/crates/bionz-preset/assets/film_sim_template.blob
+#   apps/isp-studio/crates/bionz-preset/assets/film_sim_template.json
 # which `bionz-preset::smod_v2` embeds. Run from Windows with:
 #   wsl.exe -d Ubuntu -- bash mods/film_sims/template/build_template_wsl.sh
 set -euo pipefail
@@ -13,8 +13,8 @@ export PATH="$PWD/artifacts/toolchain/arm-linux-gnueabi/bin:$PATH"
 command -v arm-linux-gnueabi-gcc >/dev/null || { echo "arm-linux-gnueabi-gcc not found" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 not found" >&2; exit 1; }
 
-OUT=isp-studio/target/film-sim-template
-ASSETS=isp-studio/crates/bionz-preset/assets
+OUT=apps/isp-studio/target/film-sim-template
+ASSETS=apps/isp-studio/crates/bionz-preset/assets
 mkdir -p "$OUT" "$ASSETS"
 
 FLAGS="-mthumb -mcpu=cortex-a5 -mfloat-abi=softfp -Os -ffreestanding -fno-builtin -nostdlib -nostartfiles -fno-stack-protector -fomit-frame-pointer -Wall -Wextra -Werror -fpie -fvisibility=hidden -Imods/film_sims/template"

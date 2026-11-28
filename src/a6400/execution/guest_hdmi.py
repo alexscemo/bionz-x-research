@@ -1,7 +1,7 @@
 """Guarded HDMI controller kernel interface (/dev/hdmi).
 
 Authentic Sony HDMI driver contract evidenced by:
-- reports/a6400_hw_dump.txt:
+- research/reports/a6400_hw_dump.txt:
     crwxrwxrwx 1 root root 248, 25 /dev/hdmi
     248 hdmi (under /proc/devices)
     Module: hdmi.ko (154,375 bytes), libInfraHdmi.so

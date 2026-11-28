@@ -28,7 +28,7 @@ class MenuInputsTests(unittest.TestCase):
                                            sha256=hashlib.sha256(content).hexdigest())
 
         self.data['source_manifest_sha256'] = self.data['inputs']['source_manifest']['sha256']
-        bridge = self.root / 'qemu-a6400/guest/zve10_menu_osd.h'
+        bridge = self.root / 'emulators/qemu-a6400/guest/zve10_menu_osd.h'
         bridge.parent.mkdir(parents=True)
         bridge.write_bytes(b'constructed bridge')
         self.data['guest_bridge_sha256'] = hashlib.sha256(bridge.read_bytes()).hexdigest()

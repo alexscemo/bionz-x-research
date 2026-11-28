@@ -4,7 +4,7 @@
  * physical address, tag and table lives in one `.rodata.sim_payload` object instead of `#define`
  * constants and `static const` arrays. The build script (`build_template_wsl.sh`) emits the
  * position-independent `.text` blob plus the payload offset and the `sim_life` offset, and
- * `isp-studio/crates/bionz-preset/src/smod_v2.rs` clones that blob, writes the addresses and tables
+ * `apps/isp-studio/crates/bionz-preset/src/smod_v2.rs` clones that blob, writes the addresses and tables
  * of the selected preset into the payload, and emits a ready-to-copy `.mod`.
  *
  * One binary template covers both bodies because no physical address is baked into the code.

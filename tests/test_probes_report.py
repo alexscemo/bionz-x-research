@@ -1,6 +1,6 @@
 """Tests for the read-only UVC/DMA probe's report contract.
 
-The report is generated at test time by `probes/build_probe.py --host-check`
+The report is generated at test time by `research/probes/build_probe.py --host-check`
 (synthetic /proc-/sys-/dev-like tree in WSL; no camera, no hardware). When WSL is
 unreachable from the test interpreter — this sandbox runs workspace binaries at
 low integrity, and WSL refuses to start from a low-integrity process — the test
@@ -17,9 +17,9 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VALIDATOR = ROOT / 'probes' / 'test_probe_report.py'
-BUILDER = ROOT / 'probes' / 'build_probe.py'
-LAST_REPORT = ROOT / 'probes' / 'build' / 'host-check' / 'report.json'
+VALIDATOR = ROOT / 'research' / 'probes' / 'test_probe_report.py'
+BUILDER = ROOT / 'research' / 'probes' / 'build_probe.py'
+LAST_REPORT = ROOT / 'research' / 'probes' / 'build' / 'host-check' / 'report.json'
 
 _spec = importlib.util.spec_from_file_location('probe_report_validator', VALIDATOR)
 validator = importlib.util.module_from_spec(_spec)

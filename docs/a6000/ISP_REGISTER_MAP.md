@@ -14,7 +14,7 @@ Credit: the CamCore (CC) ISP register layout this map is built on (the 96-word g
 documented for the A6400 by [ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research) (MIT, (c) 2026 ivica00):
 [`docs/evidence/0505-av-cam-cc-3dlut-and-ec-gamma-pipeline.md`](https://github.com/ivica00/bionz-x-research/blob/main/docs/evidence/0505-av-cam-cc-3dlut-and-ec-gamma-pipeline.md),
 [`docs/ISP_TRANSFORM_CATALOG.md`](https://github.com/ivica00/bionz-x-research/blob/main/docs/ISP_TRANSFORM_CATALOG.md), the `arri_isp`
-mod and `a6400-lut-converter`. Everything marked **[V]** here was then checked on an A6000 (FW 3.21).
+mod and `apps/lut-converter`. Everything marked **[V]** here was then checked on an A6000 (FW 3.21).
 
 ## 1. Access
 * CamCore CC register block = physical **`0xF3200000`** (BIONZ X, CXD90014). av-cam (LIRO uITRON, VA = PA - 0x40000000,

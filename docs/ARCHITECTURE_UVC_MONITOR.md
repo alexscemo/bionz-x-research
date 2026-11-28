@@ -57,7 +57,7 @@ push) is the shortest way to sub-35 ms. The evidence says something more precise
 | Track | Content | Why | Status |
 | --- | --- | --- | --- |
 | **A (primary, ship now)** | Host-driven **pipelined PTP push pipeline** over the stock PC Remote link (`054C:0CAA`), controls over the same PTP session (`0x9207` notch / `0x9209` readback), decode + SGSR upscale on Snapdragon 8 Gen 3 | only path with verified real frames + verified concurrent control; zero camera code; cannot crash `scalar`; RAM-only by construction | implemented in `android-client-ref/` |
-| **B (secondary, gated)** | Camera-side **daemon** (`camera-daemon/`) merging session runner + sensor feeder, feeding **composite UVC bulk-IN MJPEG** (PID `0x0322`) with a depth-1 queue, plus a control bridge | highest ceiling; removes request round-trip; standard UVC for any host | implemented offline; gated on module audit + stage-2/3 physical tests + explicit authorization |
+| **B (secondary, gated)** | Camera-side **daemon** (`apps/camera-daemon/`) merging session runner + sensor feeder, feeding **composite UVC bulk-IN MJPEG** (PID `0x0322`) with a depth-1 queue, plus a control bridge | highest ceiling; removes request round-trip; standard UVC for any host | implemented offline; gated on module audit + stage-2/3 physical tests + explicit authorization |
 | C (rejected) | Pure UVC + Extension Units for controls on EP0 (Path A) | no XU exists in any reference descriptor (`bmControls = 0`), needs the ZV-E10 five-component overlay **and** authored control entities **and** an internal apply contract that does not exist | not implemented |
 
 Both tracks share the same Android decode/render/upscale pipeline and the same
@@ -190,7 +190,7 @@ push stream, achieved with stock firmware semantics.
 
 ### 5.1 What it is
 
-One process, `camera-daemon/build/a6400-lived`, that merges the two physically run
+One process, `apps/camera-daemon/build/a6400-lived`, that merges the two physically run
 halves (E0345/E0339):
 
 ```
@@ -265,7 +265,7 @@ are discovered per session (LIVEVIEW_DMA.md Â§4.1).
 | UI key injection via `CtrlCode2InputKey` â†’ `SendEvtToInput` | 100â€“500 Âµs [I] | CONTROL_IPC.md Â§3 | exactly what stock PC Remote does; in-process, not reachable by an out-of-process daemon without an internal message |
 | UVC XU / class requests on EP0 | ~0.1â€“1 ms [I] | handler exists (`core_cb_class` 0x17B0) but **no selector is advertised** (`bmControls = 0`) and no XU exists in any reference descriptor | rejected (Path A) for controls |
 
-The daemon's control protocol (`camera-daemon/include/a6400_control.h`) is therefore
+The daemon's control protocol (`apps/camera-daemon/include/a6400_control.h`) is therefore
 **route-aware, not aspirational**:
 
 | Opcode class | Answer |
@@ -317,11 +317,11 @@ non-frame-based liveview path on the CXD90045 SoC?), not USB.
 | Path | Content | Verification |
 | --- | --- | --- |
 | `ARCHITECTURE_UVC_MONITOR.md` | this document | synthesis of 4 recon reports + live MSC snapshot |
-| `probes/` | `uvc_dma_probe.c` (ARMv7, read-only default, bounded), `build_probe.py` (WSL ARM build + host-check), `run_probe.sh`, `README.md`, report validator | offline build + host smoke + unit test |
-| `camera-daemon/` | `include/` contracts, `src/` (osal, uvc, frame, runner, control, log, main), `build.sh`, `Makefile`, `test/` host tests, `tools/deploy.py`, `module/README.md` | WSL ARM build `-Werror`, host unit tests, repo suite |
+| `research/probes/` | `uvc_dma_probe.c` (ARMv7, read-only default, bounded), `build_probe.py` (WSL ARM build + host-check), `run_probe.sh`, `README.md`, report validator | offline build + host smoke + unit test |
+| `apps/camera-daemon/` | `include/` contracts, `src/` (osal, uvc, frame, runner, control, log, main), `build.sh`, `Makefile`, `test/` host tests, `tools/deploy.py`, `module/README.md` | WSL ARM build `-Werror`, host unit tests, repo suite |
 | `android-client-ref/` | Gradle project, Kotlin PTP/UVC transports + app, native `cpp/` (libjpeg-turbo decode â†’ AHardwareBuffer/EGLImage â†’ GLES 3.2 SGSR-1.0-class pass), JNI contract, shader, static verifiers | host compile + assertions, shader validation, structure verifier; **no NDK/on-device build available** |
 
-### 8.1 Probes (`probes/`)
+### 8.1 Probes (`research/probes/`)
 
 Default mode is **purely observational**: `/proc`/`/sys` reads, `/dev` stat,
 PID-149 maps/fds, kallsyms lookups, one-open OSAL `/proc/osal/uipc` snapshot,
@@ -351,8 +351,8 @@ transaction and records `err/ready/size_shift/handle*`; it requires
 | --- | --- | --- |
 | Repository suite | `.\venv\Scripts\python.exe -m unittest discover -s tests -q` | 1181 OK (baseline confirmed at round start) |
 | Probe build | `.\venv\Scripts\python.exe probes\build_probe.py` (+ `--host-check`) | ARM binary produced, manifest hash, host smoke report valid |
-| Daemon build | `wsl â€¦ camera-daemon/build.sh` | ARM binary, `-Wall -Wextra -Werror` clean |
-| Daemon host tests | `wsl â€¦ camera-daemon/test/run_host_tests.py` | all assertions pass |
+| Daemon build | `wsl â€¦ apps/camera-daemon/build.sh` | ARM binary, `-Wall -Wextra -Werror` clean |
+| Daemon host tests | `wsl â€¦ apps/camera-daemon/test/run_host_tests.py` | all assertions pass |
 | Android native | `bash android-client-ref/tests/host_compile.sh` | host compile clean, host assertions pass |
 | Android structure | `.\venv\Scripts\python.exe android-client-ref\tools\verify_structure.py` | pass |
 | Shader | `.\venv\Scripts\python.exe android-client-ref\tests\validate_shaders.py` | pass |
@@ -360,7 +360,7 @@ transaction and records `err/ready/size_shift/handle*`; it requires
 ### 9.2 Physical (requires explicit authorization; not done this round)
 
 1. **P1 decisive probe — DONE (E0349, success).** Recorded for reference: PC Remote session, host streams `GetObject 0xFFFFC002`,
-   run `probes/uvc_dma_probe --poll-get-jpeg 100 --i-understand-foreign-get-jpeg`
+   run `research/probes/uvc_dma_probe --poll-get-jpeg 100 --i-understand-foreign-get-jpeg`
    from `/tmp_bt`; record `ready/err/size` distribution + host fps before/during/after.
    Success: `ready=1` with plausible JPEG prefix and host fps unaffected.
    Failure: `ready=0` (Track B frame source does not exist; Track A remains the answer).

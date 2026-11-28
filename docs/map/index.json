@@ -11278,6 +11278,14 @@
         "status": "verified-offline"
       }
     ],
+    "E0755": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "frontier",
+        "id": "F01",
+        "file": "0755-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md"
+      }
+    ],
     "E9001": [
       {
         "area": "l3-userspace",
@@ -13875,6 +13883,18 @@
       "qemu-a6400"
     ],
     "0752-a6400-open-gate-a12-to-a19-dual-pipe-live.md": [
+      "imaging-pipeline"
+    ],
+    "0753-a6400-open-gate-rec-format-id-contract-and-a12.md": [
+      "imaging-pipeline"
+    ],
+    "0754-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md": [
+      "imaging-pipeline"
+    ],
+    "0755-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md": [
+      "imaging-pipeline"
+    ],
+    "0756-opengate-a1-libmpr-hook-sites-and-guarded-test-kit.md": [
       "imaging-pipeline"
     ],
     "9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md": [

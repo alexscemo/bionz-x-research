@@ -80,7 +80,7 @@ State: **blocked on user action**.
   its exception-monitor path and the OSD buffer is empty at screenshot time (runs 16-18 failed,
   runs 15 and 19 passed, same initrd). Receipts for both outcomes are retained.
 - The full suite reports **2 failures from untracked local state**, not from this work:
-  - `emulator.test_run_b26_uvc_prearm` expects `camera-daemon/build/a6400-lived` to be the
+  - `emulator.test_run_b26_uvc_prearm` expects `apps/camera-daemon/build/a6400-lived` to be the
     E0476 pin (632,812 B, `1eda8418...`); the local untracked build is 856,320 B,
     `c92403f6...`.
   - `test_mod_manager` finds an untracked `Sony-PMCA-RE` checkout in the workspace.

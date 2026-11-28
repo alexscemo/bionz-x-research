@@ -12,7 +12,7 @@ The goal is to establish a closed feedback loop: whenever the emulator encounter
 flowchart TD
     A["Emulator executes original firmware (im.elf)"] --> B{"Emulator stops at unknown function / syscall / ioctl"}
     
-    B --> C["1. Check existing capture<br/>(reports/a6400_hw_dump.txt & docs/evidence/)"]
+    B --> C["1. Check existing capture<br/>(research/reports/a6400_hw_dump.txt & docs/evidence/)"]
     
     C --> D{"Does the data already exist in telemetry?"}
     
@@ -38,7 +38,7 @@ flowchart TD
 
 ## 2. Phase 1: Checking Existing Captures (Ground Truth Baseline)
 
-Before running a new capture on the camera, always check already-extracted data first. The file `reports/a6400_hw_dump.txt` contains **88,415 bytes (1,562 lines)** of clean data extracted directly from a physical Sony ILCE-6400:
+Before running a new capture on the camera, always check already-extracted data first. The file `research/reports/a6400_hw_dump.txt` contains **88,415 bytes (1,562 lines)** of clean data extracted directly from a physical Sony ILCE-6400:
 
 ### Available data in the existing dump:
 1. **Device registry (`/proc/devices` and `/dev`):**
@@ -146,7 +146,7 @@ Once we have authentic data from physical hardware, we move to the emulator code
 
 ### 4.2. Integrity rule (Zero Guesswork)
 * **Forbidden:** Inventing behavior, guessing return codes, or inserting generic "dummy" responses unless confirmed by telemetry or firmware disassembly.
-* **Mandatory:** Back every decision with a reference to a line in `reports/a6400_hw_dump.txt` or a corresponding Evidence document.
+* **Mandatory:** Back every decision with a reference to a line in `research/reports/a6400_hw_dump.txt` or a corresponding Evidence document.
 
 ### 4.3. Testing and verification
 Every new contract must have a corresponding unit test in `tests/`.
@@ -172,7 +172,7 @@ python -m unittest discover tests
 Following this workflow, the first task is unblocking the **85,766,715-instruction** boundary where the emulator stopped on `open("/dev/hdmi", O_RDWR)`:
 
 1. **Check in existing dump:**
-   * In `reports/a6400_hw_dump.txt` line 396 confirms:
+   * In `research/reports/a6400_hw_dump.txt` line 396 confirms:
      `crw-rw-rw- 1 root root 248, 25 /dev/hdmi`
 2. **Implementation:**
    * Create `src/a6400/hardware/guest_hdmi.py` registering major 248, minor 25.

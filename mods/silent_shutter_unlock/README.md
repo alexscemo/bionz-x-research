@@ -1,5 +1,14 @@
 # SilentShutterUnlock (`SMOD v2`)
 
+| | |
+| :--- | :--- |
+| **Status** | **Verified on camera:** `ILCE-6400` 2.00 captured layout, RAM-only; Unicorn: 16 unlocked / 5 stock-preserved cases |
+| **Tested on** | `ILCE-6400` 2.00 |
+| **Known issues** | Flash, BULB and Long Exposure NR stay stock; do not load together with `SilentFlashUnlock` (same hook) |
+| **Not tested yet** | `ILCE-6400A` and `ILCE-6100` |
+| **How to revert** | Turn it OFF in `MENU → Mods` (restores the 425 `DefInh` bits), or power off |
+| **What to send back** | Which unlocked items worked with Silent Shooting, via a [physical test report](../../.github/ISSUE_TEMPLATE/physical-test-report.yml) |
+
 RAM-only **Mod Loader v2** (`SMOD v2`) module for **Sony ILCE-6400 (`2.00` captured layout)** that lifts software mutual-exclusion locks in `libObj.so` **and** clears the menu grey-out inhibition bits in `libSysDef.so` (`DefInh::sm_refTbl`) when **Silent Shooting** is enabled or when **Auto / Superior Auto / SCN / Panorama** inhibits Silent Shooting:
 
 - **Picture Profile** (`PP1`–`PP10`, Gamma, Color Mode, Knee, Detail, Color Depth/Phase, WB Shift)

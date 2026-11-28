@@ -30,7 +30,7 @@ MODULE_PATH = ROOT / "artifacts/native/uvc-transport-e0472-status-prearm/usbg_vi
 MODULE_SHA256 = "dcc2f64f944790dd1b8519b29ee6f6ce709a03129fb92d363fdafe14f16915cd"
 MODULE_SIZE = 83644
 
-DAEMON_PATH = ROOT / "camera-daemon/build/a6400-lived"
+DAEMON_PATH = ROOT / "apps/camera-daemon/build/a6400-lived"
 DAEMON_SHA256 = "1eda841852ddd6ed856db040df57d48673cdf1e0f6c3def35281ec364aa00533"
 DAEMON_SIZE = 632812
 

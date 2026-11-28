@@ -84,7 +84,7 @@ Work through these for every record in the slice.
 - **Frontier.** If the record leaves an open next step that is still current, the area's
   `frontier` says so, with its state and what to read in the result.
 - **Drift.** If a consolidated document (`README.md`, `CURRENT_STATE.md`, `UVC_PTP_STATUS.md`,
-  `PLATFORM_MODEL.md`, `docs/architecture/*.md`, `qemu-a6400/STATUS.md`) contradicts the record,
+  `PLATFORM_MODEL.md`, `docs/architecture/*.md`, `emulators/qemu-a6400/STATUS.md`) contradicts the record,
   add a `drift` entry. Fix the document in a separate PR unless the fix is one line.
 - **English only, no secrets, no proprietary payloads.** Claims quote facts, not firmware
   bytes, keys or credentials.

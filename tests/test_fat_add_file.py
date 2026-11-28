@@ -1,4 +1,4 @@
-"""qemu-a6400/tools/fat_add_file.py: root and one-level subdirectory placement on a constructed FAT12 image."""
+"""emulators/qemu-a6400/tools/fat_add_file.py: root and one-level subdirectory placement on a constructed FAT12 image."""
 import struct
 import subprocess
 import sys
@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOL = ROOT / "qemu-a6400" / "tools" / "fat_add_file.py"
+TOOL = ROOT / "emulators/qemu-a6400" / "tools" / "fat_add_file.py"
 
 BPS, SPC, RESERVED, NFATS, ROOT_ENTRIES, TOTAL, FAT_SECTORS = 512, 1, 1, 2, 16, 64, 1
 

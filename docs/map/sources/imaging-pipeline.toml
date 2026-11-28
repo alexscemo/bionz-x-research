@@ -85,7 +85,7 @@ kind = "host"
 name = "CinemaHUD Android SpektraFilm engine (candidate)"
 aliases = ["SpektraFilm", "CinemaHUD Android", "ARW2 GPU", "film roll"]
 related = ["img.cc-lut", "img.detail-psf"]
-summary = "Two-tier Android film simulation architecture: live-view 3D .cube preview in android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model."
+summary = "Two-tier Android film simulation architecture: live-view 3D .cube preview in apps/android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model."
 
 [[entity]]
 id = "app.mobile-fotufilm"
@@ -249,7 +249,7 @@ title = "Android Vulkan SpektraFilm darkroom prototype in CinemaHUD"
 state = "not-started"
 entities = ["app.android-spektrafilm"]
 evidence = ["E0688"]
-next = "Implement a clean-room NDK Vulkan / Rust compute prototype in android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750)."
+next = "Implement a clean-room NDK Vulkan / Rust compute prototype in apps/android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750)."
 
 [[frontier]]
 id = "F03"

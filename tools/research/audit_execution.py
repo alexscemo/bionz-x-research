@@ -2,8 +2,8 @@
 import argparse
 from pathlib import Path
 
-from legacy.cxd90045_hle_emulator import CXD90045_HLE_Emulator, LIB_DIR
-from legacy.execution_audit import UnsupportedBehavior
+from research.legacy.cxd90045_hle_emulator import CXD90045_HLE_Emulator, LIB_DIR
+from research.legacy.execution_audit import UnsupportedBehavior
 from project_paths import PROJECT_ROOT
 
 

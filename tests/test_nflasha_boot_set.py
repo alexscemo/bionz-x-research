@@ -43,8 +43,8 @@ class CaptureDirectoryTests(unittest.TestCase):
         self.root = Path(temporary.name).resolve()
         self.download = self.root / 'download'
         self.download.mkdir()
-        self.config_path = self.root / 'qemu-a6400' / 'inputs.local.json'
-        self.config_path.parent.mkdir()
+        self.config_path = self.root / 'emulators/qemu-a6400' / 'inputs.local.json'
+        self.config_path.parent.mkdir(parents=True)
         self.config = {'schema_version': 1, 'dump_dir': str(self.download)}
         for name, field, content in (
                 ('manifest.json', 'manifest_sha256', b'{"status":"complete"}'),

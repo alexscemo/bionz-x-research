@@ -216,7 +216,7 @@ def run(args) -> dict:
             report["events"].append(dict(t=round(time.monotonic() - started, 3), kind=kind, **data))
 
         with console.open("wb") as log:
-            proc = subprocess.Popen(["bash", str(PROJECT_ROOT / "qemu-a6400/run.sh")], cwd=PROJECT_ROOT,
+            proc = subprocess.Popen(["bash", str(PROJECT_ROOT / "emulators/qemu-a6400/run.sh")], cwd=PROJECT_ROOT,
                                     env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
                                     start_new_session=True)
             qmp, host = None, None

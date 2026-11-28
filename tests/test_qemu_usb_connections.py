@@ -78,7 +78,7 @@ def _resolve_objcopy(cross: str | None) -> str | None:
 
 
 OBJCOPY = _resolve_objcopy(CROSS)
-FW_SOURCE = PROJECT_ROOT / 'qemu-a6400/tools/usb_gadget_modes_fw.c'
+FW_SOURCE = PROJECT_ROOT / 'emulators/qemu-a6400/tools/usb_gadget_modes_fw.c'
 NATIVE_QEMU_AND_CROSS_AVAILABLE = bool(
     os.name == 'posix' and QEMU.is_file() and CROSS and OBJCOPY and FW_SOURCE.is_file()
 )

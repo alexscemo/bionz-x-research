@@ -7,8 +7,8 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-from legacy.cxd90045_hle_emulator import CXD90045_HLE_Emulator, RAM_BASE, MMIO_BASE
-from legacy.execution_audit import UnsupportedBehavior
+from research.legacy.cxd90045_hle_emulator import CXD90045_HLE_Emulator, RAM_BASE, MMIO_BASE
+from research.legacy.execution_audit import UnsupportedBehavior
 from project_paths import PROJECT_ROOT
 
 

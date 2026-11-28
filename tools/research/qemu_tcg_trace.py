@@ -2,7 +2,7 @@
 """Build, launch, and auto-symbolize targeted QEMU TCG trace runs.
 
 Combines snapshot instant-resume (tools.research.qemu_snapshot), QEMU Plugin API v7
-(qemu-a6400/tools/tcg_trace.c), and Tier-1 SQLite symbol resolution
+(emulators/qemu-a6400/tools/tcg_trace.c), and Tier-1 SQLite symbol resolution
 (tools.research.symbol_index) into a single reproducible workflow.
 """
 from __future__ import annotations
@@ -69,11 +69,11 @@ def parse_proc_maps(text: str) -> list[MapRegion]:
 
 
 def build_plugin(out_so: Path = DEFAULT_PLUGIN_SO, qemu_dir: Path | None = None) -> Path:
-    """Compile ``qemu-a6400/tools/tcg_trace.c`` as a QEMU v7 shared plugin."""
+    """Compile ``emulators/qemu-a6400/tools/tcg_trace.c`` as a QEMU v7 shared plugin."""
     if os.name != "posix":
         raise RuntimeError("TCG plugin compilation runs on WSL2/Linux")
     qdir = qemu_dir or default_qemu_dir()
-    src = PROJECT_ROOT / "qemu-a6400" / "tools" / "tcg_trace.c"
+    src = PROJECT_ROOT / "emulators/qemu-a6400" / "tools" / "tcg_trace.c"
     inc_plugins = qdir / "include" / "plugins"
     if not (inc_plugins / "qemu-plugin.h").is_file():
         raise FileNotFoundError(f"Missing qemu-plugin.h under {inc_plugins}")
@@ -251,7 +251,7 @@ def run_trace(args: argparse.Namespace) -> dict[str, Any]:
         if not inputs_path and manifest.get("inputs_dir"):
             inputs_path = Path(manifest["inputs_dir"])
 
-    run_script = PROJECT_ROOT / "qemu-a6400" / "run.sh"
+    run_script = PROJECT_ROOT / "emulators/qemu-a6400" / "run.sh"
     with tempfile.TemporaryDirectory(prefix="a6400-tcg-run-") as tmp:
         tmp_path = Path(tmp)
         qmp_sock = tmp_path / "qmp.sock"

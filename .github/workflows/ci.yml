@@ -71,17 +71,17 @@ jobs:
           python -m pip install --disable-pip-version-check -r requirements.txt
 
       - name: Run host-check probe harness
-        run: python probes/build_probe.py --host-check
+        run: python research/probes/build_probe.py --host-check
 
       - name: Cross-compile uvc_dma_probe for ARMv7
         run: |
-          mkdir -p probes/build/ci-arm
+          mkdir -p research/probes/build/ci-arm
           arm-linux-gnueabi-gcc \
             -std=gnu11 -march=armv7-a -mfloat-abi=softfp -O2 \
             -Wall -Wextra -Werror \
             -ffreestanding -nostdlib -static -fno-stack-protector -fno-pic -fno-pie \
             -Wl,-e,_start \
-            probes/uvc_dma_probe.c -o probes/build/ci-arm/uvc_dma_probe
+            research/probes/uvc_dma_probe.c -o research/probes/build/ci-arm/uvc_dma_probe
 
       - name: Run probe report tests
         run: python -m unittest tests.test_probes_report -q
@@ -131,7 +131,7 @@ jobs:
       - name: Generate bionz-golden fixtures
         run: |
           python -m pip install --quiet numpy
-          python a6400-lut-converter/tools/export_golden.py --golden-only
+          python apps/lut-converter/tools/export_golden.py --golden-only
 
       - name: Install a software Vulkan adapter and UI libraries
         run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libgtk-3-dev libwayland-dev mesa-vulkan-drivers
@@ -140,7 +140,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Test the ISP studio
-        working-directory: isp-studio
+        working-directory: apps/isp-studio
         # Exclude bionz-gpu & GPU-pipeline tests that hit wgpu lavapipe "Parent device is lost" on headless CI
         run: cargo test --workspace --exclude bionz-gpu -- --skip chart_develops_identically_on_gpu_and_cpu --skip render_worker_keeps_only_the_newest_request
 

@@ -76,7 +76,7 @@ real timing/status contract next, rather than assuming Task 65 is stuck on SIO o
 injecting an event. No emulator GUI frame or complete camera boot was claimed
 by that receipt. The later no-peripheral E0527 decoder distinguishes the first
 mask-3 wait from the `0x3373` main loop; current QEMU display and mode-sequencer
-progress is recorded separately in [QEMU status](../qemu-a6400/STATUS.md).
+progress is recorded separately in [QEMU status](../emulators/qemu-a6400/STATUS.md).
 An opt-in sub-micro lens rail reply releases captured step 26, separately
 from the packaged step-32 Ydet gate ([E0591](evidence/0591-qemu-a6400-first-live-view-frame.md)).
 The original file service now mounts virtual SD

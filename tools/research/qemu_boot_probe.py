@@ -31,12 +31,12 @@ def source_reference_hashes(greeting: dict) -> dict[str, str]:
     if any(type(part) is not int or part < 0 for part in parts):
         raise ValueError('QMP version requires nonnegative integer components')
     label = '.'.join(map(str, parts))
-    patch = f'qemu-a6400/patches/qemu-v{label}-sony-a6400.patch'
+    patch = f'emulators/qemu-a6400/patches/qemu-v{label}-sony-a6400.patch'
     if not (PROJECT_ROOT / patch).is_file():
         raise ValueError(f'No pinned Sony source patch for QEMU {label}')
     return {name: digest(PROJECT_ROOT / name) for name in (
-        'qemu-a6400/run.sh', 'qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c',
-        'qemu-a6400/qemu-overlay/hw/timer/cxd4115_timer.c', patch)}
+        'emulators/qemu-a6400/run.sh', 'emulators/qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c',
+        'emulators/qemu-a6400/qemu-overlay/hw/timer/cxd4115_timer.c', patch)}
 
 
 def physical_range(text: str) -> tuple[int, int]:
@@ -257,7 +257,7 @@ def run(inputs: Path, output: Path, seconds: int, commands: tuple[str, ...],
     try:
         with log_path.open('xb') as log:
             process = subprocess.Popen(
-                ['bash', str(PROJECT_ROOT / 'qemu-a6400/run.sh')],
+                ['bash', str(PROJECT_ROOT / 'emulators/qemu-a6400/run.sh')],
                 cwd=PROJECT_ROOT, env=environment, stdin=subprocess.PIPE, stdout=log,
                 stderr=subprocess.STDOUT, start_new_session=True)
             report['owned_pid'] = process.pid

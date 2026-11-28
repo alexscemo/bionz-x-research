@@ -79,7 +79,7 @@ BANNER_TOP_LEFT = (42 * 640 + 120) * 2
 BANNER_RECT_BYTES = (26 * 640) * 2
 
 # The live skeleton's layout: where the payload and its name table sit inside the code.
-LIVE_RECORD = json.loads((ROOT / "isp-studio/crates/bionz-preset/assets/film_sim_live_template.json").read_text())
+LIVE_RECORD = json.loads((ROOT / "apps/isp-studio/crates/bionz-preset/assets/film_sim_live_template.json").read_text())
 
 
 def slot_names(mod: bytes) -> list[str]:

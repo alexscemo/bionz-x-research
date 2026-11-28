@@ -266,7 +266,7 @@ def main() -> int:
     parser.add_argument(
         '--sony-c',
         type=Path,
-        default=ROOT / 'qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c',
+        default=ROOT / 'emulators/qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c',
     )
     parser.add_argument('--output', type=Path, default=None)
     args = parser.parse_args()

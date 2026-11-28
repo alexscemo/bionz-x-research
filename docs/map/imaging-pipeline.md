@@ -20,7 +20,7 @@ The evidence records are authoritative; follow the links before acting on a clai
 ### <a id="f02"></a>F02 - Android Vulkan SpektraFilm darkroom prototype in CinemaHUD
 
 - **State:** `not-started`
-- **Next:** Implement a clean-room NDK Vulkan / Rust compute prototype in android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750).
+- **Next:** Implement a clean-room NDK Vulkan / Rust compute prototype in apps/android/cinemahud/ (without GPL-3.0 code, loading CC BY-SA 4.0 stock profiles with attribution), validate CIEDE2000 < 0.3 in deterministic lut_mode against gray-ramp/ColorChecker baselines, and benchmark 36-frame ARW2 batch latency and AThermal_getThermalHeadroom pacing on the Xiaomi 14 (Adreno 750).
 - **Evidence:** [E0688](../evidence/0688-android-gpu-spektrafilm-film-roll-architecture.md)
 
 ### <a id="f03"></a>F03 - Mobile fotufilm-engine Metal & batched-Vulkan 36-exposure ARW2 roll prototype
@@ -115,7 +115,7 @@ Current knowledge:
 
 `app.android-spektrafilm` | host
 
-Two-tier Android film simulation architecture: live-view 3D .cube preview in android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model.
+Two-tier Android film simulation architecture: live-view 3D .cube preview in apps/android/cinemahud/shaders/monitor.frag plus a candidate 3-pass NDK Vulkan compute engine for developing 36-exposure 24 MP ARW 2.3 rolls via SpektraFilm's spectral-spatial model.
 
 Aliases: `SpektraFilm`, `CinemaHUD Android`, `ARW2 GPU`, `film roll`
 

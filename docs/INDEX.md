@@ -33,7 +33,7 @@ For subject lookups (an address, symbol, device, or "is E0xxx still valid?") use
 | [A6400A Jiritsu packet mapping](evidence/0525-a6400a-jiritsu-senser-offline-packets.md) | Packaged service dispatch, Senser/OSAL layouts and reproducible offline packet fixtures; no USB backend |
 | [A6400A DMM metadata and lifetime](evidence/0532-a6400a-dmm-metadata-bounds-and-lifetime.md) | Opt-in single-extent metadata, original share/access counters and bounded borrowed raw replies; memory-only sink, USB disabled |
 | [REA_WORKFLOW.md](REA_WORKFLOW.md) | Connected REA/provider availability and Ghidra / WSL workflow (`tools.research.rea_wsl_batch`) |
-| [QEMU workflow](../qemu-a6400/README.md) | Reproducible captured boot inputs (`ILCE-6400` and `ILCE-6400A` [E0678](evidence/0678-qemu-ilce-6400a-captured-firmware-boot.md)), native eMMC regression checks, and the later device-model records through the viewfinder console |
+| [QEMU workflow](../emulators/qemu-a6400/README.md) | Reproducible captured boot inputs (`ILCE-6400` and `ILCE-6400A` [E0678](evidence/0678-qemu-ilce-6400a-captured-firmware-boot.md)), native eMMC regression checks, and the later device-model records through the viewfinder console |
 | [TOOLCHAIN.md](TOOLCHAIN.md) | Qualified current/legacy research tools, dependency pins, QEMU compatibility checks and rollback |
 | [DEPENDENCY_WORKFLOW.md](DEPENDENCY_WORKFLOW.md) | Dependency and call-chain tracing workflow |
 | [TCG_TRACE_WORKFLOW.md](TCG_TRACE_WORKFLOW.md) | Standard workflow: QEMU `savevm`/`loadvm` instant-resume, parameterized TCG tracing (`qemu_tcg_trace`), persistent SQLite/Ghidra symbol index (`symbol_index`), and 13-body signature scanner (`signature_scanner`) |
@@ -52,7 +52,7 @@ For subject lookups (an address, symbol, device, or "is E0xxx still valid?") use
 | [ARCHITECTURE_UVC_MONITOR.md](ARCHITECTURE_UVC_MONITOR.md) | UVC monitor architecture (hash-pinned by `E0348`) |
 | [UVC_HANDOVER_PLAN.md](UVC_HANDOVER_PLAN.md) | UVC/PTP handover plan |
 | [CINEMAHUD_STOCK_PTP.md](CINEMAHUD_STOCK_PTP.md) | CinemaHUD stock PTP reference |
-| [BIONZ_LOOK_LAB.md](BIONZ_LOOK_LAB.md) | Host Rust/`wgpu` Look Lab (`isp-studio/`) and `.bzlook` / `SMOD v2` film-simulation workflow |
+| [BIONZ_LOOK_LAB.md](BIONZ_LOOK_LAB.md) | Host Rust/`wgpu` Look Lab (`apps/isp-studio/`) and `.bzlook` / `SMOD v2` film-simulation workflow |
 | [Android SpektraFilm GPU roll architecture (E0688)](evidence/0688-android-gpu-spektrafilm-film-roll-architecture.md) | Candidate two-tier film simulation & 3-pass NDK Vulkan 36-exposure `.ARW` darkroom engine for `CinemaHUD Android` |
 | [Mobile fotufilm-engine GPU roll architecture (E0689)](evidence/0689-fotufilm-engine-mobile-gpu-film-roll-architecture.md) | Apache-2.0 `DhaliwalX/fotufilm-engine` audit, Halide Metal/Vulkan bottlenecks, and `<350 MB` 36-exposure `.ARW` mobile GPU blueprint |
 | [ISP_TRANSFORM_CATALOG.md](ISP_TRANSFORM_CATALOG.md) | Transform formats, control dependencies, evidence, and open verification for ARRI tuning |

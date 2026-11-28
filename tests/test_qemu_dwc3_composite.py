@@ -23,7 +23,7 @@ from project_paths import PROJECT_ROOT
 sys.path.insert(0, str(PROJECT_ROOT))
 from tools.research import qemu_dwc3_composite_check as dwc3  # noqa: E402
 
-SOURCE = PROJECT_ROOT / "qemu-a6400/qemu-overlay/hw/usb/cxd90045_dwc3.c"
+SOURCE = PROJECT_ROOT / "emulators/qemu-a6400/qemu-overlay/hw/usb/cxd90045_dwc3.c"
 NATIVE_AVAILABLE = os.name == "posix" and (
     Path(os.environ.get("A6400_QEMU_DIR", str(Path.home() / "sony-a6400-qemu-11.1.3")))
     / "build/qemu-system-arm").is_file()

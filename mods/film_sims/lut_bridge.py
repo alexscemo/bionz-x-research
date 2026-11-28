@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-_CONVERTER_ROOT = Path(__file__).resolve().parents[2] / "a6400-lut-converter"
+_CONVERTER_ROOT = Path(__file__).resolve().parents[2] / "apps/lut-converter"
 if str(_CONVERTER_ROOT) not in sys.path:
     sys.path.insert(0, str(_CONVERTER_ROOT))
 

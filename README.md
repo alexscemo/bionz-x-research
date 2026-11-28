@@ -7,7 +7,7 @@ An open-source toolkit for Sony **BIONZ X** cameras (such as the **a6400**, **a6
 
 > **Upstream attribution:** Built upon [ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research), retaining original upstream research, code, and contributor credits.
 
-**[1-Click Windows Mod Manager](docs/MOD_MANAGER_GUI.md)** · **[Camera Mods](mods/README.md)** · **[QEMU Emulator](qemu-a6400/README.md)** · **[Add a Camera](docs/ADDING_A_BIONZX_CAMERA.md)** · **[UVC / PTP Liveview](docs/CONTRIBUTING_UVC_PTP.md)** · **[Full Technical Docs](docs/INDEX.md)**
+**[1-Click Windows Mod Manager](docs/MOD_MANAGER_GUI.md)** · **[Camera Mods](mods/README.md)** · **[QEMU Emulator](emulators/qemu-a6400/README.md)** · **[Add a Camera](docs/ADDING_A_BIONZX_CAMERA.md)** · **[UVC / PTP Liveview](docs/CONTRIBUTING_UVC_PTP.md)** · **[Full Technical Docs](docs/INDEX.md)**
 
 ---
 
@@ -57,11 +57,11 @@ All listed cameras share Sony's **BIONZ X (`CXD90045`)** processor ([platform ov
 
 Roughly 90% of development happens completely offline in Python and C using two complementary emulators:
 
-- **QEMU (`qemu-a6400/`) — Full Virtual Camera:** Boots all 4 CPU cores, eMMC partitions, 40 Linux kernel modules, `av-cam.bin`, and the real camera menu (`im.elf`) across all 8 modeled `CXD90045` bodies (`sony-a6400`, `sony-a6400a`, `sony-zve10`, `sony-a6100`, `sony-a6600`, `sony-a7c`, `sony-a7m3`, `sony-a7rm4a`) with a live browser rear screen (`rear_panel.py`), clickable virtual touchscreen (`MenuTouchFull` taps & swipes), opt-in `BCM4339` Wi-Fi/Bluetooth, HDMI/CEC output, `AudioIp` DMA I/O, E-mount lens motors, and instant mod hot-reload ([E0700](docs/evidence/0700-qemu-touchscreen-peripherals-and-multimodel.md)). See [`qemu-a6400/README.md`](qemu-a6400/README.md) and [`qemu-a6400/MOD_DEVELOPMENT.md`](qemu-a6400/MOD_DEVELOPMENT.md).
+- **QEMU (`emulators/qemu-a6400/`) — Full Virtual Camera:** Boots all 4 CPU cores, eMMC partitions, 40 Linux kernel modules, `av-cam.bin`, and the real camera menu (`im.elf`) across all 8 modeled `CXD90045` bodies (`sony-a6400`, `sony-a6400a`, `sony-zve10`, `sony-a6100`, `sony-a6600`, `sony-a7c`, `sony-a7m3`, `sony-a7rm4a`) with a live browser rear screen (`rear_panel.py`), clickable virtual touchscreen (`MenuTouchFull` taps & swipes), opt-in `BCM4339` Wi-Fi/Bluetooth, HDMI/CEC output, `AudioIp` DMA I/O, E-mount lens motors, and instant mod hot-reload ([E0700](docs/evidence/0700-qemu-touchscreen-peripherals-and-multimodel.md)). See [`emulators/qemu-a6400/README.md`](emulators/qemu-a6400/README.md) and [`emulators/qemu-a6400/MOD_DEVELOPMENT.md`](emulators/qemu-a6400/MOD_DEVELOPMENT.md).
 - **Unicorn (`src/a6400/`) — Fast ARM Engine:** Runs isolated kernel (`L2`) and app (`L3`) slices in Python to verify mods, memory safety, and OS contracts automatically in CI without booting a full machine.
 
 ### What Does Not Work in the Emulator Yet
-- **Real sensor & SD photo/video capture:** QEMU renders a synthetic test pattern and models E-mount `BL` focus/iris/zoom/OSS actuator positions without optical defocus or saved RAW/AVCHD/JPEG files ([QEMU status](qemu-a6400/STATUS.md)).
+- **Real sensor & SD photo/video capture:** QEMU renders a synthetic test pattern and models E-mount `BL` focus/iris/zoom/OSS actuator positions without optical defocus or saved RAW/AVCHD/JPEG files ([QEMU status](emulators/qemu-a6400/STATUS.md)).
 - **Live USB webcam (UVC) stream:** EP0 control enumeration works, while real USB video streaming endpoints remain unfinished ([CONTRIBUTING_UVC_PTP.md](docs/CONTRIBUTING_UVC_PTP.md)).
 - **Over-the-air RF & BLE links:** `BCM4339` emulates SDIO enumeration, Silicon Backplane/TCM upload, `BCDC` control `ioctl`s, and Bluetooth H4 HCI + `.hcd` firmware loading, not live 802.11 WPA2/TCP traffic or BLE peer connections ([E0700](docs/evidence/0700-qemu-touchscreen-peripherals-and-multimodel.md)).
 
@@ -76,11 +76,11 @@ python -m unittest discover -s tests -q
 
 | Folder | What's inside |
 | :--- | :--- |
-| [`qemu-a6400/`](qemu-a6400/README.md) | Virtual `sony-a6400` QEMU machine, browser rear panel, and mod hot-reload |
+| [`emulators/qemu-a6400/`](emulators/qemu-a6400/README.md) | Virtual `sony-a6400` QEMU machine, browser rear panel, and mod hot-reload |
 | [`mods/`](mods/README.md) | RAM-only camera mods, Mod Loader v2 binaries, and install guides |
 | `src/a6400/` | Unicorn ARM emulators (`execution/`), camera profiles (`targets/`), USB debugger (`debug/`) |
 | `tools/` | Firmware analyzers, Mod Loader builder (`mlv2/`), C helpers, and ZV-E10 deployers |
-| [`a6400-lut-converter/`](a6400-lut-converter/README.md) | Offline color/tone LUT fitting and ARRI presets |
+| [`apps/lut-converter/`](apps/lut-converter/README.md) | Offline color/tone LUT fitting and ARRI presets |
 | `tests/` & `docs/` | Automated checks, engineering docs, and dated evidence logs |
 
 ---

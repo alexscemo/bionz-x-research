@@ -14,7 +14,7 @@ When preparing release notes, credit contributors by camera model or shared feat
 
 ## Multi-device BIONZ X support
 
-The execution platform is built against the Sony a6400 but models the shared BIONZ X (`CXD90045`) contracts, so owners of other bodies (a6100, a6600, a7 III, ZV-E10 or similar) can join without forking the code. Start with [docs/ADDING_A_BIONZX_CAMERA.md](docs/ADDING_A_BIONZX_CAMERA.md): it explains the `TargetProfile` schema in `src/a6400/targets/`, the read-only probe in `probes/`, and how to submit a profile with an evidence receipt. A partial, honest profile is a valid contribution; a complete guess is not.
+The execution platform is built against the Sony a6400 but models the shared BIONZ X (`CXD90045`) contracts, so owners of other bodies (a6100, a6600, a7 III, ZV-E10 or similar) can join without forking the code. Start with [docs/ADDING_A_BIONZX_CAMERA.md](docs/ADDING_A_BIONZX_CAMERA.md): it explains the `TargetProfile` schema in `src/a6400/targets/`, the read-only probe in `research/probes/`, and how to submit a profile with an evidence receipt. A partial, honest profile is a valid contribution; a complete guess is not.
 
 ## UVC/PTP workstreams
 
@@ -59,7 +59,7 @@ The repository-structure, target-profile and status-synchronization contracts ar
 Run focused checks during implementation and the full suite after substantive code changes. Report actual failures and environment limitations; do not describe historical test counts as a new run. Documentation-only changes need link/content checks. `requirements.txt` pins the offline suite only: physical experiments and local firmware inputs are not reproducible from a fresh clone.
 
 Local captured-boot tests share the declared dump directory in
-`qemu-a6400/inputs.local.json`, including its manifest/checksum pins. This local
+`emulators/qemu-a6400/inputs.local.json`, including its manifest/checksum pins. This local
 configuration is ignored by Git; do not commit workstation paths or firmware.
 Without that configuration, the legacy `artifacts/dumps/a6400-nflasha-readonly`
 location remains supported. A configured capture with bad metadata fails rather

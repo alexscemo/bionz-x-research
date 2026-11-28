@@ -340,7 +340,7 @@ class GuestGles:
             if mask & 0xC4000000 == 0:
                 if not getattr(self, 'engine_model', False):
                     # Not an event mask: keep the historical mask-release reply used
-                    # by earlier probes/tests rather than inventing event semantics.
+                    # by earlier research/probes/tests rather than inventing event semantics.
                     self.transactions.append({'operation': 'ioctl', 'cmd': cmd, 'arg': arg,
                                               'returned': 0, 'mask': mask,
                                               'decoded': 'mask_release_not_event'})

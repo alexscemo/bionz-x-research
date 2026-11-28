@@ -4,8 +4,8 @@ The ARM build script (`build_template_wsl.sh`) compiles `film_sim_template.c`, l
 `tools/native_camera/mlv2/mod_v2.ld`, and also compiles a tiny ARM probe that records the
 `struct sim_payload` field offsets for the target ABI. This module turns those artifacts into:
 
-* `isp-studio/crates/bionz-preset/assets/film_sim_template.blob` - the raw `.text` blob.
-* `isp-studio/crates/bionz-preset/assets/film_sim_template.json` - code length, FNV-1a checksum,
+* `apps/isp-studio/crates/bionz-preset/assets/film_sim_template.blob` - the raw `.text` blob.
+* `apps/isp-studio/crates/bionz-preset/assets/film_sim_template.json` - code length, FNV-1a checksum,
   `sim_life` offset and the payload offsets the Rust packer writes through.
 
 It refuses to emit an asset whose checksum, symbol or magic would not survive a clone-and-patch.

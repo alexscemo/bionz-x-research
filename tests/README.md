@@ -20,6 +20,6 @@ Structure/target/docs contracts on their own (also what CI runs):
 ```
 
 These checks do not claim camera equivalence. Legacy screenshot generation lives in
-`legacy/test_authentic_screens.py` and is not a fidelity test. Use `scenarios/TEMPLATE.md`
+`research/legacy/test_authentic_screens.py` and is not a fidelity test. Use `scenarios/TEMPLATE.md`
 for camera comparison cases: hardware runs must be opt-in and must not be invoked during
 ordinary repository checks.

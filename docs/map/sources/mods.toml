@@ -157,7 +157,7 @@ evidence = ["E0681"]
 id = "C10"
 entities = ["mod.film-roll-36", "mod.loader-v2"]
 status = "verified-offline"
-text = "Current camera helpers cannot package or stream 36 ARW exposures unmodified: card_read.c scans only root_cluster, caps archives at 4 MiB / 2,048 clusters and stages to /tmp_bt/mlv2/card.tar, while camera-daemon/src/wifi_stream.c is an MJPEG streamer that drops frames whenever SIOCOUTQ > 16,384 bytes."
+text = "Current camera helpers cannot package or stream 36 ARW exposures unmodified: card_read.c scans only root_cluster, caps archives at 4 MiB / 2,048 clusters and stages to /tmp_bt/mlv2/card.tar, while apps/camera-daemon/src/wifi_stream.c is an MJPEG streamer that drops frames whenever SIOCOUTQ > 16,384 bytes."
 evidence = ["E0681", "E0689"]
 
 [[claim]]

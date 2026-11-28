@@ -24,7 +24,7 @@ def main():
     original = args.qemu_dir.resolve() / 'build'
     build = output / 'build'
     build.mkdir()
-    source = ROOT / 'qemu-a6400/qemu-overlay/hw/usb/cxd90045_dwc3.c'
+    source = ROOT / 'emulators/qemu-a6400/qemu-overlay/hw/usb/cxd90045_dwc3.c'
     obj = 'libsystem_arm.a.p/hw_usb_cxd90045_dwc3.c.o'
     rows = json.loads(subprocess.check_output(['ninja', '-t', 'compdb', '-x'], cwd=original))
     compile_args = shlex.split(next(r['command'] for r in rows if r.get('output') == obj))

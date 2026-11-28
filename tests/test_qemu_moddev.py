@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "qemu-a6400" / "tools"))
+sys.path.insert(0, str(ROOT / "emulators/qemu-a6400" / "tools"))
 
 import moddev  # noqa: E402
 from tools.research.pack_mod_v2 import read_layout, reloc_table  # noqa: E402
@@ -193,7 +193,7 @@ class EmbeddedData(unittest.TestCase):
 
 class RearLcdOverlay(unittest.TestCase):
     def test_both_backings_patch_the_same_instruction(self):
-        sys.path.insert(0, str(ROOT / "qemu-a6400" / "tools"))
+        sys.path.insert(0, str(ROOT / "emulators/qemu-a6400" / "tools"))
         import rear_lcd_overlay
         offsets = [o for o, _ in rear_lcd_overlay.KNOWN]
         self.assertEqual(offsets, [0x360EAA00, 0x37EA5200])

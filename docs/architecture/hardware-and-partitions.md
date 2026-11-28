@@ -23,7 +23,7 @@ Consolidated hardware reference from `E0222`, `E0298`, `E0305â€“E0314`, `E0414â€
 **Offline QEMU backing layout (`E0524`)**: the native eMMC model expects the
 captured `nflashaB0` and `nflashaB1` images first (4 MiB each), followed by the
 user area. Its SDM header belongs at backing offset 8 MiB; user partition data
-belongs at `8 MiB + SDM.start`. The [reproducible builder](../../qemu-a6400/README.md)
+belongs at `8 MiB + SDM.start`. The [reproducible builder](../../emulators/qemu-a6400/README.md)
 checks every original hash and records unacquired zero-filled ranges explicitly.
 This constructed disk is not a complete physical-disk capture.
 

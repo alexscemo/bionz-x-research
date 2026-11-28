@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'qemu-a6400/**'
+      - 'emulators/qemu-a6400/**'
       - 'tools/toolchain.json'
       - 'tools/research/qemu_zve10_menu.py'
       - 'tools/research/qemu_boot_probe.py'
@@ -13,7 +13,7 @@ on:
 
   pull_request:
     paths:
-      - 'qemu-a6400/**'
+      - 'emulators/qemu-a6400/**'
       - 'tools/toolchain.json'
       - 'tools/research/qemu_zve10_menu.py'
       - 'tools/research/qemu_boot_probe.py'
@@ -33,7 +33,7 @@ jobs:
       - name: Stage pinned upstream QEMU and overlay
         env:
           A6400_QEMU_DIR: ${{ runner.temp }}/sony-qemu
-        run: bash qemu-a6400/setup-qemu.sh
+        run: bash emulators/qemu-a6400/setup-qemu.sh
       - name: Build ARM system emulator
         run: |
           cd "$RUNNER_TEMP/sony-qemu/build"

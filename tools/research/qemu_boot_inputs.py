@@ -21,7 +21,7 @@ from src.a6400.execution.nflasha_boot_set import (
 )
 from tools.research.inventory import digest
 
-DEFAULT_CONFIG = PROJECT_ROOT / 'qemu-a6400/inputs.local.json'
+DEFAULT_CONFIG = PROJECT_ROOT / 'emulators/qemu-a6400/inputs.local.json'
 AVCAM_LOAD = 0x035C6000
 EMMC_BOOT_PARTITION_BYTES = 4 * 1024 ** 2
 EMMC_USER_AREA_OFFSET = 2 * EMMC_BOOT_PARTITION_BYTES

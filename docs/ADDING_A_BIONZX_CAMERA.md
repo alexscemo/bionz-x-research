@@ -106,8 +106,8 @@ for your body. It is not an installer compatibility test. A stock camera without
 verified access stops here; bootstrap, startup changes and even staging helpers
 in camera RAM require their own explicit scope.
 
-The `probes/` directory contains a freestanding ARMv7 reader and its build/receipt harness.
-Read [`probes/README.md`](../probes/README.md) before running it: it documents the exact
+The `research/probes/` directory contains a freestanding ARMv7 reader and its build/receipt harness.
+Read [`research/probes/README.md`](../research/probes/README.md) before running it: it documents the exact
 bounds, exit codes and safety model.
 
 ```powershell

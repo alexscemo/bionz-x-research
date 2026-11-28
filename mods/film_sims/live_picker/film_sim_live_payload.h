@@ -1,7 +1,7 @@
 /* Layout of the Live Picker payload (SMOD v2 "FilmSimulations.mod").
  *
  * `film_sim_live_template.c` keeps one `struct live_payload` in `.rodata.live_payload`; the host
- * packer (`isp-studio/crates/bionz-preset/src/smod_v2.rs`, `emit_live_smod_v2`) writes the body's
+ * packer (`apps/isp-studio/crates/bionz-preset/src/smod_v2.rs`, `emit_live_smod_v2`) writes the body's
  * physical addresses, the look names, the stock tables and up to LIVE_MAX_LOOKS preset tables into it.
  * Slot 0 is always "Stock (Off)"; slots 1..n are the looks in library order.
  *

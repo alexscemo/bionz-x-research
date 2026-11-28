@@ -336,9 +336,9 @@ def shift(img: np.ndarray, dx: float, dy: float) -> np.ndarray:
 
 
 def load_reference(size=(1024, 576)) -> np.ndarray:
-    candidates = sorted(Path('assets/reference').glob('*.jpg'))
+    candidates = sorted(Path('research/reference').glob('*.jpg'))
     if not candidates:
-        raise SystemExit('no reference image under assets/reference')
+        raise SystemExit('no reference image under research/reference')
     img = Image.open(candidates[0]).convert('RGB')
     # central crop, then resize
     w, h = img.size

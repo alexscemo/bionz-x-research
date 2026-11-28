@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 # This launcher lives in scripts/; the repository root is its parent directory.
 $cinemaRoot = Split-Path -Parent $PSScriptRoot
 $cinemaAdb = Join-Path $cinemaRoot '.android-tools/windows/platform-tools/adb.exe'
-if (!(Test-Path -LiteralPath $cinemaAdb)) { throw 'ADB is missing. See android/cinemahud/README.md.' }
+if (!(Test-Path -LiteralPath $cinemaAdb)) { throw 'ADB is missing. See apps/android/cinemahud/README.md.' }
 if (!$DeviceSerial) {
     $cinemaDevices = @(& $cinemaAdb devices | Where-Object { $_ -match '^([^\s]+)\s+device$' } | ForEach-Object { ($_ -split '\s+')[0] })
     if ($cinemaDevices.Count -ne 1) { throw 'Connect one authorized Android phone, or pass -DeviceSerial.' }

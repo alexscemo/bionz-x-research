@@ -24,7 +24,7 @@ class TestGuestHdmi(unittest.TestCase):
         self.dev = GuestHdmi(address_limit=0x5f000000)
 
     def test_device_numbers(self):
-        # Evidenced by devno.ko and reports/a6400_hw_dump.txt
+        # Evidenced by devno.ko and research/reports/a6400_hw_dump.txt
         self.assertEqual(self.dev.major, 248)
         self.assertEqual(self.dev.minor, 25)
 

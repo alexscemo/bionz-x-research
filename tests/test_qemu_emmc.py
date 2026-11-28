@@ -27,7 +27,7 @@ NATIVE_AVAILABLE = os.name == 'posix' and QEMU.is_file()
 @unittest.skipUnless(os.name == 'posix' and shutil.which('bash'), 'Requires WSL/Linux bash')
 class QemuSubmicroPreflightTests(unittest.TestCase):
     def test_bad_fixture_is_rejected_before_staging_a_run(self):
-        run = PROJECT_ROOT / 'qemu-a6400/run.sh'
+        run = PROJECT_ROOT / 'emulators/qemu-a6400/run.sh'
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             run_dir = root / 'not-staged'
@@ -190,7 +190,7 @@ class QemuCapacityGuardTests(unittest.TestCase):
 @unittest.skipUnless(NATIVE_AVAILABLE, 'Optional WSL/Linux sony-a6400 QEMU build absent')
 class QemuBoardIoTests(unittest.TestCase):
     def test_rear_keys_and_both_display_callbacks_use_native_interfaces(self):
-        with patch.object(sys, 'path', [str(PROJECT_ROOT / 'qemu-a6400/tools'), *sys.path]):
+        with patch.object(sys, 'path', [str(PROJECT_ROOT / 'emulators/qemu-a6400/tools'), *sys.path]):
             from rear_panel import press_control
 
         directory = PROJECT_ROOT / 'artifacts/tests'

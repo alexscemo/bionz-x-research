@@ -3,7 +3,7 @@
 The captured route (qemu_boot_inputs.py) needs a read-only eMMC dump of a camera. This one
 needs nothing but the updater package that anyone can download and unpack: it lays the
 packaged partitions into an eMMC backing file with the SDM partition table the updater itself
-declares, and writes the legacy qemu-a6400/data/ layout that run.sh reads without
+declares, and writes the legacy emulators/qemu-a6400/data/ layout that run.sh reads without
 A6400_QEMU_DATA_DIR.
 
 What is packaged and what is constructed is recorded per output in manifest.json:
@@ -277,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("updater", type=Path,
                         help="the unpacked updater: the directory holding 0700_part_image")
-    parser.add_argument("output", type=Path, help="a new directory, e.g. qemu-a6400/data")
+    parser.add_argument("output", type=Path, help="a new directory, e.g. emulators/qemu-a6400/data")
     args = parser.parse_args(argv)
     for tool in ("mkfs.fat", "mcopy"):
         if shutil.which(tool) is None:

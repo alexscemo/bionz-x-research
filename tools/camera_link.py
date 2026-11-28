@@ -9,7 +9,7 @@ Sony ILCE-6400 camera (connected via USB in Mass Storage / Senser mode):
      function symbols (.symtab / .dynsym), and Capstone ARM/Thumb disassembly.
    - Decodes ARM EABI syscall numbers (r7) and Linux _IOC ioctl commands.
    - Cross-references the stop boundary against existing camera ground-truth
-     telemetry (reports/a6400_hw_dump.txt) and firmware device tables.
+     telemetry (research/reports/a6400_hw_dump.txt) and firmware device tables.
    - Generates targeted camera diagnostic probes when new hardware readings
      are required.
 
@@ -168,7 +168,7 @@ class BoundaryAnalyzer:
 
     def __init__(self, project_root=PROJECT_ROOT, hw_dump_path=None):
         self.project_root = Path(project_root)
-        self.hw_dump_path = Path(hw_dump_path or (self.project_root / 'reports/a6400_hw_dump.txt'))
+        self.hw_dump_path = Path(hw_dump_path or (self.project_root / 'research/reports/a6400_hw_dump.txt'))
         self.manifest_path = self.project_root / 'artifacts/inventory/guest-filesystem.json'
         self._nodes = None
         self._symbol_cache = {}
@@ -330,7 +330,7 @@ class BoundaryAnalyzer:
         }
 
     def search_ground_truth(self, keywords):
-        """Search reports/a6400_hw_dump.txt for relevant lines matching keywords."""
+        """Search research/reports/a6400_hw_dump.txt for relevant lines matching keywords."""
         if not self.hw_dump_path.exists() or not keywords:
             return []
         lines = self.hw_dump_path.read_text(encoding='utf-8', errors='replace').splitlines()
@@ -470,7 +470,7 @@ def format_boundary_report(analysis):
     gt = analysis.get('ground_truth_matches', [])
     lines.append('-' * 78)
     if gt:
-        lines.append(f"Ground-Truth Matches in reports/a6400_hw_dump.txt ({len(gt)} hits):")
+        lines.append(f"Ground-Truth Matches in research/reports/a6400_hw_dump.txt ({len(gt)} hits):")
         for m in gt[:12]:
             lines.append(f"  [GT] {m}")
     else:
@@ -782,7 +782,7 @@ rm -f /tmp/autoexec.lock 2>/dev/null
 
         return self.run_session(_op)
 
-    def fetch_probe_result(self, remote_out='/tmp/diag_result.txt', save_to='reports/latest_probe.txt'):
+    def fetch_probe_result(self, remote_out='/tmp/diag_result.txt', save_to='research/reports/latest_probe.txt'):
         """Fetch the output of a staged diagnostic probe and clean up the temporary file."""
         def _op(cam):
             raw = self.read_file_chunked(cam, remote_out)
@@ -827,9 +827,9 @@ def main():
     pr_p = sub.add_parser('stage-probe', help='Stage a shell diagnostic query on the camera (/tmp/autoexec.sh)')
     pr_p.add_argument('shell_cmd', help='Shell command(s) to execute on camera boot')
 
-    fp_p = sub.add_parser('fetch-probe', help='Fetch /tmp/diag_result.txt from the camera into reports/latest_probe.txt')
+    fp_p = sub.add_parser('fetch-probe', help='Fetch /tmp/diag_result.txt from the camera into research/reports/latest_probe.txt')
     fp_p.add_argument('--remote', default='/tmp/diag_result.txt')
-    fp_p.add_argument('--out', default='reports/latest_probe.txt')
+    fp_p.add_argument('--out', default='research/reports/latest_probe.txt')
 
     args = parser.parse_args()
 

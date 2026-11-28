@@ -3,7 +3,7 @@
     Build the portable BIONZ Look Lab release (bionz-look-lab.exe + README.txt + zip).
 .DESCRIPTION
     Runs the Rust workspace tests, builds `bionz-app` in release mode with the statically linked
-    MSVC C runtime (isp-studio/.cargo/config.toml), copies the executable into
+    MSVC C runtime (apps/isp-studio/.cargo/config.toml), copies the executable into
     dist\BIONZ-Look-Lab-portable\, writes the SD-card instructions, zips the folder, and checks that
     the executable does not import the Visual C++ runtime DLLs.
 
@@ -21,7 +21,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$Studio = Join-Path $RepoRoot "isp-studio"
+$Studio = Join-Path $RepoRoot "apps/isp-studio"
 $Dist = Join-Path $RepoRoot "dist"
 $Bundle = Join-Path $Dist "BIONZ-Look-Lab-portable"
 $Exe = Join-Path $Bundle "bionz-look-lab.exe"
@@ -115,7 +115,7 @@ It prints a JSON receipt with the files it wrote. Without a recognised flag the 
 
 Regenerating the ARM templates (developers)
 -------------------------------------------
-The SMOD v2 payloads are built once and committed under isp-studio/crates/bionz-preset/assets/:
+The SMOD v2 payloads are built once and committed under apps/isp-studio/crates/bionz-preset/assets/:
 * film_sim_template.blob (+ .json):
     wsl.exe -d Ubuntu -- bash mods/film_sims/template/build_template_wsl.sh
 * film_sim_live_template.mod (+ .json):

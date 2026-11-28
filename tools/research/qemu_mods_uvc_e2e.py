@@ -57,7 +57,7 @@ def main() -> int:
     log_path = args.report_dir / "panel.log"
     env = dict(os.environ, A6400_QEMU_DIR=str(args.qemu_dir))
     cmd = [
-        sys.executable, "-u", str(ROOT / "qemu-a6400/tools/rear_panel.py"),
+        sys.executable, "-u", str(ROOT / "emulators/qemu-a6400/tools/rear_panel.py"),
         "--port", str(port),
         "--log", str(log_path),
         "--inputs", str(args.inputs),

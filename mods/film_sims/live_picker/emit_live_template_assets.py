@@ -5,8 +5,8 @@ The ARM build script (`build_live_template_wsl.sh`) compiles `film_sim_live_temp
 table) and compiles a probe that records the `struct live_payload` field offsets for the target ABI.
 This module checks the packed skeleton and writes:
 
-* `isp-studio/crates/bionz-preset/assets/film_sim_live_template.mod` - the skeleton, byte for byte.
-* `isp-studio/crates/bionz-preset/assets/film_sim_live_template.json` - where the code, the payload and
+* `apps/isp-studio/crates/bionz-preset/assets/film_sim_live_template.mod` - the skeleton, byte for byte.
+* `apps/isp-studio/crates/bionz-preset/assets/film_sim_live_template.json` - where the code, the payload and
   each field sit, plus the header fields the Rust packer must keep.
 
 `bionz-preset::smod_v2::emit_live_smod_v2` clones the skeleton and rewrites only the name, the payload

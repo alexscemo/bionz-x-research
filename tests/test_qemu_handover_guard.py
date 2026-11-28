@@ -1,7 +1,7 @@
 """QEMU handover guard (E0638): ARMv7 cache/MMU teardown checks before a kexec-style jump.
 
-Builds qemu-a6400/tools/handover_guard.c (TCG plugin) and the bare-metal fixture
-qemu-a6400/tools/handover_payload.S in variants that each drop one teardown step,
+Builds emulators/qemu-a6400/tools/handover_guard.c (TCG plugin) and the bare-metal fixture
+emulators/qemu-a6400/tools/handover_payload.S in variants that each drop one teardown step,
 runs them on the sony-a6400 machine, and checks that exactly the expected guard
 items fail.  Needs the optional WSL/Linux QEMU build and arm-linux-gnueabi-gcc.
 """
@@ -17,7 +17,7 @@ import unittest
 from project_paths import PROJECT_ROOT
 from tests.test_qemu_emmc import QEMU as _DEFAULT_QEMU
 
-TOOLS = PROJECT_ROOT / 'qemu-a6400/tools'
+TOOLS = PROJECT_ROOT / 'emulators/qemu-a6400/tools'
 _FALLBACK_CROSS = Path(
     '/home/administrator/a6400-rea-tools/arm-gcc-15.2.0-prepush/bin/arm-linux-gnueabi-gcc'
 )

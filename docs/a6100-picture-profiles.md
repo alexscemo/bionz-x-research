@@ -33,7 +33,7 @@ no code change, no new menu:
 ```
 
 `PP_UNLOCK=1` writes exactly those bytes into the run's **disposable qcow2 overlay**
-(`qemu-a6400/run.sh`, same pattern as `REAR_LCD_DIAGNOSTIC`). The dump, `emmc.img` and
+(`emulators/qemu-a6400/run.sh`, same pattern as `REAR_LCD_DIAGNOSTIC`). The dump, `emmc.img` and
 `/setting` are never written; a stock run is unaffected.
 
 Proof:
@@ -61,5 +61,5 @@ rewritten with stock content; the availability table is not a modified one.
 - `tools/research/a6100_picture_profile.py` — audit + `unlock-offset` planner.
 - `tests/test_a6100_picture_profile.py` — 18 cases (hash integrity, six layers, registry
   and menu indices, settings superset, provenance, unlock bytes/refusal/round-trip).
-- `qemu-a6400/run.sh` — `PP_UNLOCK=1` opt-in.
+- `emulators/qemu-a6400/run.sh` — `PP_UNLOCK=1` opt-in.
 - Evidence: `docs/evidence/9101-a6100-picture-profile-gate.md`.

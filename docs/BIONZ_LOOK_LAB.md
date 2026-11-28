@@ -1,12 +1,12 @@
 # BIONZ Look Lab
 
-Host studio for the evidence-backed BIONZ color chain. It lives in [`isp-studio/`](../isp-studio/) and does not talk to a camera, USB, or `/dev/mem`.
+Host studio for the evidence-backed BIONZ color chain. It lives in [`apps/isp-studio/`](../apps/isp-studio/) and does not talk to a camera, USB, or `/dev/mem`.
 
-A universal preset is a `.bzlook` zip. [`isp-studio/docs/PRESET_FORMAT.md`](../isp-studio/docs/PRESET_FORMAT.md) is the layout. The twelve Film Sims recipes are packed under `mods/film_sims/presets/`. Their compiled tables use the hash-verified `av-cam.bin` stock and carry both an `a6400` and an `a6100` table plus a Movie variant for each.
+A universal preset is a `.bzlook` zip. [`apps/isp-studio/docs/PRESET_FORMAT.md`](../apps/isp-studio/docs/PRESET_FORMAT.md) is the layout. The twelve Film Sims recipes are packed under `mods/film_sims/presets/`. Their compiled tables use the hash-verified `av-cam.bin` stock and carry both an `a6400` and an `a6100` table plus a Movie variant for each.
 
 ## Portable release
 
-`scripts/build_look_lab_release.ps1` produces `dist/BIONZ-Look-Lab-portable/bionz-look-lab.exe` (and a zip). The executable is self-contained: the twelve presets and the ARM `SMOD v2` template are compiled in, so it runs from an empty folder with no Python, GCC, WSL or preset files. It is built with the statically linked MSVC CRT (`isp-studio/.cargo/config.toml`, `+crt-static`) and `windows_subsystem = "windows"`, so it needs no Visual C++ redistributable and opens no console window.
+`scripts/build_look_lab_release.ps1` produces `dist/BIONZ-Look-Lab-portable/bionz-look-lab.exe` (and a zip). The executable is self-contained: the twelve presets and the ARM `SMOD v2` template are compiled in, so it runs from an empty folder with no Python, GCC, WSL or preset files. It is built with the statically linked MSVC CRT (`apps/isp-studio/.cargo/config.toml`, `+crt-static`) and `windows_subsystem = "windows"`, so it needs no Visual C++ redistributable and opens no console window.
 
 Two scripts check the promise without a camera:
 
@@ -53,7 +53,7 @@ GPU: the chain runs on one persistent wgpu device. The backend order is DX12, th
 | `bionz-py` | `bionz_isp.fit_cube` returns gamma, matrix, and delta. `simulate` runs that fit through `apply_ycc`. `compile_preset` and `pack_live` emit Film Sims headers from `.bzlook` files. `lut_bridge` uses those tables when the module is installed and keeps the Python fitter otherwise. `studio_core.build_mod` calls `bionz-cli pack` when `BIONZ_CLI` and `BIONZ_BZLOOK` are set. |
 | `bionz-app` | Library discovery (twelve built-in presets, then disk presets, deduplicated by name), import, background recipe refit, save, the `.mod` export dialog, the viewer, scopes and stage taps described in "Using the app" above. Tests: the chart develops identically on the GPU and the CPU; look and stock differ; recipe refit keeps the stock and changes RefAdr; A6LT import composes onto stock; pack refuses synthetic stock and writes both headers for real stock; the twelve built-in presets load with no file on disk; `export_mods` writes both `<body>/mods/` trees and respects a folder already named `mods`; the Export dialog body renders in a bare `egui::Context` and its write path produces the files it reports; `--export-mod` (headless, same code as the dialog) writes both bodies and fails on an unknown look name. |
 
-`lut_core` stays the numeric oracle. The Tk GUI in `a6400-lut-converter/lut_gui` is deprecated.
+`lut_core` stays the numeric oracle. The Tk GUI in `apps/lut-converter/lut_gui` is deprecated.
 
 ## Badges
 
@@ -62,7 +62,7 @@ GPU: the chain runs on one persistent wgpu device. The backend order is DX12, th
 ## Commands
 
 ```powershell
-C:\Python314\python.exe a6400-lut-converter\tools\export_golden.py
+C:\Python314\python.exe apps/lut-converter\tools\export_golden.py
 cd isp-studio
 cargo test --workspace
 .\target\debug\bionz-cli.exe pack --target a6400 --allow-synthetic-stock -o target\host-only\film_sim_data.h ..\mods\film_sims\presets\classic-chrome.bzlook
@@ -72,7 +72,7 @@ cargo test --workspace
 
 ## Camera `.mod` export (2026-11-23)
 
-`bionz-preset::smod_v2` is a pure-Rust `SMOD v2` packer. The Film Simulation lifecycle code is compiled once, during development, by `mods/film_sims/template/build_template_wsl.sh` into `isp-studio/crates/bionz-preset/assets/film_sim_template.blob` plus `film_sim_template.json` (code length, FNV-1a 32, `sim_life` offset, and every `struct sim_payload` field offset taken from an ARM `offsetof` probe). Every physical address and every table lives inside that one payload, so one template serves both bodies; the packer clones it, writes `TargetAddrs`, `mod_tag`, `/tmp_bt/mods/<slug>.log`, the stock/simulated EC, FC, A0, A1 and B2 tables and the 1215-byte `RefAdr[0]`, then emits the 68-byte header (`SMOD`, version 2, `FLAG_ACTION`, name, code length, FNV-1a 32, `bss` 0, `on/off = sim_life|1`, no hooks) and the code.
+`bionz-preset::smod_v2` is a pure-Rust `SMOD v2` packer. The Film Simulation lifecycle code is compiled once, during development, by `mods/film_sims/template/build_template_wsl.sh` into `apps/isp-studio/crates/bionz-preset/assets/film_sim_template.blob` plus `film_sim_template.json` (code length, FNV-1a 32, `sim_life` offset, and every `struct sim_payload` field offset taken from an ARM `offsetof` probe). Every physical address and every table lives inside that one payload, so one template serves both bodies; the packer clones it, writes `TargetAddrs`, `mod_tag`, `/tmp_bt/mods/<slug>.log`, the stock/simulated EC, FC, A0, A1 and B2 tables and the 1215-byte `RefAdr[0]`, then emits the 68-byte header (`SMOD`, version 2, `FLAG_ACTION`, name, code length, FNV-1a 32, `bss` 0, `on/off = sim_life|1`, no hooks) and the code.
 
 The payload must be read at run time: the template is `const`, so `swap()`/`write_refadr()` take `const volatile` pointers. Without the qualifier GCC constant-folds the zero-initialized payload and every physical address becomes 0 — the Unicorn test catches exactly that.
 
@@ -170,7 +170,7 @@ These defects in the first app build are fixed in both `bionz-core` and `stages.
 - The GPU path requested the fallback (software) adapter and created a new device on every call. Uniform-buffer contents also leaked between calls on that adapter. It now uses one hardware device and a storage buffer for the parameters.
 - The preview was a 48×48 sample grid. It now runs at 1600 px on the long side, with banded dispatch for full-resolution export.
 
-Python `unittest` for this repository and `pytest` for `a6400-lut-converter/tests` stay on the existing Python path. The new module is not required for those tests.
+Python `unittest` for this repository and `pytest` for `apps/lut-converter/tests` stay on the existing Python path. The new module is not required for those tests.
 
 ## Still path & calibration (2026-11-22)
 

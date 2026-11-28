@@ -40,7 +40,7 @@ See [docs/INDEX.md](docs/INDEX.md) and [docs/CURRENT_STATE.md](docs/CURRENT_STAT
 - Before deriving a new contract or repeating research, consult [docs/RELATED_REPOSITORIES.md](docs/RELATED_REPOSITORIES.md) for relevant upstream work. Pin useful findings to exact commits and identity-matched evidence; upstream claims are leads, not verified local contracts or authorization to run tools.
 - Use small components and shared path/memory rules (`project_paths.py`). Prefer `rg`, constructed fixtures, and focused ABI/state/error/provenance/ARM checks. Generated fixtures belong under `artifacts/tests/`.
 - Pass the repository root URI explicitly as `workspaceRoot` to Pylance MCP tools that accept it. Discover the URI with `pylanceWorkspaceRoots` if needed; see [Pylance MCP troubleshooting](CONTRIBUTING.MD#pylance-mcp).
-- Launch first-party scripts as modules from the repository root (`python -m tools.research.<tool>`, `python -m legacy.<prototype>`).
+- Launch first-party scripts as modules from the repository root (`python -m tools.research.<tool>`, `python -m research.legacy.<prototype>`).
 
 ```powershell
 .\venv\Scripts\python.exe -m unittest discover -s tests -q
@@ -48,7 +48,7 @@ See [docs/INDEX.md](docs/INDEX.md) and [docs/CURRENT_STATE.md](docs/CURRENT_STAT
 ```
 
 - Run focused checks during work, the full suite after substantive code changes, and real-firmware replays when their path changes. Preserve reports under new output directories. Boundary exits (including the `files` probe's expected exit 2) are not regressions.
-- **Standard QEMU/RE workflow ([docs/TCG_TRACE_WORKFLOW.md](docs/TCG_TRACE_WORKFLOW.md)):** Reuse saved QEMU `savevm` snapshots (`tools.research.qemu_snapshot`, `warm.py save/load`) + the parameterized QEMU v7 TCG observer (`qemu-a6400/tools/tcg_trace.c`, `tools.research.qemu_tcg_trace`) + Tier-1 SQLite / persistent WSL2 Headless Ghidra index (`tools.research.symbol_index`) + fail-closed 13-body scanner (`tools.research.signature_scanner`) instead of iterative cold-boot probing or hardcoded throwaway trace plugins.
+- **Standard QEMU/RE workflow ([docs/TCG_TRACE_WORKFLOW.md](docs/TCG_TRACE_WORKFLOW.md)):** Reuse saved QEMU `savevm` snapshots (`tools.research.qemu_snapshot`, `warm.py save/load`) + the parameterized QEMU v7 TCG observer (`emulators/qemu-a6400/tools/tcg_trace.c`, `tools.research.qemu_tcg_trace`) + Tier-1 SQLite / persistent WSL2 Headless Ghidra index (`tools.research.symbol_index`) + fail-closed 13-body scanner (`tools.research.signature_scanner`) instead of iterative cold-boot probing or hardcoded throwaway trace plugins.
 - For substantial ARM/Thumb analysis, prefer `tools.research.symbol_index` / REA/Ghidra via WSL and `tools.research.rea_wsl_batch`; reuse only identity-matched evidence. Read [docs/REA_WORKFLOW.md](docs/REA_WORKFLOW.md) and [docs/DEPENDENCY_WORKFLOW.md](docs/DEPENDENCY_WORKFLOW.md) before following call chains.
 - References: [CONTRIBUTING.MD](CONTRIBUTING.MD), [docs/LIVE_CAMERA_EMULATOR_WORKFLOW.md](docs/LIVE_CAMERA_EMULATOR_WORKFLOW.md), [docs/ADDING_A_BIONZX_CAMERA.md](docs/ADDING_A_BIONZX_CAMERA.md).
 - Complete historical experiment logs are preserved verbatim in [docs/archives/agent-notes-2026-11-13-e0210-to-e0476.md](docs/archives/agent-notes-2026-11-13-e0210-to-e0476.md) and [docs/archives/agent-notes-2026-11-09.md](docs/archives/agent-notes-2026-11-09.md). Keep `AGENTS.md` concise; refresh `docs/images/status_a6400.png` only for substantive research milestones.

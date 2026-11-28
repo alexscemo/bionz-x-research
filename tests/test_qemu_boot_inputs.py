@@ -205,7 +205,7 @@ class QemuProbeProtocolTests(unittest.TestCase):
                 greeting = {'QMP': {'version': {
                     'qemu': dict(zip(('major', 'minor', 'micro'), version))}}}
                 references = source_reference_hashes(greeting)
-                patch = 'qemu-a6400/patches/qemu-v%s-sony-a6400.patch' % '.'.join(map(str, version))
+                patch = 'emulators/qemu-a6400/patches/qemu-v%s-sony-a6400.patch' % '.'.join(map(str, version))
                 self.assertEqual(references[patch],
                                  hashlib.sha256((PROJECT_ROOT / patch).read_bytes()).hexdigest())
                 self.assertEqual(len([name for name in references if name.endswith('.patch')]), 1)

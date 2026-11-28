@@ -21,7 +21,7 @@ client. The stock board, launcher and target qualification remain the baseline.
 | Display | Existing VPH model | Same VPH model; guest publishes completed RGBA4444 frames to ch53 |
 | Input | Existing physical-control experiments | Adapted native FunctionID events over guest UART |
 
-The guest bridge is [zve10_menu_osd.h](../qemu-a6400/guest/zve10_menu_osd.h).
+The guest bridge is [zve10_menu_osd.h](../emulators/qemu-a6400/guest/zve10_menu_osd.h).
 Call `pmca_menu_present(ne_latest.physical)` only when the adapter retires the
 coherent latest frame. It programs VPH format, pitch, row count and framebuffer
 address. It directly publishes the guest-owned framebuffer; it does not copy,
@@ -38,13 +38,13 @@ from the external experiment, not inferred physical camera contracts.
 
 ## Private input declaration
 
-Build the board using [the QEMU setup workflow](../qemu-a6400/README.md).
+Build the board using [the QEMU setup workflow](../emulators/qemu-a6400/README.md).
 The experiment consumes prepared inputs; a complete upstream source-to-image
 adapter builder is not supplied in this increment. Do not run scripts from a
 read-only reference checkout. Record the exact source manifest and toolchain
 used to build the adapter, and keep generated artifacts below `artifacts/`.
 
-Create ignored `qemu-a6400/zve10-menu.inputs.local.json` with this schema,
+Create ignored `emulators/qemu-a6400/zve10-menu.inputs.local.json` with this schema,
 replacing the explanatory hash strings with actual SHA-256 digests:
 
 ```json

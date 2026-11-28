@@ -58,7 +58,7 @@ EXPECTED_BODY_MAP = {
 
 
 def _load_rear_panel_module():
-    tools_dir = PROJECT_ROOT / "qemu-a6400/tools"
+    tools_dir = PROJECT_ROOT / "emulators/qemu-a6400/tools"
     if str(tools_dir) not in sys.path:
         sys.path.insert(0, str(tools_dir))
     spec = importlib.util.spec_from_file_location(
@@ -77,7 +77,7 @@ class HostContractParityTests(unittest.TestCase):
         registered_ids = set(DEFAULT_REGISTRY.ids())
         self.assertEqual(registered_ids, set(EXPECTED_BODY_MAP.keys()))
 
-        c_src = (PROJECT_ROOT / "qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c").read_text(
+        c_src = (PROJECT_ROOT / "emulators/qemu-a6400/qemu-overlay/hw/arm/sony_a6400.c").read_text(
             encoding="utf-8"
         )
         for tid, (mname, _, _, _, _) in EXPECTED_BODY_MAP.items():
@@ -123,7 +123,7 @@ class HostContractParityTests(unittest.TestCase):
             rp.send_touch_event(qmp, "pinch", 0.5, 0.5)
 
     def test_touch_int_repeat_property_and_asserted_only_timer(self):
-        src = (PROJECT_ROOT / "qemu-a6400/qemu-overlay/hw/misc/cxd90045_touch.c").read_text(
+        src = (PROJECT_ROOT / "emulators/qemu-a6400/qemu-overlay/hw/misc/cxd90045_touch.c").read_text(
             encoding="utf-8"
         )
         self.assertIn(
@@ -768,7 +768,7 @@ class SubmicroSyntheticPreflightTests(unittest.TestCase):
     """Verify run.sh preflight rules for SUBMICRO_SYNTHETIC=1."""
 
     def test_submicro_synthetic_rejects_conflicting_fixture_vars(self):
-        run_sh = PROJECT_ROOT / "qemu-a6400/run.sh"
+        run_sh = PROJECT_ROOT / "emulators/qemu-a6400/run.sh"
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             run_dir = root / "not-staged"

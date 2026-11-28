@@ -17,7 +17,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
-DAEMON_PATH = ROOT / "camera-daemon/build/a6400-lived"
+DAEMON_PATH = ROOT / "apps/camera-daemon/build/a6400-lived"
 BOOTSTRAP_PATH = ROOT / "tools/native_camera/wifi_5ghz_bootstrap.sh"
 
 R_DAEMON = "/tmp_bt/a6400-lived"

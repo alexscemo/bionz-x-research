@@ -28,7 +28,7 @@ More mods, formats and per-build notes: [mods/README.md](mods/README.md).
 
 | Camera | Level |
 | :--- | :--- |
-| `ILCE-6400` | Mods verified on camera; full QEMU + Unicorn emulation |
+| `ILCE-6400` | Mods and SD auto-boot verified on camera; full QEMU + Unicorn emulation |
 | `ILCE-6400A` | Mods and SD auto-boot verified in QEMU ([`mods/ilce_6400a/`](mods/ilce_6400a/README.md)) |
 | `ILCE-6100` | PhotonBin 6MP and Mod Loader v2 SD boot verified on camera |
 | `ZV-E10` | Touch menu by direct RAM injection verified on camera; Mod Loader untested |

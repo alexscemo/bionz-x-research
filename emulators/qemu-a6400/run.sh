@@ -119,7 +119,7 @@ else
         SUBMICRO_SHA=$SUBMICRO_FRAME_SHA
         SUBMICRO_SKIP=0
     else
-        SUBMICRO_RX="${SUBMICRO_PAGE-$E/../artifacts/qemu-a6400/e0526/camera-page-0x03443000.bin}"
+        SUBMICRO_RX="${SUBMICRO_PAGE-$E/../../artifacts/qemu-a6400/e0526/camera-page-0x03443000.bin}"
         SUBMICRO_SHA=14fba4e607b0efdb76ced74e0463355a279146c96bbba0abec89776b8972fb54
         SUBMICRO_SKIP=$((0x3A4))
     fi
@@ -143,7 +143,7 @@ PACKAGED=0
 if [ -n "${A6400_QEMU_DATA_DIR:-}" ]; then
     D="$(cd "$A6400_QEMU_DATA_DIR" && pwd)"
     PREPARED=1
-    (cd "$E/.." && python3 -m tools.research.qemu_boot_inputs verify --report-dir "$D")
+    (cd "$E/../.." && python3 -m tools.research.qemu_boot_inputs verify --report-dir "$D")
 elif [ -n "${A6400_PACKAGED_DATA_DIR:-}" ]; then
     D="$(cd "$A6400_PACKAGED_DATA_DIR" && pwd)"
     if [ ! -f "$D/manifest.json" ]; then
@@ -152,7 +152,7 @@ elif [ -n "${A6400_PACKAGED_DATA_DIR:-}" ]; then
     fi
     PACKAGED=1
 fi
-VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["qemu"]["version"])' "$E/../tools/toolchain.json")"
+VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["qemu"]["version"])' "$E/../../tools/toolchain.json")"
 Q="${A6400_QEMU_DIR:-$HOME/sony-a6400-qemu-$VERSION}"
 R="${RUN_DIR:-$HOME/a6400-runs}"
 if [ "$PREPARED" = 1 ]; then
@@ -169,7 +169,7 @@ if [ "$PREPARED" = 1 ]; then
 elif [ "$PACKAGED" = 1 ] && [ -f "$D/av-cam.bin" ]; then
     AVCAM="${AVCAM:-$D/av-cam.bin}"
 else
-    AVCAM="${AVCAM:-$E/../firmware/extracted_a6400/firmware.tar_unpacked/0700_part_image/dev/nflasha3_unpacked/av-cam.bin}"
+    AVCAM="${AVCAM:-$E/../../firmware/extracted_a6400/firmware.tar_unpacked/0700_part_image/dev/nflasha3_unpacked/av-cam.bin}"
 fi
 AVCAM_PA=0x035C6000
 # Custom OS tests (build_full_initrd.py): boot a declared kernel/initrd pair
@@ -220,7 +220,7 @@ if [ -n "${IDT_CAM:-}" ]; then
 fi
 SD=()
 if [ -n "${SD_IMAGE:-}${SD_SHA256:-}" ]; then
-    SD_NODE=$(cd "$E/.." && python3 -m tools.research.qemu_media sd-blockdev \
+    SD_NODE=$(cd "$E/../.." && python3 -m tools.research.qemu_media sd-blockdev \
         --image "${SD_IMAGE:-}" --sha256 "${SD_SHA256:-}" --inputs "$D" --run-dir "$R")
     SD=(-drive if=none,id=a6400-sd -blockdev "$SD_NODE")
 fi
@@ -242,7 +242,7 @@ SET_OFF=$((0x1000000)); SET_LEN=$((0x1400000))
 if [ "$OVERLAY_REUSED" = 1 ]; then
     "$Q/build/qemu-img" dd -f qcow2 -O raw bs=1M skip=$((SET_OFF >> 20)) count=$((SET_LEN >> 20)) \
         if="$EMMC_OVERLAY" of="$R/setting-part.img"
-    (cd "$E/.." && python3 -m tools.research.qemu_media extract-setting-backup \
+    (cd "$E/../.." && python3 -m tools.research.qemu_media extract-setting-backup \
         --part-image "$R/setting-part.img" --out "$R/Backup.bin" >/dev/null)
 else
     tar xOf "$D/setting.tar" ./Backup.bin > "$R/Backup.bin"
@@ -299,7 +299,7 @@ else
 # copy is used as a stand-in [assumption]; its LOGB/PRTB buffers fall inside
 # the a6400 cmdline's wbimem=0x500000@0x03085000.  Set ULOGIO= to skip.
 # nflasha2 = user-area 0x00800000 (+8 MiB of eMMC boot partitions in the file).
-ULOGIO="${ULOGIO-$E/../firmware/extracted_zve10_v203_packman/firmware.tar_unpacked/0800_appli/setting/ulogio.bin}"
+ULOGIO="${ULOGIO-$E/../../firmware/extracted_zve10_v203_packman/firmware.tar_unpacked/0800_appli/setting/ulogio.bin}"
 if [ -n "$ULOGIO" ] || [ -n "${SETTING_FILES:-}" ]; then
     if [ "$OVERLAY_REUSED" != 1 ]; then
         dd if="$D/emmc.img" of="$R/setting-part.img" bs=1M skip=$((SET_OFF >> 20)) \

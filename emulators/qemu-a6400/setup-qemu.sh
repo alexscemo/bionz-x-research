@@ -3,7 +3,7 @@
 # Versioned checkouts preserve the previous build and avoid paths with spaces.
 set -euo pipefail
 E="$(cd "$(dirname "$0")" && pwd)"
-CONFIG="$(python3 -c 'import json,sys; q=json.load(open(sys.argv[1]))["qemu"]; print(q["version"], q["tag"], q["commit"], q["repository"])' "$E/../tools/toolchain.json")"
+CONFIG="$(python3 -c 'import json,sys; q=json.load(open(sys.argv[1]))["qemu"]; print(q["version"], q["tag"], q["commit"], q["repository"])' "$E/../../tools/toolchain.json")"
 read -r VERSION TAG COMMIT REPOSITORY <<< "$CONFIG"
 if [ -n "${A6400_QEMU_DIR:-}" ]; then
     Q="$A6400_QEMU_DIR"

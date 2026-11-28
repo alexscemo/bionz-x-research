@@ -32,7 +32,8 @@ More mods, formats and per-build notes: [mods/README.md](mods/README.md).
 | `ILCE-6400A` | Mods and SD auto-boot verified in QEMU ([`mods/ilce_6400a/`](mods/ilce_6400a/README.md)) |
 | `ILCE-6100` | PhotonBin 6MP and Mod Loader v2 SD boot verified on camera |
 | `ZV-E10` | Touch menu by direct RAM injection verified on camera; Mod Loader untested |
-| `ILCE-6600` · `ILCE-7C` · `ILCE-7M3` · `ILCE-7RM4A` | Reference profiles: symbols and USB IDs mapped offline, waiting for testers |
+| `ILCE-7C` | Experimental `sony-a7c` QEMU machine and `mlv2 --target a7c` port ([E9203](docs/evidence/9203-ilce-7c-qemu-and-mlv2-port.md), [E9204](docs/evidence/9204-ilce-7c-menu-after-liveview-and-focus-bracket.md)) |
+| `ILCE-6600` · `ILCE-7M3` · `ILCE-7RM4A` | Reference profiles: symbols and USB IDs mapped offline, waiting for testers |
 | `ILCE-6700` (BIONZ XR) | Research only: its kernel boots on a new QEMU machine ([E9202](docs/evidence/9202-a6700-qemu-first-boot.md)) |
 
 Another Sony body? See [Adding a BIONZ X camera](docs/ADDING_A_BIONZX_CAMERA.md).
@@ -87,7 +88,7 @@ python -m unittest discover -s tests -q
 
 The last recorded full offline suite had 2091 tests (2026-11-18, [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md)); skips are never counted as passes.
 
-![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=093b9d21b11a)
+![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=7b591c4ca255)
 
 [Test suite growth over time](docs/images/test-growth.svg) · [Current technical state](docs/CURRENT_STATE.md) · [Knowledge map](docs/map/README.md)
 

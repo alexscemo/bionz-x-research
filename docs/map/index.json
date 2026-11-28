@@ -13681,13 +13681,34 @@
     "0736-qemu-camcore-unlisted-access-logging.md": [
       "qemu-a6400"
     ],
+    "0737-qemu-snapshot-restore-emmc-ocr.md": [
+      "qemu-a6400"
+    ],
     "0738-qemu-camcore-f3c04-f2912-register-models-boot-score.md": [
       "qemu-a6400"
     ],
-    "0751-qemu-touch-int-repeat.md": [
+    "0743-qemu-camcore-f302-0800-window-boot-score.md": [
       "qemu-a6400"
     ],
-    "0743-qemu-camcore-f302-0800-window-boot-score.md": [
+    "0745-qemu-bcm4339-bcmdhd-attach.md": [
+      "qemu-a6400"
+    ],
+    "0746-qemu-bcm4339-sdpcm-control.md": [
+      "qemu-a6400"
+    ],
+    "0747-qemu-bcm4339-wlan-up.md": [
+      "qemu-a6400"
+    ],
+    "0748-qemu-bcm4339-chanspecs.md": [
+      "qemu-a6400"
+    ],
+    "0749-qemu-bcm4339-wl-magic.md": [
+      "qemu-a6400"
+    ],
+    "0750-qemu-bcm4339-chanspec-state.md": [
+      "qemu-a6400"
+    ],
+    "0751-qemu-touch-int-repeat.md": [
       "qemu-a6400"
     ],
     "9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md": [

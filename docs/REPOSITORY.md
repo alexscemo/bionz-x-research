@@ -56,7 +56,7 @@ in [LAYOUT_MIGRATION.md](LAYOUT_MIGRATION.md).
 | `20261015-_DSC0799 copy.jpg` | `research/reference/20261015-_DSC0799 copy.jpg` | reference input |
 | `.mcp.json` | `.mcp.json.example` | template (copy locally if needed) |
 | `android-client-ref/` | `apps/android/raw-usb-ref/` | raw-USB Android reference client |
-| `reports/a6100-picture-profiles.md`, `reports/l3-osd-progress-2026-11-21.md` | `docs/a6100-picture-profiles.md`, `docs/l3-osd-progress-2026-11-21.md` | documentation (`a6400_hw_dump.txt` stays in `research/reports/`) |
+| `reports/a6100-picture-profiles.md`, `reports/l3-osd-progress-2026-11-21.md` | `docs/evidence/notes/a6100-picture-profiles.md`, `docs/evidence/notes/2026-11-21-l3-osd-progress.md` | documentation (`a6400_hw_dump.txt` stays in `research/reports/`) |
 
 The nine former root Python shims were deleted: their implementations had already been moved,
 they were only forwarding stubs, and their documented launch paths are the module paths above.

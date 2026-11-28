@@ -4,7 +4,7 @@
 
 - **Scope:** Read-only observations of the physical ILCE-6400: GPIO, bus power, HDMI/CEC, touch input, display/OSD, GPES BAR, MISCREG and the /dev/mem safety boundary, lens interface.
 - **Evidence span:** E0068-E0075, E0084, E0297-E0298, E0313-E0314, E0647-E0649; last reviewed 2026-11-26.
-- **Deep review:** 15 of 20 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 15 of 21 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -273,7 +273,7 @@ Current knowledge:
 
 - **C33** `PHYSICAL` A single-page read of PA 0x000F8000 faults with FSR 0x008 (external abort on non-linefetch). Uncaught, it reaches force_sig_info(SIGBUS), the default core-dump path and em_exception_monitor, which warm-reboots; ro_page v2 with SIGBUS handling reported 'bus error caught: signal 7' at 0x000F8000 and the camera stayed up (uptime 3,198.8 -> 3,243.9 s). Imprecise aborts and kernel-mode faults still reboot. ([E0647](../evidence/0647-ilce6400-devmem-reboot-root-cause-and-policy.md))
 
-## Record index (20 files)
+## Record index (21 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -299,3 +299,4 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0717](../evidence/0717-camera-loader-branch-avcam-oops-deadman60.md) | 2026-11-23 | Physical camera loader-branch run (`deadman=60`): av-cam oops before the Custom UI |  |  |
 | [E0718](../evidence/0718-ilce6400-bl-gate-bitmap-and-1d-mode.md) | 2026-11-26 | ILCE-6400 BL protocol: capability gate, lens bitmap, and the three-bit `0x1D` mode |  | The bitmap lives at **`BL_LENS_DATA + 1`**, where `BL_LENS_DATA` is the pointer variable at **`0x642FE7B8`** (literal slot `0x645A9088` = module base `0x645A21E4` + `0x6EA4`; the same slot the gate null-tests, and the co / libObj` publishes lens fields as `(0xC0xx key → enum value)` to observers and keeps **no persistent handler-map or lens-state table**; the temporary map is a stack object at `r7+0x650` (`r7 = sp+8`), which corrects E0649 |
 | [E0719](../evidence/0719-ttartisan-af35-command-surface-and-patch-feasibility.md) | 2026-11-26 | TTArtisan AF 35 mm F1.8 II E: command surface, controller, offline harness, and patch feasibility |  |  |
+| [2026-11-06-motion-sensor-findings.md](../evidence/notes/2026-11-06-motion-sensor-findings.md) | 2026-11-06 | Motion sensor investigation — 2026-11-06 |  | gentle horizon correction or combine it with video-derived motion estimates. |

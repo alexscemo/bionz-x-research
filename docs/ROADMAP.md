@@ -430,7 +430,7 @@ A validated scenario requires identified firmware and patch hashes, known persis
 
 ## Phase 0 — Preserve and establish an honest baseline
 
-Status: organization, local inventory, initial strict-mode guards and execution reports delivered. See [Phase 0 progress](PHASE0_PROGRESS.md) for commands, evidence, and remaining provenance/loader work. Full Phase 0 exit criteria are not yet complete.
+Status: organization, local inventory, initial strict-mode guards and execution reports delivered. See [Phase 0 progress](archives/2026-10-18-phase0-progress.md) for commands, evidence, and remaining provenance/loader work. Full Phase 0 exit criteria are not yet complete.
 
 Tasks:
 

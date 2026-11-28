@@ -4,7 +4,7 @@
 
 - **Scope:** Camera menu tree, WidgetSystem, original selection/activation, resource and sprite captures, menu .uxc containers and the touch prototypes up to the live MTF2 touch mod.
 - **Evidence span:** see record index; last reviewed 2026-11-22.
-- **Deep review:** 0 of 55 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 56 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -67,7 +67,7 @@ Current knowledge:
 - **C08** `PHYSICAL` The MTF2 full-menu touch mod was verified live on an ILCE-6400 in RAM-only deployment (op=1), without flash writes; v1 touch was validated and v2 added swipe and popup support. ([E0519](../evidence/0519-refined-menu-touch-swipe-and-popup.md), [E0520](../evidence/0520-mtf2-full-menu-touch-verified-on-a6400.md))
 - **C10** `PHYSICAL` Live module maps gave a guarded native touch candidate; a camera ELF touch symbol enabled guarded deployment. ([E0087](../evidence/0087-live-module-maps-and-guarded-native-touch-candidate.md), [E0088](../evidence/0088-camera-elf-touch-symbol-and-guarded-deployment.md))
 
-## Record index (55 files)
+## Record index (56 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -128,3 +128,4 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0520](../evidence/0520-mtf2-full-menu-touch-verified-on-a6400.md) | 2026-11-15 | MTF2 Full-Menu Touch Mod Verified on Live Sony A6400 |  |  |
 | [E0522](../evidence/0522-mods-tab-icon-and-uxd-image-container.md) | 2026-11-15 | Mods tab appearance: tab icon source and `uxd` image container layout |  | ~~Data base = record table start + 4; `size` exceeds the true block by ~17–20 bytes~~ — **superseded (§9)**: / 3. Codec status (not decoded) — NOTE: §3–§6 used blocks extracted with the superseded data base, which is |
 | [E0523](../evidence/0523-mod-loader-ok-routing-diagnostics.md) | 2026-11-15 | Mod Loader OK-key routing diagnostics (tab 7 "Mods") |  | ~~In the fake-node vtable slot 48 is a no-op~~ — **superseded**: the set_root hook copies slots 0–64 from the / corrected by hand. Note: on-disk default sources (0x15b92044 toggle) do not correspond to the Run A artifacts. |
+| [a6400-menu-inventory.md](../evidence/notes/a6400-menu-inventory.md) |  | Inventory of All Original Sony a6400 (ILCE-6400) Menu Items and Their Functions |  | 3. **Distortion Comp.:** Geometric lens distortion correction (Auto / Off). |

@@ -23,9 +23,9 @@ The audit defaults to strict and returns exit code 2 for unsupported behavior, s
 
 ## Remaining work
 
-Follow-up delivered: [platform and loader evidence](evidence/0001-platform-and-loader.md), a 474-file ELF inventory, corrections for REL symbol addends and nonzero load addresses, failed-load rollback, and strict TLS rejection. The C++ symbol is present in the extracted runtime and multiple executables; original process scope still needs investigation. Run `python -m tools.research.elf_inventory` to regenerate the static reports.
+Follow-up delivered: [platform and loader evidence](../evidence/0001-platform-and-loader.md), a 474-file ELF inventory, corrections for REL symbol addends and nonzero load addresses, failed-load rollback, and strict TLS rejection. The C++ symbol is present in the extracted runtime and multiple executables; original process scope still needs investigation. Run `python -m tools.research.elf_inventory` to regenerate the static reports.
 
-Execution follow-up: [E0003](evidence/0003-original-interpreter-boundary.md) records a separate original-interpreter probe reaching `brk(0)` without a kernel response. This does not remove the legacy harness's TLS/loader limitations or complete full-system startup.
+Execution follow-up: [E0003](../evidence/0003-original-interpreter-boundary.md) records a separate original-interpreter probe reaching `brk(0)` without a kernel response. This does not remove the legacy harness's TLS/loader limitations or complete full-system startup.
 
 - The inventoried environment is a snapshot, not a fresh-install lock. Confirm required dependencies, upstream origins/working-tree modifications, package/native provenance, and firmware authenticity separately.
 - Audit supported relocation formulas and loader mapping/initialization behavior; accepting a relocation type does not prove correct ABI implementation.

@@ -10,6 +10,7 @@ Original Sony user-space processes (interpreter, linker, libc/NPTL, UIPC/OSAL, D
 evidence_span = "see record index"
 reviewed = "2026-11-26"
 records = [
+  "notes/2026-11-21-l3-osd-progress.md",
   "E0001-E0008",
   "E0015-E0028",
   "E0033-E0055",

@@ -10,6 +10,7 @@ Read-only observations of the physical ILCE-6400: GPIO, bus power, HDMI/CEC, tou
 evidence_span = "E0068-E0075, E0084, E0297-E0298, E0313-E0314, E0647-E0649"
 reviewed = "2026-11-26"
 records = [
+  "notes/2026-11-06-motion-sensor-findings.md",
   "E0068",
   "E0069",
   "E0071-E0075",

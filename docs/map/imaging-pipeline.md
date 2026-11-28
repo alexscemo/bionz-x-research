@@ -4,7 +4,7 @@
 
 - **Scope:** av-cam CC 3D LUT and gamma, the Arrivederci/ARRI color work, debayer/PSF/detail stages, RAW develop, IMX284, Open Gate and high-bit-depth paths, AIF DMA, the RCRAW probes, and the candidate mobile GPU 36-exposure ARW roll pipelines (SpektraFilm and fotufilm-engine).
 - **Evidence span:** see record index; last reviewed 2026-11-27.
-- **Deep review:** 0 of 56 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 57 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -142,7 +142,7 @@ Current knowledge:
 
 Related: [av-cam CC 3D LUT, color matrix and EC gamma](#img-cc-lut), [Debayer, dcv_psf / spica and detail stages](#img-detail-psf), [CinemaHUD Android SpektraFilm engine (candidate)](#app-android-spektrafilm)
 
-## Record index (56 files)
+## Record index (57 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -203,4 +203,5 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0728](../evidence/0728-a6400-open-gate-f3851-mmio-live.md) | 2026-11-26 | ILCE-6400 Open Gate `0xF3851xxx` / `0xF3951xxx` Live MMIO Read During `plus8` |  |  |
 | [E0739](../evidence/0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md) | 2026-11-27 | ILCE-6400 10-bit RAW video feasibility, `SET_RAW_EXTERNAL_OUTPUT` (`0x40BD`) 3G-SDI stub proof, `DDR-B` `SHS` ring buffer, and `QFHD` HDMI `UYVY` transport |  | Note correction to [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md) §2.3's tentative IPC label: `0x2044` and `0x2042` at `av-cam.bin` `0x63BDFDA8` / `0x63BDFDD6` (`bl 0x63D403E0(4, 0x2044/0x2042, ...)`) are |
 | [E0741](../evidence/0741-open-gate-32-mode10-smod-v2.md) | 2026-11-27 | 3-Tier 4K & HD 3:2 Open Gate (`5.1K True 4K`, `6K Reg01 Full`, `Full-FOV 2K`) and `OpenGate32` / `OpenGateSensor` (`SMOD v2` + `SMNU`) |  |  |
+| [E0752](../evidence/0752-a6400-open-gate-a12-to-a19-dual-pipe-live.md) | 2026-11-27 | ILCE-6400 Open Gate: Live `A12`–`A19` Dual-Pipe, `tbl_0x34` / `desc_0xAC` `.bss` Baseline, and `0x63761C64` Discovery |  |  |
 | [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md) | 2026-11-26 | ILCE-6100 `RCRAW` / `AIF0 W2` (`0xF3002480`) and `S_SetFOPD` Gate Chain |  |  |

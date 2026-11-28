@@ -13874,6 +13874,9 @@
     "0751-qemu-touch-int-repeat.md": [
       "qemu-a6400"
     ],
+    "0752-a6400-open-gate-a12-to-a19-dual-pipe-live.md": [
+      "imaging-pipeline"
+    ],
     "9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md": [
       "l3-userspace"
     ],

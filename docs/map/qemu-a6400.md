@@ -4,7 +4,7 @@
 
 - **Scope:** The QEMU sony-a6400 board: captured four-core boot, av-cam and CamCore sequencing, SIO/sub-micro, display/rear panel, Ydet/CamPig, live-view frame, contributor scores, Custom OS handover guards and DMA engines.
 - **Evidence span:** see record index; last reviewed 2026-11-26.
-- **Deep review:** 64 of 103 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 64 of 104 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -121,7 +121,7 @@ Do not rely on:
 
 - ~~The LIRO ram section filled through 0xF30A is a separate sub-core firmware image.~~ **R01** `RETRACTED` ([E0642](../evidence/0642-a6400-f30a-fill-engine-and-liro-ram-section.md)); see C13: The LIRO ram section copied by the work DMA is av-cam's own initialised RW data (1,878 references from av-cam code), not a sub-core image.
 
-## Record index (103 files)
+## Record index (104 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -222,6 +222,7 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0737](../evidence/0737-qemu-snapshot-restore-emmc-ocr.md) | 2026-11-27 | Carry the eMMC OCR across snapshot restore |  | Red-team correction / The red team upheld the fix with a correction: the earlier "serial output continues without fault |
 | [E0738](../evidence/0738-qemu-camcore-f3c04-f2912-register-models-boot-score.md) | 2026-11-21 | Boot score for the register models at 0xF3C04000 and 0xF2912000-0xF2915FFF |  |  |
 | [E0743](../evidence/0743-qemu-camcore-f302-0800-window-boot-score.md) | 2026-11-21 | Boot score for the CamCore `0xF3020800` window at `0xF3020000` |  | The red team corrected the original prose, which said "89 write-only + 1 read-modify-write", |
+| [E0744](../evidence/0744-qemu-camcore-f302-c00-window-boot-score.md) | 2026-11-21 | Boot score for the CamCore `0xF3020C00` window at `0xF3020000` |  | The finding notes state that the first red-team pass **refuted the claim's scope**: "0 page / 73. The wording was corrected, including in `STATUS.md`, and the re-check **upheld** it on |
 | [E0745](../evidence/0745-qemu-bcm4339-bcmdhd-attach.md) | 2026-11-27 | QEMU BCM4339 EROM encoding and the bcmdhd `si_attach` failure |  | Hypothesis verdict: supported.** With the corrected ROM the driver scans the four |
 | [E0746](../evidence/0746-qemu-bcm4339-sdpcm-control.md) | 2026-11-27 | QEMU BCM4339 SDPCM transmit credit and the bcmdhd `dhd_bus_start` stall |  |  |
 | [E0747](../evidence/0747-qemu-bcm4339-wlan-up.md) | 2026-11-27 | QEMU BCM4339 control replies: `WLC_GET_VERSION` and `WLC_GET_BANDLIST` |  |  |

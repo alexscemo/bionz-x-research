@@ -13850,6 +13850,9 @@
     "0743-qemu-camcore-f302-0800-window-boot-score.md": [
       "qemu-a6400"
     ],
+    "0744-qemu-camcore-f302-c00-window-boot-score.md": [
+      "qemu-a6400"
+    ],
     "0745-qemu-bcm4339-bcmdhd-attach.md": [
       "qemu-a6400"
     ],

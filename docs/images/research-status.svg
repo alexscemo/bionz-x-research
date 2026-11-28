@@ -18,7 +18,7 @@
 <rect x="414.232" y="68" width="217.574" height="26" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1" />
 <rect x="479.272" y="68" width="152.534" height="26" rx="5" fill="#1f6feb" />
 <text x="423.232" y="85" fill="#c9d1d9" font-size="10.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">evidence</text>
-<text x="488.272" y="85" fill="#ffffff" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">794 indexed · 289 deep</text>
+<text x="488.272" y="85" fill="#ffffff" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">795 indexed · 289 deep</text>
 <rect x="639.806" y="68" width="89.3904" height="26" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1" />
 <rect x="698.966" y="68" width="30.2304" height="26" rx="5" fill="#d29922" />
 <text x="648.806" y="85" fill="#c9d1d9" font-size="10.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">hazards</text>
@@ -87,7 +87,7 @@
 <text x="40" y="650" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Live hardware observations and peripheral contracts</text>
 <text x="434" y="650" fill="#8b949e" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">15/20 · 40/2</text>
 <text x="40" y="670" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Imaging pipeline: color, RAW, RCRAW and recording paths</text>
-<text x="434" y="670" fill="#8b949e" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">0/60 · 20/0</text>
+<text x="434" y="670" fill="#8b949e" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">0/61 · 20/0</text>
 <text x="40" y="690" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">L2 full-system kernel boot (UnicornMachine)</text>
 <text x="434" y="690" fill="#8b949e" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">88/88 · 47/10</text>
 <text x="40" y="710" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">L3 user space: original im.elf under InterpreterProbe</text>
@@ -113,17 +113,17 @@
 <text x="40" y="910" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Wi-Fi and remote control</text>
 <text x="434" y="910" fill="#8b949e" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">0/15 · 6/1</text>
 <text x="40" y="932" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Evidence records indexed by an area</text>
-<text x="434" y="932" fill="#f0f6fc" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">794 / 794 · 100.0%</text>
+<text x="434" y="932" fill="#f0f6fc" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">795 / 795 · 100.0%</text>
 <rect x="40" y="938" width="394" height="6" rx="3" fill="#21262d" />
 <rect x="40" y="938" width="394" height="6" rx="3" fill="#1f6feb" />
 <text x="40" y="964" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Evidence records cited by curated claims</text>
-<text x="434" y="964" fill="#f0f6fc" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">729 / 794 · 91.8%</text>
+<text x="434" y="964" fill="#f0f6fc" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">729 / 795 · 91.7%</text>
 <rect x="40" y="970" width="394" height="6" rx="3" fill="#21262d" />
-<rect x="40" y="970" width="361.746" height="6" rx="3" fill="#8957e5" />
+<rect x="40" y="970" width="361.291" height="6" rx="3" fill="#8957e5" />
 <text x="40" y="996" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Evidence records deep-reviewed (read in full)</text>
-<text x="434" y="996" fill="#f0f6fc" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">289 / 794 · 36.4%</text>
+<text x="434" y="996" fill="#f0f6fc" font-size="9" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="end">289 / 795 · 36.4%</text>
 <rect x="40" y="1002" width="394" height="6" rx="3" fill="#21262d" />
-<rect x="40" y="1002" width="143.408" height="6" rx="3" fill="#2ea043" />
+<rect x="40" y="1002" width="143.228" height="6" rx="3" fill="#2ea043" />
 <text x="486" y="609" fill="#f0f6fc" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">F01  Remaining ILCE-6400A flash boundary</text>
 <text x="486" y="623" fill="#f0883e" font-size="8.5" font-weight="400" font-family="Consolas, 'Courier New', monospace" text-anchor="start">open · a6400a-acquisition</text>
 <text x="486" y="645" fill="#f0f6fc" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">F01  Acquisition provenance and a6100 partition roles</text>
@@ -169,6 +169,6 @@
 <rect x="382.72" y="1275" width="10" height="10" rx="2" fill="#21262d" stroke="#30363d" stroke-width="1" />
 <text x="398.72" y="1284" fill="#c9d1d9" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">not yet mapped</text>
 <text x="24" y="1306" fill="#9da7b3" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">Counts what the knowledge map describes, not an overall firmware compatibility percentage.</text>
-<text x="24" y="1322" fill="#9da7b3" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">All 794 evidence records are indexed; claims summarise them and the records stay authoritative.</text>
+<text x="24" y="1322" fill="#9da7b3" font-size="9.5" font-weight="400" font-family="Segoe UI, Arial, sans-serif" text-anchor="start">All 795 evidence records are indexed; claims summarise them and the records stay authoritative.</text>
 </g>
 </svg>

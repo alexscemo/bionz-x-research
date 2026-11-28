@@ -4,7 +4,7 @@
 
 - **Scope:** av-cam CC 3D LUT and gamma, the Arrivederci/ARRI color work, debayer/PSF/detail stages, RAW develop, IMX284, Open Gate and high-bit-depth paths, AIF DMA, the RCRAW probes, and the candidate mobile GPU 36-exposure ARW roll pipelines (SpektraFilm and fotufilm-engine).
 - **Evidence span:** see record index; last reviewed 2026-11-27.
-- **Deep review:** 0 of 60 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 61 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -142,7 +142,7 @@ Current knowledge:
 
 Related: [av-cam CC 3D LUT, color matrix and EC gamma](#img-cc-lut), [Debayer, dcv_psf / spica and detail stages](#img-detail-psf), [CinemaHUD Android SpektraFilm engine (candidate)](#app-android-spektrafilm)
 
-## Record index (60 files)
+## Record index (61 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -207,4 +207,5 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0753](../evidence/0753-a6400-open-gate-rec-format-id-contract-and-a12.md) | 2026-11-28 | ILCE-6400 Open Gate: `rec_fmt_tbl` Id Contract, Per-Id Geometry Descriptors, and the Step `A12` Patch Rule |  | \| userspace `libmpr.so` -> message -> av-cam request struct \| **not verified, and the stated mechanism is refuted** (below) \| / coming from Linux user-space (`im.elf`) over UIPC" is **refuted as stated** for |
 | [E0754](../evidence/0754-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md) | 2026-11-28 | ILCE-6400 Open Gate Round 6: `avlog` Read Recipe, `pasp`/`tkhd` Findings, and the `3200`/`3264` Candidate Patch Sets |  | results and the `.bss` baseline). This record supersedes specific `E0753` statements, listed in / Correction to `E0753`:** the table *is* statically referenced. `0x6371B764` `add r3,pc` with |
 | [E0755](../evidence/0755-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md) | 2026-11-28 | Live `ILCE-6400` TCP Read-Only Check: HEVC / 10-Bit Absence, Movie vs. Still `CamPig` / `cRAW2` DDR Buffers, and `0xF3031164` Allocation |  |  |
+| [E0756](../evidence/0756-opengate-a1-libmpr-hook-sites-and-guarded-test-kit.md) | 2026-11-28 | OpenGateA1 `libmpr.so` hook sites match the updater build, not the camera; guarded test kit |  |  |
 | [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md) | 2026-11-26 | ILCE-6100 `RCRAW` / `AIF0 W2` (`0xF3002480`) and `S_SetFOPD` Gate Chain |  |  |

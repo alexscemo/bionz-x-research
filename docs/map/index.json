@@ -13894,6 +13894,9 @@
     "0755-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md": [
       "imaging-pipeline"
     ],
+    "0756-opengate-a1-libmpr-hook-sites-and-guarded-test-kit.md": [
+      "imaging-pipeline"
+    ],
     "9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md": [
       "l3-userspace"
     ],

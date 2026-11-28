@@ -22,7 +22,7 @@
     "imaging-pipeline": {
       "title": "Imaging pipeline: color, RAW, RCRAW and recording paths",
       "doc": "docs/map/imaging-pipeline.md",
-      "reviewed": "2026-11-24",
+      "reviewed": "2026-11-27",
       "evidence_span": "see record index"
     },
     "l2-kernel-boot": {
@@ -46,7 +46,7 @@
     "mods": {
       "title": "Mod Loader and firmware mods",
       "doc": "docs/map/mods.md",
-      "reviewed": "2026-11-24",
+      "reviewed": "2026-11-27",
       "evidence_span": "see record index"
     },
     "native-debugger": {
@@ -70,7 +70,7 @@
     "storage-sd-backup": {
       "title": "Storage, SD card and backup service",
       "doc": "docs/map/storage-sd-backup.md",
-      "reviewed": "2026-11-24",
+      "reviewed": "2026-11-27",
       "evidence_span": "see record index"
     },
     "usb-composite": {
@@ -612,13 +612,19 @@
         "Open Gate 3:2",
         "ZIMA_AVC",
         "AIF",
-        "SET_RAW_EXTERNAL_OUTPUT"
+        "SET_RAW_EXTERNAL_OUTPUT",
+        "CAMERA_SCN_EXTERNAL_RAW_RECORD.so",
+        "0x40BD",
+        "SuperSlowManagerMainLsi"
       ],
       "anchor": "imaging-pipeline.md#img-recording-paths",
       "active_claims": [
         "C06",
         "C07",
-        "C17"
+        "C17",
+        "C18",
+        "C19",
+        "C20"
       ],
       "inactive_claims": []
     },
@@ -1156,7 +1162,9 @@
         "C11",
         "C08",
         "C09",
-        "C10"
+        "C10",
+        "C17",
+        "C18"
       ],
       "inactive_claims": []
     },
@@ -1217,6 +1225,39 @@
         "C13",
         "C14",
         "C15"
+      ],
+      "inactive_claims": []
+    },
+    "mod.rear-lcd-60fps": {
+      "area": "mods",
+      "name": "RearLcd60fps",
+      "kind": "module",
+      "address": null,
+      "aliases": [
+        "RearLcd60fps.mod",
+        "Rear LCD 60fps",
+        "rear_lcd_60fps"
+      ],
+      "anchor": "mods.md#mod-rear-lcd-60fps",
+      "active_claims": [
+        "C17"
+      ],
+      "inactive_claims": []
+    },
+    "mod.open-gate-32": {
+      "area": "mods",
+      "name": "OpenGate32 / OpenGateSensor",
+      "kind": "module",
+      "address": null,
+      "aliases": [
+        "OpenGate32.mod",
+        "OpenGateSensor.mod",
+        "open_gate_32",
+        "open_gate_sensor"
+      ],
+      "anchor": "mods.md#mod-open-gate-32",
+      "active_claims": [
+        "C18"
       ],
       "inactive_claims": []
     },
@@ -1508,7 +1549,8 @@
       "active_claims": [
         "C03",
         "C05",
-        "C06"
+        "C06",
+        "C08"
       ],
       "inactive_claims": []
     },
@@ -1525,7 +1567,26 @@
       "anchor": "storage-sd-backup.md#dev-sd-stack",
       "active_claims": [
         "C04",
-        "C05"
+        "C05",
+        "C08",
+        "C09"
+      ],
+      "inactive_claims": []
+    },
+    "mod.emunand-prototype": {
+      "area": "storage-sd-backup",
+      "name": "Reversible SD VDisk and eMMC CoW guard prototype (emunand_guard.ko)",
+      "kind": "module",
+      "address": null,
+      "aliases": [
+        "emunand_guard",
+        "CFW_VDISK.IMG",
+        "emunand_vdisk_ctl"
+      ],
+      "anchor": "storage-sd-backup.md#mod-emunand-prototype",
+      "active_claims": [
+        "C08",
+        "C09"
       ],
       "inactive_claims": []
     },
@@ -10058,6 +10119,13 @@
         "id": "C06",
         "file": "0620-a6400-open-gate-4k-and-6k-paths.md",
         "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C19",
+        "file": "0620-a6400-open-gate-4k-and-6k-paths.md",
+        "status": "inference"
       }
     ],
     "E0621": [
@@ -11093,6 +11161,13 @@
     ],
     "E0715": [
       {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C19",
+        "file": "0715-qemu-f01-playback-capture-uhs-mmio-and-kexec-prereqs.md",
+        "status": "inference"
+      },
+      {
         "area": "qemu-a6400",
         "kind": "claim",
         "id": "C23",
@@ -11128,6 +11203,78 @@
         "kind": "claim",
         "id": "C41",
         "file": "0719-ttartisan-af35-command-surface-and-patch-feasibility.md",
+        "status": "verified-offline"
+      }
+    ],
+    "E0728": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C20",
+        "file": "0728-a6400-open-gate-f3851-mmio-live.md",
+        "status": "verified-offline"
+      }
+    ],
+    "E0739": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C18",
+        "file": "0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C19",
+        "file": "0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md",
+        "status": "inference"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "frontier",
+        "id": "F01",
+        "file": "0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md"
+      }
+    ],
+    "E0740": [
+      {
+        "area": "mods",
+        "kind": "claim",
+        "id": "C17",
+        "file": "0740-rear-lcd-60fps-high-quality-mod.md",
+        "status": "verified-offline"
+      }
+    ],
+    "E0741": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C20",
+        "file": "0741-open-gate-32-mode10-smod-v2.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "mods",
+        "kind": "claim",
+        "id": "C18",
+        "file": "0741-open-gate-32-mode10-smod-v2.md",
+        "status": "verified-offline"
+      }
+    ],
+    "E0742": [
+      {
+        "area": "storage-sd-backup",
+        "kind": "claim",
+        "id": "C08",
+        "file": "0742-reversible-emunand-vdisk-and-emmc-cow-prototype.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "storage-sd-backup",
+        "kind": "claim",
+        "id": "C09",
+        "file": "0742-reversible-emunand-vdisk-and-emmc-cow-prototype.md",
         "status": "verified-offline"
       }
     ],
@@ -13681,10 +13828,29 @@
     "0736-qemu-camcore-unlisted-access-logging.md": [
       "qemu-a6400"
     ],
+    "0737-qemu-snapshot-restore-emmc-ocr.md": [
+      "qemu-a6400"
+    ],
     "0738-qemu-camcore-f3c04-f2912-register-models-boot-score.md": [
       "qemu-a6400"
     ],
+    "0739-a6400-10bit-raw-video-feasibility-and-external-raw-stub.md": [
+      "imaging-pipeline"
+    ],
+    "0740-rear-lcd-60fps-high-quality-mod.md": [
+      "mods"
+    ],
+    "0741-open-gate-32-mode10-smod-v2.md": [
+      "imaging-pipeline",
+      "mods"
+    ],
+    "0742-reversible-emunand-vdisk-and-emmc-cow-prototype.md": [
+      "storage-sd-backup"
+    ],
     "0743-qemu-camcore-f302-0800-window-boot-score.md": [
+      "qemu-a6400"
+    ],
+    "0744-qemu-camcore-f302-c00-window-boot-score.md": [
       "qemu-a6400"
     ],
     "0745-qemu-bcm4339-bcmdhd-attach.md": [
@@ -13704,6 +13870,12 @@
     ],
     "0750-qemu-bcm4339-chanspec-state.md": [
       "qemu-a6400"
+    ],
+    "0751-qemu-touch-int-repeat.md": [
+      "qemu-a6400"
+    ],
+    "0752-a6400-open-gate-a12-to-a19-dual-pipe-live.md": [
+      "imaging-pipeline"
     ],
     "9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md": [
       "l3-userspace"

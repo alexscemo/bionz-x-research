@@ -122,6 +122,32 @@ class HostContractParityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             rp.send_touch_event(qmp, "pinch", 0.5, 0.5)
 
+    def test_touch_int_repeat_property_and_asserted_only_timer(self):
+        src = (PROJECT_ROOT / "qemu-a6400/qemu-overlay/hw/misc/cxd90045_touch.c").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'DEFINE_PROP_UINT32("int-repeat-ms", Cxd90045TouchState, int_repeat_ms, 10)',
+            src,
+        )
+        self.assertIn("device_class_set_props(dc, touch_props);", src)
+
+        def body(header):
+            self.assertIn(header, src)
+            return src.split(header, 1)[1].split("\n}", 1)[0]
+
+        arm = body("static void touch_int_repeat_arm")
+        self.assertIn("!touch_line_asserted(s)", arm)
+        self.assertIn("timer_mod", arm)
+        sync = body("static void touch_input_sync")
+        self.assertIn("touch_update_int_line(s, true)", sync)
+        self.assertIn("touch_int_repeat_arm(s)", sync)
+        prepare = body("static void touch_prepare_burst")
+        self.assertIn("touch_line_asserted(s)", prepare)
+        self.assertIn("touch_int_repeat_stop(s)", prepare)
+        reset = body("static void touch_reset")
+        self.assertIn("touch_int_repeat_stop(s)", reset)
+
 
 class _QTestQmpHarness(unittest.TestCase):
     """Helper starting QEMU with both qtest stdio and a unix QMP socket."""

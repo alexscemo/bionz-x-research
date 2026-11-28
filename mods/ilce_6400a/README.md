@@ -15,12 +15,13 @@ See **[E0679](../../docs/evidence/0679-ilce-6400a-mod-loader-v2-and-mods-port.md
 | `Arrivederci.mod` | `Arrivederci` | `129,444` | `31beab47dd10e4ec43c0419e558ec64734430dd5e40d71bc31bd6e29585f5694` | ARRI LogC3 Classic tone curve (`PA 0x03E560C4`), fitted Q10 color matrix (`PA 0x0444FDC8`), `CC_TUNING` (`PA 0x0444ED96`), 3D LUT (`PA 0x044B191B`..`+0x143C`), and SPICA/DCV `/usr/sabin/*` 4K tap-table bind-mounts (`sabin=m`/`u`). Excluded from default `MLV2.TAR` SD auto-boot packaging; **turn OFF before powering off camera** (`COLOR_PA` persists in `Backup.bin`). |
 | `MenuTouchFull.mod` | `Menu Touch Full` | `3,032` | `b4e30572bf3282f860b9c21564b054e31302a98a3f4c811d54b96cd3beb9f35c` | Full-menu touch (`MTF2`): tab bar taps, page-dot taps, horizontal swipe paging, row select/open, popup scroll/apply/outside-tap close across `viewUnified2.so`, `libsyscommon.so`, and `libevsel.so`. |
 | `ModsTabLook.mod` | `Mods Tab Look` | `2,000` | `e8d526bcb54e2561cfe5d489365808f69a4fbdb0078186859e04ff432afaf9eb` | Auto-ON (`SMOD_FLAG_AUTO_ON`) custom `MODS` tab icon + teal tab gradient (`viewUnified2 + 0x5ADBB4`). |
-| `OpenGate32.mod` | `Open Gate 3:2` | `2,028` | `992ecdff4b3e212d9d74d68eae92fb7f111bc21ce868dae7e15465601ba07d91` | Experimental full `5400x3600` 3:2 sensor readout + `3240x2160` DMM/VPI/VENC (`41` LIRO swaps) + runtime-located `libmpr.so` (`10` swaps = `51/51` verified in live QEMU `im.elf`). Mutually exclusive with `OpenGateSensor` and `OpenGate_5400_Test`. |
-| `OpenGateSensor.mod` | `Open Gate Sensor` | `1,232` | `746158e68adc8f1ebb15d063e3d2ab741b5049b6637688572af98c23278353b6` | Experimental sensor-only `5400x3600` 3:2 readout (`16/16` LIRO swaps, keeping stock `3840x2160` DMM/VPI/VENC/MPR canvas). |
+| `OpenGate32.mod` | `Open Gate 3:2` | `9,788` | `bfc03026fec4f1cac951017d5f909721bdf81c8f0b31f788b244fc18ee7414dd` | 3-tier 3:2 Open Gate Movie mod (`SMOD_V2_FLAG_SUBMENU` `SMNU`: `5.1K True 4K` `5064x3376`/`4140x2760` default, `6K Reg01 Full` `6000x4000` + `reg 0x0001=0x40` + `S-Ele` crash guard, or `Full-FOV 2K` `Mode 10` `1996x1332`; `3240x2160`, `1620x1080`, `Both`, or `Anamorphic`) synchronized across `ExlHelper`, `DMM`, `VPI`, `ZIMA DVENC`, and runtime-located `libmpr.so` (`MprLibCore::EncOpen` `.text` + `.rodata`; **[E0741](../../docs/evidence/0741-open-gate-32-mode10-smod-v2.md)**). Mutually exclusive with `OpenGateSensor` and `OpenGate_5400_Test`. |
+| `OpenGateSensor.mod` | `Open Gate Sensor` | `6,672` | `4237297ff3aa32463ef2c0d042ae66551755a92e45290625b29db4bb93807dd9` | Companion 3-tier `SMNU` sensor-only 3:2 Open Gate stage (`5.1K True 4K` `5064x3376`/`4140x2760`, `6K Reg01 Full` `6000x4000`, or `Full-FOV 2K` `1996x1332`) keeping stock `3840x2160` / `1920x1080` `DMM`/`VPI`/`DVENC`/`libmpr.so` (`1.33x` anamorphic squeeze; **[E0741](../../docs/evidence/0741-open-gate-32-mode10-smod-v2.md)**). |
 | `OpenGate_5400_Test.mod` | `OpenGate_5400_Test` | `1,388` | `11524dbf4abd8b9aa1ad375450dc76e6ef9ac7860335f84adef5aa44f46d515f` | Diagnostic `41/41` LIRO RAM swap (`5400x3600` sensor + `3240x2160` DMM/VPI/VENC) with `libmpr.so` skipped (`m=skip`). |
 | `PhotonBin6MP.mod` | `PhotonBin 6MP` | `6,188` | `ef5af925becb321b29da55440d1c8e6ace650b099690cda1b3193747a219017f` | Low-light pre-demosaic `4x4->2x2` Bayer / `2x2` Mono `.ARW` photon convergence (`3008x2008` / `3000x2000` active, 16-bit Uncomp / 14-bit Uncomp / 14-bit `cRAW`) + `IMX284` `Mconv` HCG & `14-bit 1H2H` overrides via 2-page nested submenu (`SMOD_V2_FLAG_SUBMENU`, **[E0680](../../docs/evidence/0680-photonbin-6mp-and-mlv2-nested-submenus.md)**). |
 | `RCRAW_Enable_Test.mod` | `RCRAW_Enable_Test` | `1,184` | `43953573166bd8be5410122626615b1d3ffb9c58a23cae5ec83320ee103ce487` | Diagnostic toggle for `RCRAW_EN_PA` (`0x043F2B04`) with readback of `RDRAW_EN_PA` (`0x043F2EC0`), `D1534_PA` (`0x043F2828`), and `W1`/`W2` descriptors (`0x04422FE8`/`0x0442304C`). |
 | `RCRAW_W2_Probe.mod` | `RCRAW_W2_Probe` | `780` | `213983f17e7e08d5ad0e7e7c97fc452f10333c260b0ff8db4314459df0083a0d` | Strictly read-only LIRO RAM probe logging `W1`, `W2`, `W2B`, and `RAW_EXT_PA` (`0x044295BC`) to `/tmp_bt/mods/rcraw_w2_probe.log`. |
+| `RearLcd60fps.mod` | `Rear LCD 60fps` | `768` | `4412826ec817b7745c31be0fffa0716bbf242443bf60e3980486781727f85719` | Unlocks `59.94 fps` (`60 fps`) Live-View on the rear LCD while keeping `Display Quality = High` on EVF (`libbackup.so + 0x1204` RAM override of `BK4 0x01071489` + live `NoAdapter(1)` apply on `ON`/`OFF`; **[E0740](../../docs/evidence/0740-rear-lcd-60fps-high-quality-mod.md)**). |
 | `UsbStreamingTest.mod` | `USB Streaming Test` | `2,784` | `431482047d39bb9cf23a7c042b20d93cf4189e8046344c34a48634c39ecad289` | QEMU-only `--action` item driving original `ILCE-6400A` `UsbControl` (`libUsbControl.so` `94,220` B) through `STATE 1 -> 5 -> 7` and auto-closing the menu via `EventManager::push`. Refuses execution outside QEMU (`console=ttyAM0,`). |
 
 ---
@@ -31,11 +32,13 @@ See **[E0679](../../docs/evidence/0679-ilce-6400a-mod-loader-v2-and-mods-port.md
 # 1. Build Mod Loader v2 (shim @ 0x05d76800, core.bin with nested submenu support, mlv2.req, mlv2_guard_arm)
 bash tools/native_camera/mlv2/build_wsl.sh artifacts/tests/mlv2-ilce6400a-build-3 --target ilce_6400a
 
-# 2. Build all 10 ILCE-6400A SMOD v2 mods
+# 2. Build all 11 ILCE-6400A SMOD v2 mods
 bash mods/mods_tab_look/build_mtl_v2_wsl.sh artifacts/mods/ilce_6400a/mods_tab_look --target ilce_6400a
 bash mods/menu_touch_full/build_mtf_v2_wsl.sh artifacts/mods/ilce_6400a/menu_touch_full --target ilce_6400a
+bash mods/rear_lcd_60fps/build_v2_wsl.sh artifacts/mods/ilce_6400a/rear_lcd_60fps --target ilce_6400a
 bash mods/arri_isp/arrivederci/build_v3_wsl.sh artifacts/mods/ilce_6400a/arrivederci --target ilce_6400a
-bash mods/opengate_5400_test/build_v2_wsl.sh artifacts/mods/ilce_6400a/opengate --target ilce_6400a
+bash mods/open_gate/build_wsl.sh artifacts/mods/ilce_6400a/open_gate --target ilce_6400a
+bash mods/opengate_5400_test/build_v2_wsl.sh artifacts/mods/ilce_6400a/opengate_5400_test --target ilce_6400a
 bash mods/photon_bin_6mp/build_wsl.sh artifacts/mods/ilce_6400a/photon_bin_6mp --target ilce_6400a
 bash mods/rcraw_enable_test/build_v2_wsl.sh artifacts/mods/ilce_6400a/rcraw_enable_test --target ilce_6400a
 bash mods/rcraw_w2_probe/build_v2_wsl.sh artifacts/mods/ilce_6400a/rcraw_w2_probe --target ilce_6400a

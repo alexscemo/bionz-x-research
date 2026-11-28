@@ -8,7 +8,7 @@ title = "Storage, SD card and backup service"
 scope = """
 Storage tables, ring-buffer write pipeline, backup service and presets, SD/SDHCI/ADMA2 stack, mmca/ms character devices and SD recovery."""
 evidence_span = "see record index"
-reviewed = "2026-11-24"
+reviewed = "2026-11-27"
 records = [
   "E0009-E0014",
   "E0029-E0032",
@@ -17,6 +17,7 @@ records = [
   "E0079",
   "E0138",
   "E0689",
+  "E0742",
 ]
 
 [[entity]]
@@ -40,6 +41,14 @@ name = "SD stack (mmc_drv, SDHCI, ADMA2)"
 aliases = ["/dev/mmca-char", "/dev/ms-char", "A: drive"]
 inventory = ["kernel.modules:mmc_drv", "kernel.modules:ms_drv"]
 summary = "SD communication layers, the registered read ioctl, the serialized transfer pipeline, SDHCI host context and ADMA2 scatter-gather DMA, and the mmca/ms character devices."
+
+[[entity]]
+id = "mod.emunand-prototype"
+kind = "module"
+name = "Reversible SD VDisk and eMMC CoW guard prototype (emunand_guard.ko)"
+aliases = ["emunand_guard", "CFW_VDISK.IMG", "emunand_vdisk_ctl"]
+inventory = ["kernel.modules:emmc", "kernel.modules:backup"]
+summary = "Emulator-verified reversible kernel CoW guard hooking emmc_seq_read/emmc_seq_write with Backup_save=0 and a freestanding FAT32/exFAT raw-block ext2 VDisk loop controller."
 
 [[claim]]
 id = "C01"
@@ -89,6 +98,20 @@ entities = ["proc.storage-ringbuffer"]
 status = "verified-offline"
 text = "The original compressed-header comparison was reproduced on the extracted images."
 evidence = ["E0010"]
+
+[[claim]]
+id = "C08"
+entities = ["mod.emunand-prototype", "dev.sd-stack", "proc.backup"]
+status = "verified-offline"
+text = "A reversible emulator prototype (emunand_guard.ko + freestanding FAT32/exFAT emunand_vdisk_ctl.elf + emunand_session.sh) mounts an ext2 CFW_VDISK.IMG zero-copy from raw /dev/mmca1 without a Linux VFS SD mount, sinks user/MPR/WBI/B0/B1 eMMC writes into a 2 MiB RAM CoW table with 0 QMP block writes and Backup_save=0, and restores original prologues, BLKFLSBUF caches and settings on stop in Unicorn and 4-core QEMU."
+evidence = ["E0742"]
+
+[[claim]]
+id = "C09"
+entities = ["mod.emunand-prototype", "dev.sd-stack"]
+status = "verified-offline"
+text = "Extracted Sony flashable partition packages (0700_part_image/dev/nflasha3 vfat, nflasha7/nflasha15 ext2, 0400_updater/dev/nflasha1 vfat + nested ext2/cramfs initrd.img) and Custom-OS ext2 rootfs packages mount simultaneously zero-copy from a 64 MiB exFAT SD card across loop0..loop5 in 4-core QEMU (overmounting /system, executing chroot ARM binaries, and rejecting non-FS WBI1 blobs with rc=6), whereas switching the active kernel/av-cam in DRAM still requires a ramboot/kexec handover."
+evidence = ["E0742"]
 
 [[hazard]]
 id = "H01"

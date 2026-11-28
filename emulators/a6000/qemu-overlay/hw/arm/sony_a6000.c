@@ -175,6 +175,7 @@ struct A6KMachineState {
     char *shell_socket;             /* UART2 server address HOST:PORT */
     char *provision;
     char *nand_file;
+    bool nand_snapshot;             /* guest NAND writes are discarded */
     char *preload;
     char *loader;
     char *fb;
@@ -2317,6 +2318,7 @@ static void a6k_init(MachineState *ms)
     dev = qdev_new("cxd90014-nand");
     if (s->nand_file) {
         qdev_prop_set_string(dev, "file", s->nand_file);
+        qdev_prop_set_bit(dev, "snapshot", s->nand_snapshot);
     }
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0x00020000);
@@ -2713,6 +2715,16 @@ static void a6k_set_nand(Object *o, const char *v, Error **errp)
     A6K_MACHINE(o)->nand_file = g_strdup(v);
 }
 
+static bool a6k_get_nandsnap(Object *o, Error **errp)
+{
+    return A6K_MACHINE(o)->nand_snapshot;
+}
+
+static void a6k_set_nandsnap(Object *o, bool v, Error **errp)
+{
+    A6K_MACHINE(o)->nand_snapshot = v;
+}
+
 static char *a6k_get_prov(Object *o, Error **errp)
 {
     return g_strdup(A6K_MACHINE(o)->provision);
@@ -2757,6 +2769,10 @@ static void a6k_class_init(ObjectClass *oc, const void *data)
                                   a6k_set_preload);
     object_class_property_set_description(oc, "preload",
         "FILE@ADDR[;FILE@ADDR...] raw images placed in RAM at boot");
+    object_class_property_add_bool(oc, "nand-snapshot", a6k_get_nandsnap,
+                                   a6k_set_nandsnap);
+    object_class_property_set_description(oc, "nand-snapshot",
+        "open the nand= file read-only and discard guest writes on exit");
     object_class_property_add_str(oc, "nand", a6k_get_nand, a6k_set_nand);
     object_class_property_set_description(oc, "nand",
         "Raw NAND backing file (created erased if missing)");

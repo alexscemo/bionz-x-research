@@ -1,6 +1,12 @@
 {
   "schema": 1,
   "areas": {
+    "a6000-emulator": {
+      "title": "ILCE-6000 (CXD90014) sony-a6000 emulator",
+      "doc": "docs/map/a6000-emulator.md",
+      "reviewed": "2026-11-28",
+      "evidence_span": "see record index"
+    },
     "a6400a-acquisition": {
       "title": "ILCE-6400A qualification and firmware acquisition",
       "doc": "docs/map/a6400a-acquisition.md",
@@ -99,6 +105,80 @@
     }
   },
   "entities": {
+    "a6000.board": {
+      "area": "a6000-emulator",
+      "name": "QEMU sony-a6000 board",
+      "kind": "tool",
+      "address": null,
+      "aliases": [
+        "sony-a6000",
+        "ILCE-6000",
+        "CXD90014",
+        "emulators/a6000"
+      ],
+      "anchor": "a6000-emulator.md#a6000-board",
+      "active_claims": [
+        "C01"
+      ],
+      "inactive_claims": [
+        "R01"
+      ]
+    },
+    "a6000.synthetic-nand": {
+      "area": "a6000-emulator",
+      "name": "NAND built from the updater alone",
+      "kind": "tool",
+      "address": null,
+      "aliases": [
+        "mknand_synth",
+        "mknand_synth.py",
+        "synthetic NAND"
+      ],
+      "anchor": "a6000-emulator.md#a6000-synthetic-nand",
+      "active_claims": [
+        "C01",
+        "C03"
+      ],
+      "inactive_claims": []
+    },
+    "a6000.psd-bin": {
+      "area": "a6000-emulator",
+      "name": "/setting/psd.bin (phase-detect AF calibration)",
+      "kind": "source",
+      "address": null,
+      "aliases": [
+        "psd.bin",
+        "A_PSD_DATA_WRITE",
+        "A_PSD_DATA_READ",
+        "ZPD",
+        "0x4378947C",
+        "0x000301D7"
+      ],
+      "anchor": "a6000-emulator.md#a6000-psd-bin",
+      "active_claims": [
+        "C02"
+      ],
+      "inactive_claims": []
+    },
+    "a6000.backup-calibration": {
+      "area": "a6000-emulator",
+      "name": "Protected Backup.bin calibration props",
+      "kind": "field",
+      "address": null,
+      "aliases": [
+        "BK_PROTECT_ADJ",
+        "0x00e70031",
+        "0x013e0016",
+        "0x0147",
+        "usb_serial_set",
+        "NsP2PGenerateBackUpCredential"
+      ],
+      "anchor": "a6000-emulator.md#a6000-backup-calibration",
+      "active_claims": [
+        "C03"
+      ],
+      "inactive_claims": []
+    },
     "body.ilce6400a": {
       "area": "a6400a-acquisition",
       "name": "ILCE-6400A firmware 1.01 (reference target)",
@@ -1428,8 +1508,7 @@
         "C16",
         "C21",
         "C22",
-        "C23",
-        "C25"
+        "C23"
       ],
       "inactive_claims": []
     },
@@ -11466,17 +11545,50 @@
     ],
     "README": [
       {
+        "area": "a6000-emulator",
+        "kind": "claim",
+        "id": "R01",
+        "file": "external-a6000-emulator/README.md",
+        "status": "retracted"
+      },
+      {
+        "area": "a6000-emulator",
+        "kind": "claim",
+        "id": "C01",
+        "file": "external-a6000-emulator/README.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "a6000-emulator",
+        "kind": "claim",
+        "id": "C02",
+        "file": "external-a6000-emulator/README.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "a6000-emulator",
+        "kind": "claim",
+        "id": "C03",
+        "file": "external-a6000-emulator/README.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "a6000-emulator",
+        "kind": "frontier",
+        "id": "F01",
+        "file": "external-a6000-emulator/README.md"
+      },
+      {
+        "area": "a6000-emulator",
+        "kind": "hazard",
+        "id": "H01",
+        "file": "external-a6000-emulator/README.md"
+      },
+      {
         "area": "mods",
         "kind": "claim",
         "id": "C07",
         "file": "external-zve10-menu/README.md",
-        "status": "verified-offline"
-      },
-      {
-        "area": "qemu-a6400",
-        "kind": "claim",
-        "id": "C25",
-        "file": "external-a6000-emulator/README.md",
         "status": "verified-offline"
       }
     ],
@@ -13980,7 +14092,7 @@
       "platform-multidevice"
     ],
     "external-a6000-emulator/README.md": [
-      "qemu-a6400"
+      "a6000-emulator"
     ],
     "external-ilce7c-usb-ids/README.md": [
       "platform-multidevice"

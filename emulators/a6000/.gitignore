@@ -4,5 +4,6 @@
 /data/
 /state/
 /dumps/
+/inputs.local.json*
 /provision/a6kcopy
 /provision/*.cpio

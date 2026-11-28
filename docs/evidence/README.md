@@ -19,8 +19,9 @@ snapshot or its recorded test count.
   stock `upm.ko` boundary. No upstream runtime integration or stock-menu boot claim.
 - [ILCE-6000 emulator receipt, 2026-11-27](external-a6000-emulator/README.md):
   `sony-a6000` QEMU machine for the CXD90014 body, ported from voxivoid/a6000-qemu;
-  boot, UI, USB, NFC, Wi-Fi, HDMI and SD compared against the source build. Needs the
-  contributor's own NAND dump; no CXD90045 claim.
+  boot, UI, USB, NFC, Wi-Fi, HDMI and SD compared against the source build. Boots
+  from the contributor's own NAND dump and, since the 2026-11-28 update, from a NAND
+  built from Sony's updater alone; no CXD90045 claim.
 - [ILCE-7C USB IDs receipt, 2026-11-21](external-ilce7c-usb-ids/README.md):
   external contributor (`mavanha`, Issue #60) `pmca` MSC `model_code` (`0032852231`)
   and Windows PnP USB PIDs (`054C:0D29`, `0D2A`, `0D2B`, `0DE6`, `bcdDevice 0x0200`)

@@ -219,11 +219,11 @@ class StatusSnapshot:
 
 STATUS_SNAPSHOT = StatusSnapshot(
     schema_version=1,
-    as_of="2026-11-27",
+    as_of="2026-11-28",
     latest=EvidenceRef(
-        evidence_id="E9202",
-        path="docs/evidence/9202-a6700-qemu-first-boot.md",
-        date="2026-11-27",
+        evidence_id="E9204",
+        path="docs/evidence/9204-ilce-7c-menu-after-liveview-and-focus-bracket.md",
+        date="2026-11-28",
         title="ILCE-6700 Linux 4.9.337 boots on a new sony-a6700 QEMU machine built from the camera device tree",
         demonstrated=(
             "The stock 2.00 kernel runs from EL3 on a QEMU machine with GIC-400, the 2 MHz timer and five PL011 UARTs, "

@@ -4,7 +4,7 @@
 
 - **Scope:** Mod Loader v2 in QEMU and on cameras, command items, nested SMNU submenus, standalone SD auto-boot, the ILCE-6100 Picture Profile unlock and Mod Loader port, mod qualification, candidate 36-exposure film-roll tracking, and the external ZV-E10 adapted menu.
 - **Evidence span:** see record index; last reviewed 2026-11-27.
-- **Deep review:** 0 of 18 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 20 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -40,6 +40,8 @@ Current knowledge:
 - **C10** `OFFLINE` Current camera helpers cannot package or stream 36 ARW exposures unmodified: card_read.c scans only root_cluster, caps archives at 4 MiB / 2,048 clusters and stages to /tmp_bt/mlv2/card.tar, while apps/camera-daemon/src/wifi_stream.c is an MJPEG streamer that drops frames whenever SIOCOUTQ > 16,384 bytes. ([E0681](../evidence/0681-ilce-6400a-standalone-sd-boot-and-exfat-reader.md), [E0689](../evidence/0689-fotufilm-engine-mobile-gpu-film-roll-architecture.md))
 - **C17** `OFFLINE` Rear LCD hardware scan-out on ILCE-6400 / ILCE-6400A (JDI and Innolux 3.0-type 640x480 DotLcd panels, VPH mode 0x06 at 27.0 MHz /20) is fixed at 59.94 Hz NTSC / 50.00 Hz PAL, while Display Quality = High (0x01070C8A = 0) throttles Rear LCD Live-View to 29.97 fps via BK4 0x01071489 = 0x02 despite unchanged 0x0107147D = 0x01 resolution; RearLcd60fps.mod (768 B SMOD v2 RLC1 for ILCE-6400 and ILCE-6400A) overrides 0x01071489 -> 0x01 in RAM via Backup_read (+0x1204) and applies live on ON/OFF, verified in Cortex-A5 Thumb-2 Unicorn at reference and relocated bases. ([E0740](../evidence/0740-rear-lcd-60fps-high-quality-mod.md))
 - **C18** `OFFLINE` OpenGate32.mod (9,788 B) and OpenGateSensor.mod (6,672 B) SMOD v2 + SMNU nested-submenu builds for ILCE-6400 (2.00 captured) and ILCE-6400A (1.01) expose three Sensor Gate tiers -- (0) 5.1K True 4K default keeping unbinned IMX284 Mode 16/17 (5064x3376 17.1 MP @ 24p/25p, stock FE <= 3445) & Mode 15 (4140x2760 11.4 MP @ 30p) supersampled into 3240x2160, (1) 6K Reg01 Full flipping col 11 reg 0x0001 0x41 -> 0x40 + dy=+624 (6000x4000) + S-Ele 0x603F -> 0xBF00 crash guard, and (2) Full-FOV 2K Mode 10 (0x44, 1996x1332 1.00x FOV) -- synchronized across ExlHelper, DMM, VPI, ZIMA DVENC, and libmpr.so (MprLibCore::EncOpen .text immediates + .rodata) with live SMNU reconfiguration and byte-exact OFF restoration, verified in real-firmware Unicorn and full-system sony-a6400 QEMU. ([E0741](../evidence/0741-open-gate-32-mode10-smod-v2.md))
+- **C19** `OFFLINE` Mod Loader v2 was ported to the ILCE-7C (mlv2 --target a7c) and verified in the ILCE-7C QEMU emulator (qemu-a7c) with slot-B lens-reply and 16 MiB hostwin shared-memory transfer (MLV2_RESULT=0 changed=1). ([E9203](../evidence/9203-ilce-7c-qemu-and-mlv2-port.md))
+- **C20** `OFFLINE` In the ILCE-7C QEMU emulator MENU and Fn work after live-view start via the emulator-side A7C_CAKEY_POKE write of CAkey1 into six av-cam copies; av-cam stops fetching sub-micro slot A at live-view start (link word 0x6427E2CC 0x100->0x118) and the real trigger is unknown. ([E9204](../evidence/9204-ilce-7c-menu-after-liveview-and-focus-bracket.md))
 
 ### <a id="mod-a6100-picture-profile"></a>ILCE-6100 Picture Profile unlock
 
@@ -122,7 +124,21 @@ Current knowledge:
 
 Related: [Mod Loader v2](#mod-loader-v2)
 
-## Record index (25 files)
+### <a id="mod-focus-bracket-a7c"></a>FocusBracket.mod (ILCE-7C)
+
+`mod.focus-bracket-a7c` | module
+
+SMOD v2 Mods-tab focus bracketing for the ILCE-7C: Landscape/Macro/Custom presets, step width 1-10, 5-100 shots, libObj step-focus plus S2 shutter events, WriteStillComp save sync; built, not run.
+
+Aliases: `FocusBracket.mod`, `focus bracketing`
+
+Current knowledge:
+
+- **C21** `OPEN` FocusBracket.mod for the ILCE-7C is built (SMNU items, libObj MSGID_SYNC_STEP_FOCUS_CMD 0x9c40 near/far, S2 events, WriteStillComp hook with corrected prologue replay) but has not run in QEMU or on a camera: still capture and the E-mount lens model are not emulated. ([E9204](../evidence/9204-ilce-7c-menu-after-liveview-and-focus-bracket.md))
+
+Related: [Mod Loader v2](#mod-loader-v2)
+
+## Record index (27 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -143,6 +159,8 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E9102](../evidence/9102-a6100-picture-profile-camera-apply.md) | 2026-11-21 | Applying the Picture Profile redirect to a physical ILCE-6100 |  |  |
 | [E9103](../evidence/9103-a6100-mod-loader-port.md) | 2026-11-21 | Porting Mod Loader v2 to the ILCE-6100: first milestone |  |  |
 | [E9104](../evidence/9104-a6100-photonbin-6mp-port.md) | 2026-11-24 | Porting `PhotonBin 6MP` to `ILCE-6100` (FW `1.00`) and Hardware Verification |  |  |
+| [E9203](../evidence/9203-ilce-7c-qemu-and-mlv2-port.md) | 2026-11-26 | Sony ILCE-7C (a7C) QEMU board, hostwin transfers, and Mod Loader v2 port |  |  |
+| [E9204](../evidence/9204-ilce-7c-menu-after-liveview-and-focus-bracket.md) | 2026-11-27 | ILCE-7C QEMU: MENU after live view, S-Ele panel crash, black-LCD cause, and FocusBracket.mod |  |  |
 | [README.md](../evidence/external-zve10-menu/README.md) | 2026-11-21 | External ZV-E10 QEMU adapted-menu receipt |  | \| Input \| UART commands injected native function events. Vertical wire labels required correction; after-draw state was awaited after consumption. This is not physical button/ADC/FRONT emulation. \| / This comparison does not supersede the upstream a6400 results in |
 | [acceptance-receipt.json](../evidence/external-zve10-menu/acceptance-receipt.json) |  | attachment |  |  |
 | [english-menu-page2.png](../evidence/external-zve10-menu/english-menu-page2.png) |  | attachment |  |  |

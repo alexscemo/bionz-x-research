@@ -1164,7 +1164,9 @@
         "C09",
         "C10",
         "C17",
-        "C18"
+        "C18",
+        "C19",
+        "C20"
       ],
       "inactive_claims": []
     },
@@ -1258,6 +1260,21 @@
       "anchor": "mods.md#mod-open-gate-32",
       "active_claims": [
         "C18"
+      ],
+      "inactive_claims": []
+    },
+    "mod.focus-bracket-a7c": {
+      "area": "mods",
+      "name": "FocusBracket.mod (ILCE-7C)",
+      "kind": "module",
+      "address": null,
+      "aliases": [
+        "FocusBracket.mod",
+        "focus bracketing"
+      ],
+      "anchor": "mods.md#mod-focus-bracket-a7c",
+      "active_claims": [
+        "C21"
       ],
       "inactive_claims": []
     },
@@ -11464,6 +11481,31 @@
         "status": "verified-offline"
       }
     ],
+    "E9203": [
+      {
+        "area": "mods",
+        "kind": "claim",
+        "id": "C19",
+        "file": "9203-ilce-7c-qemu-and-mlv2-port.md",
+        "status": "verified-offline"
+      }
+    ],
+    "E9204": [
+      {
+        "area": "mods",
+        "kind": "claim",
+        "id": "C20",
+        "file": "9204-ilce-7c-menu-after-liveview-and-focus-bracket.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "mods",
+        "kind": "claim",
+        "id": "C21",
+        "file": "9204-ilce-7c-menu-after-liveview-and-focus-bracket.md",
+        "status": "open"
+      }
+    ],
     "README": [
       {
         "area": "mods",
@@ -13936,6 +13978,12 @@
     ],
     "9202-a6700-qemu-first-boot.md": [
       "firmware-dumps"
+    ],
+    "9203-ilce-7c-qemu-and-mlv2-port.md": [
+      "mods"
+    ],
+    "9204-ilce-7c-menu-after-liveview-and-focus-bracket.md": [
+      "mods"
     ],
     "cross_model/a6400-scalarwebapi-2026-11-20-transcript.jsonl": [
       "wifi-and-remote"

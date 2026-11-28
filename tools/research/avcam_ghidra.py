@@ -55,7 +55,7 @@ def _db(out_dir: Path) -> sqlite3.Connection:
 
 def _wsl_path(path: Path) -> str:
     resolved = Path(path).resolve()
-    if sys.platform.startswith("linux"):
+    if os.name != "nt":
         return resolved.as_posix()
     drive = resolved.drive
     if len(drive) != 2:

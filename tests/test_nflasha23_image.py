@@ -13,6 +13,7 @@ class Nflasha23Tests(unittest.TestCase):
         f = tempfile.NamedTemporaryFile(delete=False)
         f.write(bytes(range(256)) * 8192)  # 2 MiB
         f.close()
+        self.addCleanup(Path(f.name).unlink, missing_ok=True)
         return f.name
 
     def test_synthetic_takes_its_own_size_and_nflasha4_default_is_unchanged(self):

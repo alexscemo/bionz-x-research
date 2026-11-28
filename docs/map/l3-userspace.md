@@ -4,7 +4,7 @@
 
 - **Scope:** Original Sony user-space processes (interpreter, linker, libc/NPTL, UIPC/OSAL, DMM, timers, GRM, GLES/Sugilite) executed under InterpreterProbe with explicit guest contracts.
 - **Evidence span:** see record index; last reviewed 2026-11-26.
-- **Deep review:** 22 of 81 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 22 of 82 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -282,7 +282,7 @@ Current knowledge:
 - **C13** `OFFLINE` Appframework CreateFramebuffer(640,480) is a GRM-MA open for DMM unit 0x4092e; captured unit 0x4092e is OSD A/B and an opt-in mapping opens the authentic 640x480 surface. The post-CreateFramebuffer wait is a fixed 20 ms sleep-poll, not a render loop. ([E9001](../evidence/9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md), [E9002](../evidence/9002-grm-pool-policy-reconcile-and-glcommon-createframebuffer.md), [E9004](../evidence/9004-glcommon-wait-is-20ms-sleep-not-render.md), [E9006](../evidence/9006-captured-dmm-unit-4092e-authentic-osd-surface.md))
 - **C27** `OFFLINE` After CreateFramebuffer the labelled single-pool run idles on a timer wait instead of reaching OSD. ([E9003](../evidence/9003-glcommon-post-createframebuffer-timer-wait.md))
 
-## Record index (81 files)
+## Record index (82 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -369,3 +369,4 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E9004](../evidence/9004-glcommon-wait-is-20ms-sleep-not-render.md) | 2026-11-21 | The post-CreateFramebuffer wait is a 20 ms sleep-poll, not a render loop |  |  |
 | [E9005](../evidence/9005-rea-provider-limit-and-20ms-sites.md) | 2026-11-21 | REA deep analysis is unavailable for the ARM libObj on this host; the 20 ms constant has six libObj sites |  |  |
 | [E9006](../evidence/9006-captured-dmm-unit-4092e-authentic-osd-surface.md) | 2026-11-21 | Captured DMM unit 0x4092e is OSD A/B; an opt-in mapping opens the authentic 640x480 surface |  |  |
+| [2026-11-21-l3-osd-progress.md](../evidence/notes/2026-11-21-l3-osd-progress.md) | 2026-11-21 | L3 progress report - 2026-11-21 |  |  |

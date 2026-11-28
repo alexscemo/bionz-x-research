@@ -108,6 +108,14 @@ tools/native_camera/zve10_uvc_tree.h
 
 # Per-run scratch directories and files that host tools create in the repository root
 # (random tmp<8-char> names). Test-owned fixtures belong under artifacts/tests/.
+# Python's tempfile falls back to the current directory when the system temp directory
+# is not writable (for example inside a sandbox), so these land here too.
 /tmp*
+/pip-*/
+/probe-report-*/
+/look-lab-smod-*/
+/a.out
+/build/
+/target/
 
 /emulators/qemu-a6400/zve10-menu.inputs.local.json

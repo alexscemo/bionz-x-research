@@ -10,6 +10,9 @@ Thirteen official updaters, nine kernels, command tables, IPC and call graphs, u
 evidence_span = "see record index"
 reviewed = "2026-11-22"
 records = [
+  "notes/README.md",
+  "notes/a6100-picture-profiles.md",
+  "notes/ilce6400-fw200-8257-macos-patch-notes.md",
   "E0110",
   "E0477-E0490",
   "E0570",

@@ -117,7 +117,7 @@ flowchart LR
 
 ## Status (2026-11-22)
 
-Phases 1–3 implemented and verified offline; evidence in [E0682](evidence/0682-still-jpeg-film-look-domain-and-recipe-recalibration.md).
+Phases 1–3 implemented and verified offline; evidence in [E0682](../evidence/0682-still-jpeg-film-look-domain-and-recipe-recalibration.md).
 
 - **Phase 1:** `still_jpeg_params_from_compiled`/`apply_still_jpeg_look` (cam `base_matrix`, relative Q10 matrix with 1024 row sums, relative FC composed onto `STILL_STANDARD_FC`, EC bypassed) is used by `bionz-app` side A and by `bionz-cli render --gamma-path still-jpeg`. Gold 200 on `_DSC1738`: legacy 17.09/33.31 → **8.26/21.57** ΔE2000 (stock side 7.41/20.23). `preset-eval` added, plus `render --gamma-path`/`--iso-model`/`--dcv-gain`.
 - **Phase 2:** C¹ Hermite tone curve, row-stochastic look matrix with a luma-tapered `warmth` tint, and the recalibrated seven recipes (Python and Rust bit-matched; Python golden fixtures regenerated).

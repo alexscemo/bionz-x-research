@@ -6,7 +6,7 @@ This document tracks progress through all 5 emulation phases from bare kernel bo
 
 | Phase | Name | Status | Key Evidence / Boundary |
 | --- | --- | --- | --- |
-| **Phase 1** | Updater kernel (`nflasha1`) + interactive `/bin/ash` shell | **DONE** | [E0510](evidence/0510-nflasha1-busybox-ash-ttyam0-shell.md) (`BusyBox v1.13.4` `/ # ` on `ttyAM0`, `uname -a`, `ls -la /`, `cpu_v7_do_idle+0x8`, CI `PASS`) |
+| **Phase 1** | Updater kernel (`nflasha1`) + interactive `/bin/ash` shell | **DONE** | [E0510](../evidence/0510-nflasha1-busybox-ash-ttyam0-shell.md) (`BusyBox v1.13.4` `/ # ` on `ttyAM0`, `uname -a`, `ls -la /`, `cpu_v7_do_idle+0x8`, CI `PASS`) |
 | **Phase 2** | Main kernel (`nflasha3` `vmlinux.bin` + `initrd.img`) and early `init` | **IN PROGRESS** | Loading the main kernel, hook/`kallsyms` addresses, `ATAGS`/cmdline, and reaching the main `initrd` userspace (`/linuxrc` / `ash`) |
 | **Phase 3** | Main RootFS (`nflasha7` / `nflasha15`), `rcS`, `.ko` modules, and `/dev/*` | **PENDING** | Mounting main rootfs (`/`, `/usr`, `/setting`, `/var`), `mcmn_drv` / `grm_gles` / `dmpgles2` contracts, and `/dev/*` nodes |
 | **Phase 4** | `Appframework` / `im.elf` (`libObj.so`, `gui.so`) inside the OS | **PENDING** | Starting original userspace processes/threads (`THREAD_APP`, `gui.so`, `viewUnified2`), IPC, and `ioctl` without host spoofing |

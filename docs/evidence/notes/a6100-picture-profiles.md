@@ -4,7 +4,7 @@
 time via model data. The smallest honest unlock is the documented 2-byte menu-node
 redirect, now implemented as an opt-in emulator overlay and verified byte-for-byte
 against the existing validated patch.** Details:
-[E9101](evidence/9101-a6100-picture-profile-gate.md).
+[E9101](../9101-a6100-picture-profile-gate.md).
 
 ## The gate
 

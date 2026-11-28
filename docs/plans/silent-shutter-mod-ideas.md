@@ -35,7 +35,7 @@ When `[Silent Shooting]` is set to `[On]` in the stock firmware, the following f
 
 ## 2. Firmware Root Cause (`libObj.so` Exclusion Control)
 
-Static analysis of the captured `ILCE-6400` (`2.00` layout) `/usr/lib/libObj.so` (reference base `0x05d18000` in [reference_layout_ilce6400.txt](../tools/native_camera/mlv2/reference_layout_ilce6400.txt)) establishes that feature mutual-exclusion rules are evaluated centrally by `ExcMgr`:
+Static analysis of the captured `ILCE-6400` (`2.00` layout) `/usr/lib/libObj.so` (reference base `0x05d18000` in [reference_layout_ilce6400.txt](../../tools/native_camera/mlv2/reference_layout_ilce6400.txt)) establishes that feature mutual-exclusion rules are evaluated centrally by `ExcMgr`:
 
 - **Master exclusion evaluator:** `libObj.so + 0x00c708a0` (reference VA `0x069888a0`, vtable entry `0x00c708a1` at `0x1368db8`).
   - Signature: `uint32_t CheckExclusion(void *self, uint32_t src_param, uint32_t src_val, uint32_t dst_param, uint32_t dst_val, uint32_t *out_buf)`
@@ -63,7 +63,7 @@ Bypassing `libObj.so` `ExcMgr` alone keeps the active settings working when enab
 ### Tier 1 — Implemented & Hardware-Verified (`SilentShutterUnlock.mod`)
 - **Scope:** Bypass `ExcMgr` mutual-exclusion checks between Silent Shutter (`0x9983`, `0xa013`) and **Picture Profile**, **Picture Effect**, **Auto HDR / DRO**, **Multi Frame NR**, and **Exposure / Shoot Mode (`0x95c8`, `0x95bd`, `0x963f`, `0x9813`, `0x9b7f`, `0xc00d`, `0xc0f1`)**, plus reversibly clear the `425` verified `DefInh::sm_refTbl` grey-out bits (restored byte-for-byte on `OFF`).
 - **Feasibility:** **Verified.** All five are post-readout ISP/UI software gates in `libObj.so` / `libSysDef.so` / `viewUnified2.so`; `av-cam.bin` accepts Silent Shooting with these modes active.
-- **Implementation:** [mods/silent_shutter_unlock/](../mods/silent_shutter_unlock/README.md) (RAM-only `SMOD v2`, relocatable via `RLC1`, SHA-256 `951e7417197bcd609fdd7515e1eb8fb14e23f5d5919c4e974d150be8bc540d0e`).
+- **Implementation:** [mods/silent_shutter_unlock/](../../mods/silent_shutter_unlock/README.md) (RAM-only `SMOD v2`, relocatable via `RLC1`, SHA-256 `951e7417197bcd609fdd7515e1eb8fb14e23f5d5919c4e974d150be8bc540d0e`).
 - **Physical hardware verification (`ILCE-6400` `2.00` captured layout, RAM-only):** Verified live via Mod Loader v2 — Picture Profile (+ sub-items, main menu & C1), Picture Effect, Auto HDR / DRO, and Multi Frame NR are all un-greyed and controllable while Silent Shooting is ON, and Silent Shooting can be enabled and shot in Auto mode.
 
 ### Tier 2 — Candidate: Faster Electronic Shutter Speeds (> 1/4000 s)
@@ -72,7 +72,7 @@ Bypassing `libObj.so` `ExcMgr` alone keeps the active settings working when enab
 
 ### Tier 3 — Candidates: Deep Sensor / Sequencer Mods
 1. **14-bit Single-Shot RAW in Silent Mode**
-   - **Feasibility:** **Low–Moderate.** Sony selects a 12-bit `IMX284` readout mode for Silent Shooting to reduce rolling shutter. Unlocking 14-bit requires switching the silent-capture `reglist` / FE / `CAMOUT` configuration in `av-cam.bin` to the 14-bit readout mode while preserving `Lost CAMOUT_V` / `S-Ele Refresh` frame-commit consistency (see [imaging-pipeline.md](map/imaging-pipeline.md)). Trade-off: slower sensor readout (more rolling shutter).
+   - **Feasibility:** **Low–Moderate.** Sony selects a 12-bit `IMX284` readout mode for Silent Shooting to reduce rolling shutter. Unlocking 14-bit requires switching the silent-capture `reglist` / FE / `CAMOUT` configuration in `av-cam.bin` to the 14-bit readout mode while preserving `Lost CAMOUT_V` / `S-Ele Refresh` frame-commit consistency (see [imaging-pipeline.md](../map/imaging-pipeline.md)). Trade-off: slower sensor readout (more rolling shutter).
 2. **Silent BULB Mode**
    - **Feasibility:** **Low–Moderate.** Requires removing the BULB exclusion and ensuring `av-cam.bin` sequencer holds electronic integration open without triggering `S-Ele Refresh` frame watchdog timeouts.
 3. **Silent Flash Sync Unlock**

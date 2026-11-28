@@ -1,5 +1,14 @@
 # PhotonBin 6MP (`PhotonBin6MP.mod`)
 
+| | |
+| :--- | :--- |
+| **Status** | **Verified on camera:** `ILCE-6100` 1.00 ([E9104](../../docs/evidence/9104-a6100-photonbin-6mp-port.md)). **Emulator only:** `ILCE-6400A` 1.01 ([E0680](../../docs/evidence/0680-photonbin-6mp-and-mlv2-nested-submenus.md)) |
+| **Tested on** | `ILCE-6100` 1.00 |
+| **Known issues** | See [E9104](../../docs/evidence/9104-a6100-photonbin-6mp-port.md) |
+| **Not tested yet** | `ILCE-6400A` on a camera; `ILCE-6400` 2.00 has no build |
+| **How to revert** | Turn it OFF in `MENU → Mods`, or power off (RAM-only, including the `av-cam.bin` readout overrides) |
+| **What to send back** | A 6 MP `.ARW` with its stock-mode pair at the same ISO, via a [physical test report](../../.github/ISSUE_TEMPLATE/physical-test-report.yml) |
+
 Relocatable **`SMOD v2`** low-light photography mod for **Sony `ILCE-6400A` (FW `1.01`)** and **Sony `ILCE-6100` (FW `1.00`)** combining:
 
 1. **Option 1 — Pre-Demosaic `4×4 → 2×2` Bayer & `2×2` Monochrome Photon Convergence into `.ARW` (`ImageBuilder::MakeRawInfoArea` hook in `libObj.so`):**

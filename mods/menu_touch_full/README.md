@@ -1,5 +1,14 @@
 # Full-Menu Touch Mod (`MTF2`)
 
+| | |
+| :--- | :--- |
+| **Status** | **Verified on camera:** `ILCE-6400` 2.00 ([E0520](../../docs/evidence/0520-mtf2-full-menu-touch-verified-on-a6400.md), loader build [E0522](../../docs/evidence/0522-mods-tab-icon-and-uxd-image-container.md)); `ZV-E10` by direct RAM injection ([guide](../../tools/native_camera/zve10/README.md)). **Emulator only:** `ILCE-6400A` 1.01 ([`mods/ilce_6400a/`](../ilce_6400a/README.md)) |
+| **Tested on** | `ILCE-6400` 2.00, Mod Loader build v3 (2026-11-15); `ZV-E10` (direct RAM) |
+| **Known issues** | Mod Loader is untested on `ZV-E10`; there the mod is injected directly |
+| **Not tested yet** | `ILCE-6400A` and `ILCE-6100` on a camera |
+| **How to revert** | Turn it OFF in `MENU → Mods`, or power off (RAM-only) |
+| **What to send back** | Which menu screens and gestures worked or failed, via a [physical test report](../../.github/ISSUE_TEMPLATE/physical-test-report.yml) |
+
 RAM-only dual-hook touch mod for Sony `ILCE-6400` (`im.elf`). Original standalone version: [E0520](../../docs/evidence/0520-mtf2-full-menu-touch-verified-on-a6400.md).
 Loader installation and combined physical test: [E0522](../../docs/evidence/0522-mods-tab-icon-and-uxd-image-container.md#13-default-artwork-in-the-mod-loader-and-menutouchfull-coexistence).
 

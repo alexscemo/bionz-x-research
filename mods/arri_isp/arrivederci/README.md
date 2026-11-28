@@ -1,5 +1,14 @@
 # Arrivederci — ARRI Classic look mod
 
+| | |
+| :--- | :--- |
+| **Status** | **Verified on camera:** `ILCE-6400` 2.00, Mod Loader v2 ([E0555](../../../docs/evidence/0555-arrivederci-menu-exit-recompute-and-cc8-refill.md), [E0556](../../../docs/evidence/0556-arrivederci-classic-fitted-matrix.md)). **Emulator only:** `ILCE-6400A` 1.01 ([`mods/ilce_6400a/`](../../ilce_6400a/README.md)) |
+| **Tested on** | `ILCE-6400` 2.00, 2026-11-16 and 2026-11-17 |
+| **Known issues** | The color matrix is saved by Sony's backup at power-off and survives a battery pull (see [persistence](#color-matrix-persistence-reversible-by-design)) |
+| **Not tested yet** | `ILCE-6400A` and `ILCE-6100` on a camera |
+| **How to revert** | Turn it **OFF before power-off**. If it was ON at power-off: ON, OFF, a Color Mode round trip, then a normal power-off (verified 2026-11-16) |
+| **What to send back** | The `color=` line ON/OFF reports and a still or clip pair, via a [physical test report](../../../.github/ISSUE_TEMPLATE/physical-test-report.yml) |
+
 **Status: usable as part of modset v2 (2026-11-17; Mod Loader v2, fitted Classic matrix, E0556).** Earlier status: functional (verified on the camera, 2026-11-16). With PP Gamma S-Log3 and Color
 Mode S-Gamut3.Cine:
 

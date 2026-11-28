@@ -1,116 +1,120 @@
 # Sony BIONZ X Mods & Camera Emulator
 
-An open-source toolkit for Sony **BIONZ X** cameras (such as the **a6400**, **a6400A**, **a6100**, and **ZV-E10**) that lets you:
+Reversible mods for Sony **BIONZ X** cameras (a6400, a6400A, a6100, ZV-E10), and emulators
+that boot the real camera firmware on a PC. Every claim below links to a dated evidence record.
 
-1. **Install safe, reversible camera mods** — full touchscreen menus, cinema film looks, 6 MP low-light RAW capture, and background Wi-Fi photo transfer, without writing to internal camera flash.
-2. **Run Sony camera software on your PC** — boot real camera firmware in our **QEMU** and **Unicorn** emulators to test mods and research hardware without even owning a camera.
-
-> **Upstream attribution:** Built upon [ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research), retaining original upstream research, code, and contributor credits.
-
-**[1-Click Windows Mod Manager](docs/MOD_MANAGER_GUI.md)** · **[Camera Mods](mods/README.md)** · **[QEMU Emulator](emulators/qemu-a6400/README.md)** · **[Add a Camera](docs/ADDING_A_BIONZX_CAMERA.md)** · **[UVC / PTP Liveview](docs/CONTRIBUTING_UVC_PTP.md)** · **[Full Technical Docs](docs/INDEX.md)**
+**[Install mods](#install-in-5-minutes)** · **[What works](#what-works-today)** · **[Is it safe?](#is-it-safe-how-do-i-undo-it)** · **[Help us test](#help-us-test)** · **[Developers](docs/DEVELOPERS.md)** · **[All docs](docs/INDEX.md)**
 
 ---
 
-## For Camera Owners — Install Mods in 5 Minutes (No Coding Needed)
+## What works today
 
-If you just want to add mods to your Sony **`ILCE-6400`** (or **`ILCE-6400A` / `ILCE-6100`**), use the graphical **BIONZ X Mod Manager** on Windows:
-
-1. **Install Python (one time):** Download [Python 3.11+](https://www.python.org/downloads/) and check **"Add python.exe to PATH"** during setup (or open a prebuilt `BionzX-Mod-Manager.exe` release if you have one).
-2. **Launch the app:** Double-click [`scripts/launch_mod_manager.bat`](scripts/launch_mod_manager.bat) (macOS/Linux: run [`scripts/launch_mod_manager.sh`](scripts/launch_mod_manager.sh)). Wait a few seconds for the **BIONZ X Mod Manager** window to open.
-3. **Download the mod pack:** If prompted at the top, click **Download Official Release** (or **Tools & Setup → Download / Prepare Tools**).
-4. **Plug in your camera:** On the camera, set `MENU → Setup → USB Connection` to **Mass Storage**, connect via USB, and click **Scan Camera**.
-5. **Choose mods & click Install:** Switch the mods you want **ON**, click **1-Click Install to Camera**, and follow the prompt. Unplug the cable and open `MENU → Mods` on your camera!
-
-> [!NOTE]
-> **Safe & reversible:** Runtime mods run in temporary camera memory (**RAM**) only — they make **zero writes** to internal firmware flash. Turning the camera off restores completely stock Sony software. *(Important: always toggle **Arrivederci** OFF in `MENU → Mods` before powering off.)*
-
-### Available Mods
+Status labels ([definitions](docs/STATUS_LABELS.md)): **Verified on camera** · **Emulator only** (Unicorn/QEMU) · **Not run on a camera yet**.
 
 | Mod | What it does | Status |
 | :--- | :--- | :--- |
-| **[MenuTouchFull](mods/menu_touch_full/README.md)** | Lets you tap tabs, swipe pages, and use dropdowns across the Sony menu with the touchscreen | Hardware-verified on `ILCE-6400` ([E0520](docs/evidence/0520-mtf2-full-menu-touch-verified-on-a6400.md)) and `ZV-E10` ([ZV-E10 guide](tools/native_camera/zve10/README.md)) |
-| **[Arrivederci](mods/arri_isp/arrivederci/README.md)** | Adds an ARRI LogC3 Classic cinema tone curve and color look right in-camera | Usable on `ILCE-6400` / `ILCE-6400A` ([E0556](docs/evidence/0556-arrivederci-classic-fitted-matrix.md)); turn OFF before power-off |
-| **[SilentShutterUnlock](mods/silent_shutter_unlock/README.md)** | Unlocks Picture Profile (+ sub-items), Picture Effect, Auto HDR/DRO, Multi Frame NR, and Auto/SCN modes while **Silent Shooting** is active (`libObj.so` `ExcMgr` hook + reversible `libSysDef.so` `DefInh::sm_refTbl` patch; Flash/BULB/LENR remain stock) | **Hardware-verified on physical `ILCE-6400` (`2.00` captured layout, RAM-only)** + Unicorn verified (`16` unlocked / `5` stock-preserved, `425` `DefInh` bits cleared & restored on `OFF`) |
-| **Film Simulations & Studio** | Custom Picture Profile film looks and live preview picker | Look pipeline fitted offline ([E0682](docs/evidence/0682-still-jpeg-film-look-domain-and-recipe-recalibration.md), [E0683](docs/evidence/0683-arri-shoulder-and-fujifilm-simulations.md), [E0687](docs/evidence/0687-photo-movie-fixes.md)); no physical film-simulation application recorded |
-| **PhotonBin 6MP** | 6 MP low-light 16-bit `.ARW` capture with high-conversion-gain mode | Hardware-verified on `ILCE-6100` ([E9104](docs/evidence/9104-a6100-photonbin-6mp-port.md)); QEMU-verified on `ILCE-6400A` ([E0680](docs/evidence/0680-photonbin-6mp-and-mlv2-nested-submenus.md)) |
-| **[WiFiSync](mods/wifisync/README.md)** | Sends `.JPG` and `.ARW` photos in the background over 5 GHz Wi-Fi (`:8765`) | Faster than stock image transfer, but still slow to our liking |
-| **ModsTabLook & Open Gate 3:2** | Custom `MODS` tab icon and experimental 3:2 full-sensor recording research | Details & installation steps in [mods/README.md](mods/README.md) |
+| [MenuTouchFull](mods/menu_touch_full/README.md) | Tap tabs, swipe pages and use dropdowns in Sony's menu with the touchscreen | **Verified on camera:** `ILCE-6400` ([E0520](docs/evidence/0520-mtf2-full-menu-touch-verified-on-a6400.md)), `ZV-E10` by direct RAM injection ([guide](tools/native_camera/zve10/README.md)) |
+| [SilentShutterUnlock](mods/silent_shutter_unlock/README.md) | Picture Profile, Picture Effect, Auto HDR/DRO, Multi Frame NR and Auto/SCN while **Silent Shooting** is on | **Verified on camera:** `ILCE-6400` 2.00, RAM-only |
+| [Arrivederci](mods/arri_isp/arrivederci/README.md) | ARRI LogC3 Classic tone curve and fitted color matrix for PP S-Log3 / S-Gamut3.Cine | **Verified on camera:** `ILCE-6400` RAM stage ([E0556](docs/evidence/0556-arrivederci-classic-fitted-matrix.md)). **Turn it OFF before power-off** (see below) |
+| PhotonBin 6MP | 6 MP low-light 16-bit `.ARW` with high conversion gain | **Verified on camera:** `ILCE-6100` ([E9104](docs/evidence/9104-a6100-photonbin-6mp-port.md)); **Emulator only** on `ILCE-6400A` ([E0680](docs/evidence/0680-photonbin-6mp-and-mlv2-nested-submenus.md)) |
+| [Rear LCD 60 fps](docs/evidence/0740-rear-lcd-60fps-high-quality-mod.md) | 59.94 fps live view on the rear LCD with Display Quality High | **Emulator only** ([E0740](docs/evidence/0740-rear-lcd-60fps-high-quality-mod.md)) |
+| [WiFiSync](mods/wifisync/README.md) | Background `.JPG`/`.ARW` transfer over 5 GHz Wi-Fi | **Not run on a camera yet:** camera half verified offline ([E0698](docs/evidence/0698-wifisync-camera-side-mod.md)); the 5 GHz AP gate is open |
+| Film Simulations | Picture Profile film looks built in [BIONZ Look Lab](docs/BIONZ_LOOK_LAB.md) | **Not run on a camera yet:** looks fitted offline ([E0682](docs/evidence/0682-still-jpeg-film-look-domain-and-recipe-recalibration.md)) |
+| [Open Gate 3:2](mods/open_gate/README.md) | Full-sensor 3:2 movie recording | **Emulator only:** Unicorn + QEMU ([E0741](docs/evidence/0741-open-gate-32-mode10-smod-v2.md)). Live RAM tests on `ILCE-6400` restore cleanly but no 3:2 clip is recorded yet ([E0752](docs/evidence/0752-a6400-open-gate-a12-to-a19-dual-pipe-live.md)) |
+
+More mods, formats and per-build notes: [mods/README.md](mods/README.md).
+
+### Cameras
+
+| Camera | Level |
+| :--- | :--- |
+| `ILCE-6400` | Mods verified on camera; full QEMU + Unicorn emulation |
+| `ILCE-6400A` | Mods and SD auto-boot verified in QEMU ([`mods/ilce_6400a/`](mods/ilce_6400a/README.md)) |
+| `ILCE-6100` | PhotonBin 6MP and Mod Loader v2 SD boot verified on camera |
+| `ZV-E10` | Touch menu by direct RAM injection verified on camera; Mod Loader untested |
+| `ILCE-6600` · `ILCE-7C` · `ILCE-7M3` · `ILCE-7RM4A` | Reference profiles: symbols and USB IDs mapped offline, waiting for testers |
+| `ILCE-6700` (BIONZ XR) | Research only: its kernel boots on a new QEMU machine ([E9202](docs/evidence/9202-a6700-qemu-first-boot.md)) |
+
+Another Sony body? See [Adding a BIONZ X camera](docs/ADDING_A_BIONZX_CAMERA.md).
 
 ---
 
-## Supported Cameras
+## Install in 5 minutes
 
-All listed cameras share Sony's **BIONZ X (`CXD90045`)** processor ([platform overview](docs/PLATFORM_MODEL.md)). Want to add another Sony model? See **[Adding a BIONZ X Camera](docs/ADDING_A_BIONZX_CAMERA.md)**.
+Windows, `ILCE-6400` / `ILCE-6400A` / `ILCE-6100`, no coding:
 
-| Camera | Support Level | What works today |
-| :--- | :--- | :--- |
-| **`ILCE-6400`** | **Verified (Hardware + Emulator)** | Full QEMU & Unicorn emulation, Mod Loader v2, MenuTouchFull, Arrivederci, Film Sims |
-| **`ILCE-6400A`** | **Verified (QEMU + SD Auto-Boot)** | 4-core QEMU stock UI boot, Mod Loader v2 + 10 `.mod` packages, FAT32/exFAT SD auto-boot ([`mods/ilce_6400a/`](mods/ilce_6400a/README.md)) |
-| **`ILCE-6100`** | **Verified (Hardware Mods)** | PhotonBin 6MP and MLV2 SD-boot/SMNU ([E9104](docs/evidence/9104-a6100-photonbin-6mp-port.md)); Picture Profile unlock is QEMU-only ([E9101](docs/evidence/9101-a6100-picture-profile-gate.md)); the emulator Mod Loader port is offline ([E9103](docs/evidence/9103-a6100-mod-loader-port.md)) |
-| **`ILCE-6700`** | **Research only (partition capture)** | BIONZ XR (`CXD90057`): ten partitions absent from the 2.00 update were read from the running camera ([E9201](docs/evidence/9201-a6700-camera-partition-capture-via-jiritsu.md)); its kernel boots on a new QEMU machine up to the first unmodelled driver ([E9202](docs/evidence/9202-a6700-qemu-first-boot.md)); no UI or debugger yet |
-| **`ZV-E10`** | **Verified (RAM Touch Mod)** | Full Main Menu + 12-tile Fn touch on physical hardware via direct RAM injection ([ZV-E10 guide](tools/native_camera/zve10/README.md)) |
-| **`ILCE-6600` · `ILCE-7C` · `ILCE-7M3` · `ILCE-7RM4A`** | **Reference Profiles** | Firmware symbols & USB IDs mapped offline; ready for contributors to verify mods |
+1. Install [Python 3.11+](https://www.python.org/downloads/) with **"Add python.exe to PATH"** (or use a `BionzX-Mod-Manager.exe` release).
+2. Double-click [`scripts/launch_mod_manager.bat`](scripts/launch_mod_manager.bat) (macOS/Linux: [`scripts/launch_mod_manager.sh`](scripts/launch_mod_manager.sh)).
+3. Click **Download Official Release** when asked.
+4. On the camera: `MENU → Setup → USB Connection` → **Mass Storage**. Connect USB and click **Scan Camera**.
+5. Switch the mods you want **ON**, click **1-Click Install to Camera**, unplug, and open `MENU → Mods`.
+
+Full guide: [Mod Manager](docs/MOD_MANAGER_GUI.md).
 
 ---
 
-## For Developers — Run the Camera on Your PC
+## Is it safe? How do I undo it?
 
-Roughly 90% of development happens completely offline in Python and C using two complementary emulators:
+- **Nothing is flashed.** Mods live in camera RAM through Mod Loader v2. Internal firmware partitions are never written.
+- **Power-off normally returns the camera to stock.** One exception: Sony saves some settings to its own backup at power-off. **Arrivederci's color matrix is one of them**, so turn Arrivederci **OFF** in `MENU → Mods` before you switch the camera off. A battery pull does not undo it. If you forget, follow the [verified recovery](mods/arri_isp/arrivederci/README.md#color-matrix-persistence-reversible-by-design): ON, OFF, a Color Mode round trip, then a normal power-off.
+- **Each camera and firmware build gets its own loader and mods.** Never copy `.mod` files between bodies.
+- **Read-only first.** Diagnostic tools read; anything that writes says so and asks first. Bulk `/dev/mem` scans that can reboot a camera are banned ([AGENTS.MD](AGENTS.MD)).
 
-- **QEMU (`emulators/qemu-a6400/`) — Full Virtual Camera:** Boots all 4 CPU cores, eMMC partitions, 40 Linux kernel modules, `av-cam.bin`, and the real camera menu (`im.elf`) across all 8 modeled `CXD90045` bodies (`sony-a6400`, `sony-a6400a`, `sony-zve10`, `sony-a6100`, `sony-a6600`, `sony-a7c`, `sony-a7m3`, `sony-a7rm4a`) with a live browser rear screen (`rear_panel.py`), clickable virtual touchscreen (`MenuTouchFull` taps & swipes), opt-in `BCM4339` Wi-Fi/Bluetooth, HDMI/CEC output, `AudioIp` DMA I/O, E-mount lens motors, and instant mod hot-reload ([E0700](docs/evidence/0700-qemu-touchscreen-peripherals-and-multimodel.md)). See [`emulators/qemu-a6400/README.md`](emulators/qemu-a6400/README.md) and [`emulators/qemu-a6400/MOD_DEVELOPMENT.md`](emulators/qemu-a6400/MOD_DEVELOPMENT.md).
-- **Unicorn (`src/a6400/`) — Fast ARM Engine:** Runs isolated kernel (`L2`) and app (`L3`) slices in Python to verify mods, memory safety, and OS contracts automatically in CI without booting a full machine.
+---
 
-### What Does Not Work in the Emulator Yet
-- **Real sensor & SD photo/video capture:** QEMU renders a synthetic test pattern and models E-mount `BL` focus/iris/zoom/OSS actuator positions without optical defocus or saved RAW/AVCHD/JPEG files ([QEMU status](emulators/qemu-a6400/STATUS.md)).
-- **Live USB webcam (UVC) stream:** EP0 control enumeration works, while real USB video streaming endpoints remain unfinished ([CONTRIBUTING_UVC_PTP.md](docs/CONTRIBUTING_UVC_PTP.md)).
-- **Over-the-air RF & BLE links:** `BCM4339` emulates SDIO enumeration, Silicon Backplane/TCM upload, `BCDC` control `ioctl`s, and Bluetooth H4 HCI + `.hcd` firmware loading, not live 802.11 WPA2/TCP traffic or BLE peer connections ([E0700](docs/evidence/0700-qemu-touchscreen-peripherals-and-multimodel.md)).
+## Help us test
 
-### Quick Start & Repository Map
+Most rows above say **Not run on a camera yet** because nobody has run them on that body.
+If you have the camera:
 
-Requires Python 3.11+ (tested up to 3.15.2; toolchain details in [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md)). Camera dumps and private artifacts stay local and are excluded from Git.
+1. Run the mod or kit as its README says.
+2. Open a **[Physical test report](.github/ISSUE_TEMPLATE/physical-test-report.yml)** issue: camera, firmware version, kit commit, what each step printed, what the screen showed, and the log zip.
+3. A failed run is as useful as a working one. Say exactly what happened.
+
+---
+
+## For developers
+
+About 90 % of the work runs offline: a QEMU machine family that boots captured firmware to the real
+Sony menu ([`emulators/qemu-a6400/`](emulators/qemu-a6400/README.md)) and a fast Unicorn engine
+that checks mods and OS contracts in CI ([`src/a6400/`](src/a6400/README.md)). Start with
+[docs/DEVELOPERS.md](docs/DEVELOPERS.md); USB video work is in [UVC / PTP](docs/CONTRIBUTING_UVC_PTP.md).
 
 ```bash
 pip install -r requirements.txt
 python -m unittest discover -s tests -q
 ```
 
-| Folder | What's inside |
-| :--- | :--- |
-| [`emulators/qemu-a6400/`](emulators/qemu-a6400/README.md) | Virtual `sony-a6400` QEMU machine, browser rear panel, and mod hot-reload |
-| [`mods/`](mods/README.md) | RAM-only camera mods, Mod Loader v2 binaries, and install guides |
-| `src/a6400/` | Unicorn ARM emulators (`execution/`), camera profiles (`targets/`), USB debugger (`debug/`) |
-| `tools/` | Firmware analyzers, Mod Loader builder (`mlv2/`), C helpers, and ZV-E10 deployers |
-| [`apps/lut-converter/`](apps/lut-converter/README.md) | Offline color/tone LUT fitting and ARRI presets |
-| `tests/` & `docs/` | Automated checks, engineering docs, and dated evidence logs |
-
----
-
-## Project Status & Verification
-
-This project never reports fake "compatibility percentages." Every claim is backed by a dated evidence file and tracked against the **2091 tests** recorded in the integrated offline suite (2026-11-18, [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md); skip counts are tracked honestly and never counted as passes). Latest synced milestone: **[E9105](docs/evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md)**.
+The last recorded full offline suite had 2091 tests (2026-11-18, [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md)); skips are never counted as passes.
 
 ![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=301078f5a6da)
 
-[Daily automated test suite growth: 2091 tests across 32 days](docs/images/test-growth.svg)
+[Test suite growth over time](docs/images/test-growth.svg) · [Current technical state](docs/CURRENT_STATE.md) · [Knowledge map](docs/map/README.md)
 
-For deep reverse-engineering logs, memory maps, and USB traces, see:
-[Current Technical State](docs/CURRENT_STATE.md) · [Knowledge Map](docs/map/README.md) · [Evidence Archive](docs/evidence/README.md) · [UVC / PTP Progress](docs/UVC_PTP_STATUS.md) · [USB Debugger v2](docs/NATIVE_USB_DEBUGGER.md)
+### Repository map
+
+| Folder | What's inside |
+| :--- | :--- |
+| [`mods/`](mods/README.md) | Camera mods and install guides |
+| [`apps/`](apps/README.md) | BIONZ Look Lab, LUT converter, Android clients, camera daemon |
+| [`emulators/`](emulators/README.md) | QEMU machines (`sony-a6400` family, a6700, a6000) |
+| `src/a6400/` | Python package: Unicorn engine, camera profiles, Mod Manager logic, USB debugger |
+| `tools/` | Research tools (`python -m tools.research.<tool>`), Mod Manager UI, native helpers |
+| `tests/` | Offline test suite |
+| `scripts/` | Launchers and build scripts (Windows + macOS/Linux) |
+| [`research/`](research/README.md) | Preserved prototypes, read-only probes, telemetry captures |
+| [`docs/`](docs/INDEX.md) | Guides, [knowledge map](docs/map/README.md), [evidence records](docs/evidence/README.md) |
+
+Layout details: [docs/REPOSITORY.md](docs/REPOSITORY.md).
 
 ---
 
-## Safety Rules
+## Credits
 
-- **Honest claims only:** Host-written UI or camera logic is **never** presented as real firmware compatibility.
-- **Zero internal flash writes:** Never flash custom firmware or modify internal boot partitions.
-- **Clean-room emulation:** Original firmware owns camera logic; unimplemented hardware stops cleanly instead of faking success.
-- **Safe hardware inspection:** Read-only probes are allowed; bulk `/dev/mem` sweeps that can reboot the camera are strictly banned ([`AGENTS.MD`](AGENTS.MD)).
+- [ma1co/Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE): the USB service-mode switch the Mod Manager builds on.
+- [ma1co/fwtool.py](https://github.com/ma1co/fwtool.py) and [DavidBuchanan314/fwtool.py](https://github.com/DavidBuchanan314/fwtool.py): firmware unpacking.
+- [Oein/a5000-emulator](https://github.com/Oein/a5000-emulator) by Park SungHyun (Oein): clean-room reference for DMP SMAPH/P3D GPU commands, interrupt pre-routing and `im.elf` UI bring-up.
+- Everyone who sent physical test reports. More upstream work: [docs/RELATED_REPOSITORIES.md](docs/RELATED_REPOSITORIES.md).
 
----
-
-## Links & Attribution
-
-[Docs Index](docs/INDEX.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Repository Layout](docs/REPOSITORY.md) · [Contributing](CONTRIBUTING.MD) · [Agent Rules](AGENTS.MD) · [Related Repositories](docs/RELATED_REPOSITORIES.md)
-
-- **Cross-generation BIONZ X research:** [Oein/a5000-emulator](https://github.com/Oein/a5000-emulator) by Park SungHyun (Oein) — clean-room reference for DMP SMAPH/P3D GPU commands and tiling (`docs/RE_GPU_P3D_CMD.md`, CC BY 4.0), interrupt pre-routing, and `im.elf` UI bringup.
-
-Independent research; not affiliated with or endorsed by Sony. Sony, a6400, ILCE-6400, and BIONZ X are trademarks of their respective owners.
+Independent research; not affiliated with or endorsed by Sony. Sony, a6400, ILCE-6400 and BIONZ X
+are trademarks of their respective owners. [Contributing](CONTRIBUTING.MD) · [Roadmap](docs/ROADMAP.md) · [Agent rules](AGENTS.MD)

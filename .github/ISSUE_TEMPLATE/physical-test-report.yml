@@ -1,0 +1,95 @@
+name: Physical test report
+description: Report what a mod or test kit did on a real camera, working or not.
+title: "[test] <mod or kit> on <model> <firmware> (<commit>)"
+labels: ["physical-test"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing on real hardware. A failed or partial run is as useful as a working one: say exactly what happened.
+        **Do not attach Sony firmware images, full memory dumps, `/setting/Backup.*`, photos of people, or serial numbers.**
+        The log zip a kit exports (`camera_private/…`) is designed to leave those out; check it before you upload.
+  - type: input
+    id: camera
+    attributes:
+      label: Camera model and firmware version
+      description: As the camera menu shows it (MENU → Setup → Version).
+      placeholder: "ILCE-6400, Ver. 2.00"
+    validations:
+      required: true
+  - type: input
+    id: what
+    attributes:
+      label: Mod or kit, and its version or commit
+      placeholder: "opengate_a1 kit, commit 1d26e3c"
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host used
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Android
+        - Mod Manager (Windows GUI)
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Overall result
+      options:
+        - Worked as described
+        - Partly worked
+        - Did not work, camera stayed responsive
+        - Camera restarted, froze, or needed a battery pull
+        - Read-only check said NOT READY (nothing was written)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What each step printed
+      description: Paste the console output, or list each step with DONE / NOTHING TO DO / FAILED and its message.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: screen
+    attributes:
+      label: What the camera screen showed
+      description: Live view, menus, errors, and anything that looked wrong (colour cast, bands, black screen).
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Recorded files (if any)
+      description: Resolution, frame rate, codec and bit rate (MediaInfo text is ideal). Did the clip play on the camera and on a computer?
+    validations:
+      required: false
+  - type: textarea
+    id: undo
+    attributes:
+      label: Return to stock
+      description: How you undid it (put-back step, mod OFF, power-off, battery pull) and whether the camera behaved normally afterwards.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log zip and anything else
+      description: Drag the exported log zip here.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: No firmware images, full memory dumps, Backup files or personal data are attached.
+          required: true
+        - label: The camera firmware version matched the one the mod or kit names.
+          required: false

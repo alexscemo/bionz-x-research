@@ -13681,6 +13681,9 @@
     "0736-qemu-camcore-unlisted-access-logging.md": [
       "qemu-a6400"
     ],
+    "0737-qemu-snapshot-restore-emmc-ocr.md": [
+      "qemu-a6400"
+    ],
     "0738-qemu-camcore-f3c04-f2912-register-models-boot-score.md": [
       "qemu-a6400"
     ],

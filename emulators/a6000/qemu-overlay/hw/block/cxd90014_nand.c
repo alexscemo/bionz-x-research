@@ -26,7 +26,9 @@
  * Flash chip: 1 die, 1 plane, 2048 blocks x 64 pages x (4096 data +
  * 8 "extra" bytes as seen through the ARM7 firmware), SLC.  Backing file
  * (property "file"): [data 512 MiB][extra 1 MiB][programmed bitmap 16 KiB],
- * created erased (0xFF) when missing.
+ * created erased (0xFF) when missing.  With "snapshot" the file must already
+ * exist at full size; it is opened read-only and mapped copy-on-write, so
+ * guest writes last for this QEMU process only.
  */
 
 #include "qemu/osdep.h"
@@ -77,6 +79,7 @@ struct CXDNandState {
     bool arm7_booting;       /* released from reset, next bell = boot */
     qemu_irq nand_irq, arm7_irq;
     char *file;
+    bool snapshot;           /* never write the backing file */
     uint8_t *mem;            /* mmap of the backing file */
     uint8_t scratch[0x20000];
 };
@@ -701,7 +704,8 @@ static void nand_realize(DeviceState *dev, Error **errp)
         memset(s->mem + DATA_SIZE + XTRA_SIZE, 0, BMAP_SIZE);
         return;
     }
-    int fd = open(s->file, O_RDWR | O_CREAT, 0644);
+    int fd = s->snapshot ? open(s->file, O_RDONLY)
+                         : open(s->file, O_RDWR | O_CREAT, 0644);
     if (fd < 0) {
         error_setg_errno(errp, errno, "cxd-nand: cannot open %s", s->file);
         return;
@@ -709,12 +713,19 @@ static void nand_realize(DeviceState *dev, Error **errp)
     struct stat st;
     fstat(fd, &st);
     bool fresh = st.st_size != (off_t)FILE_SIZE;
+    if (fresh && s->snapshot) {
+        error_setg(errp, "cxd-nand: %s is not a provisioned NAND file "
+                   "(wrong size)", s->file);
+        close(fd);
+        return;
+    }
     if (fresh && ftruncate(fd, FILE_SIZE) < 0) {
         error_setg_errno(errp, errno, "cxd-nand: cannot size %s", s->file);
         close(fd);
         return;
     }
-    s->mem = mmap(NULL, FILE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    s->mem = mmap(NULL, FILE_SIZE, PROT_READ | PROT_WRITE,
+                  s->snapshot ? MAP_PRIVATE : MAP_SHARED, fd, 0);
     close(fd);
     if (s->mem == MAP_FAILED) {
         error_setg_errno(errp, errno, "cxd-nand: cannot map %s", s->file);
@@ -742,6 +753,7 @@ static void nand_init(Object *obj)
 
 static const Property nand_props[] = {
     DEFINE_PROP_STRING("file", CXDNandState, file),
+    DEFINE_PROP_BOOL("snapshot", CXDNandState, snapshot, false),
 };
 
 static void nand_class_init(ObjectClass *klass, const void *data)

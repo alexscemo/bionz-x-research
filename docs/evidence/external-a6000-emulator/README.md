@@ -97,10 +97,28 @@ failures against a baseline run on the unchanged tree.
 
 ## Boundaries
 
-- The A6000 boots only with the user's own NAND dump. There is no firmware-only path,
-  because `Backup.bin`, the calibration and the updater core are not in the updater.
+- At the date of this record the A6000 booted only with the user's own NAND dump.
+  This boundary no longer holds since 2026-11-28; see the update below.
 - Not shown: still capture (no ISP or live-view model), lens behaviour, EVF and eye
   sensor, control dial, power-cycle resume screen, PMCA app install.
 - The emulated Wi-Fi module is an AR6003 model. It is not established that the ILCE-6000
   carries an AR6003.
 - These are emulator observations. Nothing was run on the camera for this record.
+
+## Update 2026-11-28: NAND without a camera dump
+
+`emulators/a6000/tools/mknand_synth.py` builds the NAND image from the updater alone: its
+partition table and images, the factory-default `Backup.bin` template from `0110_backup/`,
+and `DmmConfig.bin` and `ulogio.bin` rebuilt from tables in the factory warm-boot image.
+`nflasha4` is written erased; the firmware writes its own records there.
+
+Run in a copy of `emulators/a6000/` without `dumps/`, `state/`, `inputs.local.json` or
+`data/`: `tools/mkdata.py` → `mknand_synth.py` → `provision.sh` → `run.sh` (and
+`tools/camui.py --launch`). The firmware reached the shooting screen and the menus, and
+the kernel log had no oops. The NAND file's SHA-256 did not change.
+
+Still missing compared with a real camera: the per-unit calibration (protected
+`Backup.bin` props, `/setting/psd.bin`), the updater core (`nflasha1`), and owner data.
+[emulators/a6000/README.md](../../../emulators/a6000/README.md#what-a-synthetic-nand-lacks)
+lists each item and what it is for. On the synthetic NAND the shooting screen has shown
+a SteadyShot warning icon whose cause is not known.

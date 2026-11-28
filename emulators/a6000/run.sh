@@ -11,8 +11,14 @@
 #   does the bootloader's NAND duties) -> stage 2 = stock kernel + initrd read
 #   from NAND /system -> stock /sbin/init ...
 # Needs state/a6000.nand (create with ./provision.sh <your NAND dump>).
+# The NAND file is never written: guest writes are discarded when QEMU exits.
+# With inputs.local.json (tools/inputs.py init) the updater files, data/ and
+# the NAND are SHA-256 checked first and taken from the recorded paths.
 #
-# Env: A6K_NAND=<file>       NAND backing file (default state/a6000.nand)
+# Env: A6K_NAND=<file>       NAND base file (default state/a6000.nand); read only,
+#                            not hash-checked
+#      A6K_PERSIST=<file>    keep guest NAND writes in <file>, copied from the
+#                            base when it does not exist yet
 #      A6K_SHELL=<port>      root shell on UART2 as a TCP server on
 #                            127.0.0.1:<port> (-M console=ttyAM1 via
 #                            shell-socket=; only the console= token of the
@@ -38,8 +44,18 @@ E="$(cd "$(dirname "$0")" && pwd)"
 # unpacked official updater: $A6K_FW, else ./firmware (git-ignored)
 M=sony-a6000 RAM=1G DATA="$E/data"
 FW="${A6K_FW:-$E/firmware}"
+INPUTS="$E/inputs.local.json"
+CHECKED=0
+if [ -f "$INPUTS" ]; then
+  get() { python3 -I "$E/tools/inputs.py" get "$1"; }
+  FW="${A6K_FW:-$(get fw_dir)}" DATA="$(get data_dir)"
+  CHECKED=1
+fi
 F="$FW/unpacked/firmware.tar_unpacked/0700_part_image/dev/nflasha3_unpacked_unpacked"
 NAND="${A6K_NAND:-$E/state/a6000.nand}"
+if [ "$CHECKED" = 1 ] && [ -z "${A6K_NAND:-}" ]; then
+  NAND="$(python3 -I "$E/tools/inputs.py" get nand 2>/dev/null || echo "$NAND")"
+fi
 QEMU="${A6K_QEMU:-${A6400_QEMU_DIR:-$HOME/sony-a6400-qemu-11.1.3}/build/qemu-system-arm}"
 LOADER="${A6K_LOADER:-$E/provision/loader.cpio}"
 # stock console=ttynull by default (A6K_STOCK_CONSOLE=1 is the old spelling).
@@ -68,6 +84,21 @@ if [ "${A6K_DIRECT:-0}" = 1 ]; then
     -kernel "$F/vmlinux.bin" -initrd "$F/initrd.img" ${SER[@]+"${SER[@]}"} "$@"
 fi
 [ -f "$NAND" ] || { echo "run.sh: $NAND missing — run ./provision.sh <your NAND dump> first" >&2; exit 1; }
+if [ "$CHECKED" = 1 ] && [ -z "${A6K_NAND:-}" ] && [ -z "${A6K_FW:-}" ]; then
+  python3 -I "$E/tools/inputs.py" check --nand || exit 1
+else
+  echo "run.sh: inputs not hash-checked (no inputs.local.json, or A6K_NAND/A6K_FW set)" >&2
+fi
+SNAP=on
+if [ -n "${A6K_PERSIST:-}" ]; then
+  if [ ! -e "$A6K_PERSIST" ]; then
+    cp --reflink=auto -- "$NAND" "$A6K_PERSIST.tmp"
+    chmod u+w "$A6K_PERSIST.tmp"
+    mv -- "$A6K_PERSIST.tmp" "$A6K_PERSIST"
+  fi
+  [ ! "$A6K_PERSIST" -ef "$NAND" ] || { echo "run.sh: A6K_PERSIST must not be the base NAND" >&2; exit 1; }
+  NAND="$A6K_PERSIST" SNAP=off
+fi
 # provision/a6kcopy: static ARM helper inside both initramfs images, built on demand
 # (gcc-arm-none-eabi; -Ttext-segment: some toolchains link at VA 0, which the
 # kernel refuses)
@@ -81,6 +112,6 @@ if [ -z "${A6K_LOADER:-}" ] && { [ ! -f "$LOADER" ] || [ "$E/provision/loader.sh
   A6K_FW="$FW" python3 -I "$E/provision/mkinitramfs.py" "$LOADER" loader.sh >/dev/null || exit 1
 fi
 exec "$QEMU" \
-  -M "$M,submicro=on,submicro-frames=${A6K_SMFRAMES:-$DATA/submicro_frames.bin},nand=$NAND,loader=$LOADER,preload=${A6K_HANDOFF:-$DATA/handoff_80021000.bin}@0x80021000" \
+  -M "$M,submicro=on,submicro-frames=${A6K_SMFRAMES:-$DATA/submicro_frames.bin},nand=$NAND,nand-snapshot=$SNAP,loader=$LOADER,preload=${A6K_HANDOFF:-$DATA/handoff_80021000.bin}@0x80021000" \
   -m $RAM ${IC[@]+"${IC[@]}"} -kernel "$F/vmlinux.bin" \
   ${A6K_SD:+-drive if=sd,file=$A6K_SD,format=raw} ${SER[@]+"${SER[@]}"} "$@"

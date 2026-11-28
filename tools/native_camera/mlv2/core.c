@@ -230,7 +230,11 @@ static int mtl_present(void) {
     return 0;   /* a6100 has no v1 ModsTabLook hook; always use the sixth tab's icon */
 #else
     if (!core_libobj_ok) return 0;
-    return *(volatile uint32_t *)(MTL_HOOK_ADDR + 2u + core_libobj_bias) == 0xf000f8dfu;
+    if (*(volatile uint32_t *)(MTL_HOOK_ADDR + 2u + core_libobj_bias) == 0xf000f8dfu) return 1;
+#ifdef MTL_HOOK_ADDR_FW200
+    if (*(volatile uint32_t *)(MTL_HOOK_ADDR_FW200 + 2u + core_libobj_bias) == 0xf000f8dfu) return 1;
+#endif
+    return 0;
 #endif
 }
 

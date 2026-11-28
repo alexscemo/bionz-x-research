@@ -18,7 +18,9 @@ See ``docs/ADDING_A_BIONZX_CAMERA.md`` for how to add a body.
 from __future__ import annotations
 
 from src.a6400.targets.catalog import (
+    CXD90014_REGISTRY,
     DEFAULT_REGISTRY,
+    ILCE_6000,
     ILCE_6100,
     ILCE_6400,
     ILCE_6400A,
@@ -34,6 +36,8 @@ from src.a6400.targets.profile import (
     STATUS_UNVERIFIED,
     STATUS_VERIFIED,
     SOC_BIONZ_X,
+    SOC_CXD90014,
+    SUPPORTED_SOCS,
     TARGET_STATUSES,
     EvidenceRef,
     BootLayoutSpec,
@@ -46,7 +50,9 @@ from src.a6400.targets.profile import (
 )
 
 __all__ = [
+    "CXD90014_REGISTRY",
     "DEFAULT_REGISTRY",
+    "ILCE_6000",
     "PID_TIER_OBSERVED",
     "PID_TIER_PROJECT_AUTHORED",
     "PID_TIER_STOCK",
@@ -56,6 +62,8 @@ __all__ = [
     "ILCE_6600",
     "ILCE_7M3",
     "SOC_BIONZ_X",
+    "SOC_CXD90014",
+    "SUPPORTED_SOCS",
     "STATUS_REFERENCE",
     "STATUS_UNVERIFIED",
     "STATUS_VERIFIED",

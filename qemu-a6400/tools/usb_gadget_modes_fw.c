@@ -140,6 +140,7 @@ void *memset(void *dst, int c, size_t n)
 
 #define TRB_CTRL_HWO            (1U << 0)
 #define TRB_CTRL_LST            (1U << 1)
+#define TRB_CTRL_CHN            (1U << 2)
 #define TRB_CTRL_IOC            (1U << 11)
 
 #define TRBCTL_NORMAL           1U
@@ -407,6 +408,7 @@ static uint16_t g_ep0_wvalue;
 static uint16_t g_ep0_windex;
 static uint16_t g_ep0_wlength;
 static uint32_t g_ep4_armed_bytes;
+static uint32_t g_ep4_chain_count;
 
 /* MSC state */
 static enum BotState g_bot_state;
@@ -433,8 +435,8 @@ static uint32_t g_ptp_last_canceled_tx;
 static uint32_t g_ptp_lv_seq;
 
 /* UVC state */
-static uint8_t g_uvc_probe_ctrl[26];
-static uint8_t g_uvc_commit_ctrl[26];
+static uint8_t g_uvc_probe_ctrl[26] __attribute__((aligned(4)));
+static uint8_t g_uvc_commit_ctrl[26] __attribute__((aligned(4)));
 static int g_uvc_streaming;
 static uint8_t g_uvc_fid;
 static uint32_t g_uvc_pts;
@@ -504,8 +506,32 @@ static void ep0_arm_setup(void)
 
 static void ep4_arm_out(uint32_t len)
 {
+    volatile Dwc3Trb *trbs = (volatile Dwc3Trb *)TRB_EP4_PA;
     g_ep4_armed_bytes = len;
-    dwc3_arm_single_trb(4U, TRB_EP4_PA, BUF_EP4_OUT_PA, len, TRBCTL_NORMAL);
+    g_ep4_chain_count = 1U;
+    if (len >= 1024U) {
+        uint32_t first = (len / 2U) & ~511U;
+        uint32_t second = len - first;
+        if (first >= 512U && second >= 512U) {
+            trbs[0].bpl = (uint32_t)BUF_EP4_OUT_PA;
+            trbs[0].bph = 0U;
+            trbs[0].size = first;
+            trbs[0].ctrl = TRB_CTRL_HWO | TRB_CTRL_CHN |
+                           (TRBCTL_NORMAL << 4) | TRB_CTRL_IOC;
+            trbs[1].bpl = (uint32_t)(BUF_EP4_OUT_PA + first);
+            trbs[1].bph = 0U;
+            trbs[1].size = second;
+            trbs[1].ctrl = TRB_CTRL_HWO | TRB_CTRL_LST |
+                           (TRBCTL_NORMAL << 4) | TRB_CTRL_IOC;
+            g_ep4_chain_count = 2U;
+            dmb_barrier();
+            dwc3_ep_cmd(4U, DEPCMD_STARTTRANSFER, 0U,
+                        (uint32_t)TRB_EP4_PA, 0U);
+            return;
+        }
+    }
+    dwc3_arm_single_trb(4U, TRB_EP4_PA, BUF_EP4_OUT_PA, len,
+                        TRBCTL_NORMAL);
 }
 
 /* Arm multi-packet Bulk-IN payload on EP3 (512B chunks), optionally appending a
@@ -677,14 +703,16 @@ static void init_ramdisk(void)
     uint8_t *disk = (uint8_t *)RAMDISK_PA;
     for (uint32_t s = 0U; s < RAMDISK_SECTORS; s++) {
         uint8_t *sec = disk + (s << 9);
-        memset(sec, 0, RAMDISK_SECTOR_SIZE);
-        sec[0] = 'S';
-        sec[1] = 'O';
-        sec[2] = 'N';
-        sec[3] = 'Y';
-        put_le32(&sec[4], s);
-        for (uint32_t i = 8U; i < RAMDISK_SECTOR_SIZE; i++) {
-            sec[i] = (uint8_t)((s * 17U + i) & 0xFFU);
+        volatile uint32_t *words = (volatile uint32_t *)sec;
+        words[0] = 0x594E4F53U; /* "SONY" */
+        words[1] = s;
+        for (uint32_t word = 2U;
+             word < RAMDISK_SECTOR_SIZE / sizeof(*words); word++) {
+            uint32_t first = s * 17U + word * sizeof(*words);
+            words[word] = (first & 0xFFU) |
+                          (((first + 1U) & 0xFFU) << 8) |
+                          (((first + 2U) & 0xFFU) << 16) |
+                          (((first + 3U) & 0xFFU) << 24);
         }
     }
 }
@@ -827,7 +855,7 @@ static void msc_handle_cbw(UsbFwMailbox *mbox, uint32_t rx_len)
         break;
     }
 
-    case 0x2AU: { /* WRITE(10) - single multi-packet Bulk-OUT TRB */
+    case 0x2AU: { /* WRITE(10) - multi-packet Bulk-OUT TRB transfer */
         uint32_t lba = get_be32(&cdb[2]);
         uint16_t blocks = get_be16(&cdb[7]);
         uint32_t byte_len = (uint32_t)blocks << 9;
@@ -847,7 +875,7 @@ static void msc_handle_cbw(UsbFwMailbox *mbox, uint32_t rx_len)
         g_bot_xfer_len = byte_len;
         g_bot_wp_reject = (mbox->flags & MBOX_FLAG_MSC_WP) ? 1 : 0;
         g_bot_state = BOT_DATA_OUT;
-        /* Arm ONE byte_len TRB (e.g. 2048 B) to accumulate all 512B packets */
+        /* Arm byte_len across linked TRBs; each accumulates 512B packets. */
         ep4_arm_out(byte_len);
         break;
     }
@@ -1798,8 +1826,11 @@ static void drain_dwc3_events(UsbFwMailbox *mbox, uint32_t mode)
                 }
             }
         } else if (phys_ep == 4U && evt_type == DEPEVT_XFERCOMPLETE) {
-            volatile Dwc3Trb *trb = (volatile Dwc3Trb *)TRB_EP4_PA;
-            uint32_t residual = trb->size & 0x00FFFFFFU;
+            volatile Dwc3Trb *trbs = (volatile Dwc3Trb *)TRB_EP4_PA;
+            uint32_t residual = 0U;
+            for (uint32_t i = 0; i < g_ep4_chain_count; i++) {
+                residual += trbs[i].size & 0x00FFFFFFU;
+            }
             uint32_t rx_len = g_ep4_armed_bytes >= residual
                                   ? (g_ep4_armed_bytes - residual)
                                   : 0U;
@@ -1918,7 +1949,10 @@ void fw_main(void)
     init_ramdisk();
     init_uvc_default_controls();
 
-    memset((void *)mbox, 0, sizeof(*mbox));
+    volatile uint32_t *mbox_words = (volatile uint32_t *)mbox;
+    for (uint32_t i = 0U; i < sizeof(*mbox) / sizeof(*mbox_words); i++) {
+        mbox_words[i] = 0U;
+    }
     mbox->req_mode = init_mode;
     mbox->active_mode = USB_MODE_NONE;
     mbox->flags = init_flags;

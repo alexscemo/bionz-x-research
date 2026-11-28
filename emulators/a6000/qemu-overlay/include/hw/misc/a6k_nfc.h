@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * From voxivoid/a6000-qemu (commit 62cf3bc)
+ *   qemu-overlay/include/hw/misc/a6k_nfc.h,
+ * ported to QEMU 11.1.3.  voxivoid/a6000-qemu adapts
+ * Oein/a5000-emulator (GPL-2.0, Park SungHyun; base commit 6ad36bd) to
+ * the ILCE-6000.  The original description follows; its docs/reference/
+ * paths are files in voxivoid/a6000-qemu.
+ */
+/* A6000 board NFC dynamic tag (FeliCa Plug class) on SIO2 (docs/reference/RE_NFC.md) */
+#ifndef HW_MISC_A6K_NFC_H
+#define HW_MISC_A6K_NFC_H
+
+#include "hw/core/sysbus.h"
+#include "chardev/char.h"
+
+#define TYPE_A6K_NFC "a6k-nfc"
+
+/*
+ * Create the tag and wire it: SIO channel 2 of @sio, SW = P7.10 and
+ * SEL = P7.14 ("out" lines of @gpio), RFDET -> P0.8 (input of @gpio),
+ * data-ready IRQ -> @irq (GIC 125).  @chr (may be NULL) = "virtual phone".
+ */
+DeviceState *a6k_nfc_create(DeviceState *sio, DeviceState *gpio,
+                            qemu_irq irq, Chardev *chr);
+
+#endif

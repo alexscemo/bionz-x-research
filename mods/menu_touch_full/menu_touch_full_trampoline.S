@@ -14,6 +14,8 @@ mt_original_release:
     ldr.w pc, [pc, #0]
 #ifdef TARGET_ILCE6400A
     .word 0x0659aea5
+#elif defined(TARGET_ILCE6400_8257)
+    .word 0x06309dcd
 #else
     .word 0x06309d55
 #endif
@@ -30,6 +32,8 @@ mt_original_press:
     ldr.w pc, [pc, #0]
 #ifdef TARGET_ILCE6400A
     .word 0x0659afb1
+#elif defined(TARGET_ILCE6400_8257)
+    .word 0x06309ed9
 #else
     .word 0x06309e61
 #endif

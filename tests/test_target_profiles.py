@@ -10,11 +10,14 @@ from pathlib import Path
 
 from src.a6400.execution.zve10_uvc_enablement import ZVE10_UVC_COMPONENTS
 from src.a6400.targets import (
+    CXD90014_REGISTRY,
     DEFAULT_REGISTRY,
+    ILCE_6000,
     PID_TIER_OBSERVED,
     PID_TIER_PROJECT_AUTHORED,
     PID_TIER_STOCK,
     SOC_BIONZ_X,
+    SOC_CXD90014,
     STATUS_REFERENCE,
     STATUS_UNVERIFIED,
     STATUS_VERIFIED,
@@ -292,6 +295,66 @@ class TestJsonView(unittest.TestCase):
             self.assertIn(name, modules)
             self.assertEqual(modules[name].size, expected["size"], name)
             self.assertEqual(modules[name].sha256, expected["sha256"], name)
+
+
+
+class TestCxd90014Registry(unittest.TestCase):
+    """ILCE-6000 (CXD90014) is accepted, but only in its own registry."""
+
+    def test_ilce_6000_is_only_in_the_cxd90014_registry(self):
+        self.assertEqual(CXD90014_REGISTRY.ids(), ("ilce_6000",))
+        self.assertEqual(CXD90014_REGISTRY.soc, SOC_CXD90014)
+        self.assertNotIn("ilce_6000", profile_ids())
+        self.assertEqual(DEFAULT_REGISTRY.soc, SOC_BIONZ_X)
+
+    def test_a_cxd90045_registry_rejects_a_cxd90014_body(self):
+        with self.assertRaises(ValueError) as caught:
+            TargetRegistry(DEFAULT_REGISTRY.list() + (ILCE_6000,))
+        self.assertIn("cannot hold a CXD90014 body", str(caught.exception))
+        with self.assertRaises(ValueError):
+            TargetRegistry((_fixture_profile(),), soc=SOC_CXD90014)
+        with self.assertRaises(ValueError):
+            TargetRegistry((ILCE_6000,), soc="CXD90042")
+
+    def test_ilce_6000_is_a_sourced_reference_profile(self):
+        self.assertEqual(ILCE_6000.status, STATUS_REFERENCE)
+        self.assertEqual(ILCE_6000.soc, SOC_CXD90014)
+        self.assertEqual(set(ILCE_6000.claims()), {"firmware_version", "kernel_version"})
+        self.assertEqual(ILCE_6000.firmware_version, "3.21")
+        self.assertEqual(ILCE_6000.kallsyms, {})
+        self.assertIsNone(ILCE_6000.usb)
+        for claim, refs in ILCE_6000.sources.items():
+            for ref in refs:
+                self.assertTrue((ROOT / ref.path).is_file(), f"{claim}: {ref.path}")
+        record = (ROOT / "docs/evidence/external-a6000-emulator/README.md").read_text(encoding="utf-8")
+        self.assertIn("crypterName: CXD90014", record)
+        self.assertIn("3.0.27_nl-rt106", record)
+        self.assertTrue(ILCE_6000.boundaries)
+
+
+class TestIlce7cUsbIdentity(unittest.TestCase):
+    def setUp(self):
+        self.profile = get_profile("ilce_7c")
+
+    def test_usb_and_product_code_cite_external_receipt(self):
+        receipt = "docs/evidence/external-ilce7c-usb-ids/README.md"
+        self.assertEqual(self.profile.product_code, "0032852231")
+        self.assertIsNotNone(self.profile.usb)
+        self.assertEqual(self.profile.usb.vid, 0x054C)
+        self.assertEqual(self.profile.usb.bcd_device, 0x0200)
+        self.assertEqual(
+            {name: (pid.value, pid.tier) for name, pid in self.profile.usb.pids.items()},
+            {
+                "mass_storage": (0x0D29, PID_TIER_OBSERVED),
+                "mtp": (0x0D2A, PID_TIER_OBSERVED),
+                "pc_remote": (0x0D2B, PID_TIER_OBSERVED),
+                "usb_streaming": (0x0DE6, PID_TIER_OBSERVED),
+            },
+        )
+        self.assertEqual([ref.path for ref in self.profile.sources["product_code"]], [receipt])
+        self.assertTrue(self.profile.sources["usb"])
+        self.assertTrue(all(ref.path == receipt for ref in self.profile.sources["usb"]))
+        self.assertTrue((ROOT / receipt).is_file())
 
 
 if __name__ == "__main__":

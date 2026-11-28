@@ -69,8 +69,12 @@
  * is the observed one, so this one-shot gate holds 0; no value is invented.
  *
  * All observed reads are in the table, so no read offset depends on a
- * blanket fallback.  An unlisted read returns 0 and is logged with LOG_UNIMP,
- * so a new read offset is never silent.
+ * blanket fallback.  An unlisted read returns 0 and an unlisted write is
+ * stored; both are logged with LOG_UNIMP in the same format and with the
+ * same offset base (0xF0000000) as the board's cxd90045.unmodelled catch-all,
+ * so an offset without a rule still counts as unmodelled: mapping a window
+ * over unknown registers never makes them look modelled.  Only offsets with
+ * a rule (RF or Z0) are treated as modelled.
  *
  * The off-by-default "trace" property logs every access (kind, offset,
  * size, value) with qemu_log, so the guest write stream can be compared
@@ -596,6 +600,26 @@ struct CamCoreState {
     uint32_t *mig_kv;
 };
 
+/* Base of the board's catch-all region; unlisted accesses log offsets from it. */
+#define CAMCORE_UNMODELLED_BASE 0xF0000000ULL
+
+static void camcore_log_unlisted(const CamCoreState *s, bool write, hwaddr off,
+                                 unsigned size, uint64_t v)
+{
+    uint64_t pa = (s->window ? s->window : s->base) + off;
+    const char *n = s->name ? s->name : "cxd90045-camcore";
+
+    if (write) {
+        qemu_log_mask(LOG_UNIMP, "%s.unmodelled: unimplemented device write "
+                      "(size %u, offset 0x%" PRIx64 ", value 0x%" PRIx64 ")\n",
+                      n, size, pa - CAMCORE_UNMODELLED_BASE, v);
+    } else {
+        qemu_log_mask(LOG_UNIMP, "%s.unmodelled: unimplemented device read "
+                      "(size %u, offset 0x%" PRIx64 ")\n",
+                      n, size, pa - CAMCORE_UNMODELLED_BASE);
+    }
+}
+
 /* Block-relative offset of a region access (rule tables are block-relative). */
 static uint64_t camcore_key(const CamCoreState *s, hwaddr off)
 {
@@ -626,9 +650,7 @@ static uint64_t camcore_read(void *opaque, hwaddr off, unsigned size)
     uint32_t v = 0;
 
     if (!r) {
-        qemu_log_mask(LOG_UNIMP, "%s: unlisted read offset 0x%05x size %u\n",
-                      s->name ? s->name : "cxd90045-camcore", (unsigned)off,
-                      size);
+        camcore_log_unlisted(s, false, off, size, 0);
     } else if (r->kind == CAM_RF) {
         v = GPOINTER_TO_UINT(g_hash_table_lookup(s->regs,
                               GUINT_TO_POINTER((guint)w)));
@@ -658,6 +680,9 @@ static void camcore_write(void *opaque, hwaddr off, uint64_t v, unsigned size)
     uint32_t mask = size >= 4 ? 0xffffffffu : ((1u << (size * 8)) - 1) << sh;
     uint32_t nv = (old & ~mask) | (((uint32_t)v << sh) & mask);
 
+    if (!camcore_rule(s, w)) {
+        camcore_log_unlisted(s, true, off, size, v);
+    }
     if (s->trace) {
         qemu_log("camcore-trace: %s write off 0x%05x size %u value 0x%08x "
                  "pa 0x%08x\n",

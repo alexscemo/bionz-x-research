@@ -29,6 +29,7 @@
 #include "qapi/error.h"
 #include "qapi/visitor.h"
 #include "hw/core/qdev.h"
+#include "hw/core/qdev-properties.h"
 #include "hw/core/sysbus.h"
 #include "hw/core/irq.h"
 #include "hw/misc/cxd90045_i2c.h"
@@ -37,6 +38,7 @@
 #include "ui/input.h"
 #include "qemu/log.h"
 #include "qemu/module.h"
+#include "qemu/timer.h"
 #include "qom/object.h"
 
 #define TYPE_CXD90045_TOUCH "cxd90045-touch"
@@ -75,6 +77,14 @@ struct Cxd90045TouchState {
     bool deferred_release;
     bool pending_up;
 
+    /*
+     * FocalTech trigger-mode INT pulses once per report while a touch is active
+     * [assumption: period 10 ms not captured; reg 0x88 active scan period 6 is
+     * not decoded]. int-repeat-ms = 0 keeps the old single-edge behaviour.
+     */
+    uint32_t int_repeat_ms;
+    QEMUTimer *int_timer;
+
     /* Telemetry exposed via QOM for deterministic verification */
     uint64_t i2c_bursts;
     uint64_t pointer_events;
@@ -97,6 +107,41 @@ static void touch_update_int_line(Cxd90045TouchState *s, bool retrigger_edge)
                  assert_low ? 0 : 1);
     qemu_set_irq(qdev_get_gpio_in(s->gpio, TOUCH_GPIO_LINE),
                  assert_low ? 0 : 1);
+}
+
+static bool touch_line_asserted(Cxd90045TouchState *s)
+{
+    return s->pending_down || s->active_contact || s->pending_up;
+}
+
+static void touch_int_repeat_stop(Cxd90045TouchState *s)
+{
+    if (s->int_timer) {
+        timer_del(s->int_timer);
+    }
+}
+
+static void touch_int_repeat_arm(Cxd90045TouchState *s)
+{
+    int64_t period_ns;
+
+    if (!s->int_repeat_ms || !s->int_timer || !touch_line_asserted(s)) {
+        return;
+    }
+    period_ns = (int64_t)s->int_repeat_ms * 1000000;
+    timer_mod(s->int_timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + period_ns);
+}
+
+static void touch_int_repeat(void *opaque)
+{
+    Cxd90045TouchState *s = opaque;
+
+    if (!touch_line_asserted(s)) {
+        return;
+    }
+    /* Fresh high->low edge on P0.12 while a report is still unread. */
+    touch_update_int_line(s, true);
+    touch_int_repeat_arm(s);
 }
 
 static uint8_t axis_to_panel_byte(int64_t val)
@@ -164,6 +209,9 @@ static void touch_prepare_burst(Cxd90045TouchState *s)
     touch_pack_point(&s->regs[0x09], FT_EVENT_NONE, 0x0f, 0, 0, 0);
     s->i2c_bursts++;
     touch_update_int_line(s, false);
+    if (!touch_line_asserted(s)) {
+        touch_int_repeat_stop(s);
+    }
 }
 
 static void touch_i2c_write(void *opaque, const uint8_t *buf, unsigned len)
@@ -255,6 +303,7 @@ static void touch_input_sync(DeviceState *dev)
     Cxd90045TouchState *s = CXD90045_TOUCH(dev);
 
     touch_update_int_line(s, true);
+    touch_int_repeat_arm(s);
 }
 
 static const QemuInputHandler cxd90045_touch_handler = {
@@ -268,6 +317,7 @@ static void touch_reset(DeviceState *dev)
 {
     Cxd90045TouchState *s = CXD90045_TOUCH(dev);
 
+    touch_int_repeat_stop(s);
     memset(s->regs, 0, sizeof(s->regs));
     s->regs[0x00] = 0x00; /* working mode */
     s->regs[0x0a] = 0x01;
@@ -316,11 +366,16 @@ static bool touch_get_down(Object *obj, Error **errp)
     return s->host_down || s->pending_down || s->active_contact;
 }
 
+static const Property touch_props[] = {
+    DEFINE_PROP_UINT32("int-repeat-ms", Cxd90045TouchState, int_repeat_ms, 10),
+};
+
 static void touch_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     device_class_set_legacy_reset(dc, touch_reset);
+    device_class_set_props(dc, touch_props);
     object_class_property_add(klass, "touch-x", "uint64",
                               touch_get_u64_prop, NULL, NULL, NULL);
     object_class_property_add(klass, "touch-y", "uint64",
@@ -333,10 +388,18 @@ static void touch_class_init(ObjectClass *klass, const void *data)
                                    touch_get_down, NULL);
 }
 
+static void touch_init(Object *obj)
+{
+    Cxd90045TouchState *s = CXD90045_TOUCH(obj);
+
+    s->int_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, touch_int_repeat, s);
+}
+
 static const TypeInfo touch_info = {
     .name          = TYPE_CXD90045_TOUCH,
     .parent        = TYPE_SYS_BUS_DEVICE,
     .instance_size = sizeof(Cxd90045TouchState),
+    .instance_init = touch_init,
     .class_init    = touch_class_init,
 };
 

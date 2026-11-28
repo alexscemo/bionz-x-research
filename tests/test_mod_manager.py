@@ -302,7 +302,9 @@ class TestSmodParser(unittest.TestCase):
         shipped = [
             PROJECT_ROOT / "mods/menu_touch_full/MenuTouchFull.mod",
             PROJECT_ROOT / "mods/arri_isp/arrivederci/Arrivederci.mod",
+            PROJECT_ROOT / "mods/rear_lcd_60fps/RearLcd60fps.mod",
             PROJECT_ROOT / "mods/ilce_6400a/PhotonBin6MP.mod",
+            PROJECT_ROOT / "mods/ilce_6400a/RearLcd60fps.mod",
         ]
         for path in shipped:
             info = parse_smod(path.read_bytes(), filename=path.name)
@@ -1045,6 +1047,7 @@ class TestIlce6400aSupport(unittest.TestCase):
                 "PhotonBin6MP.mod",
                 "RCRAW_Enable_Test.mod",
                 "RCRAW_W2_Probe.mod",
+                "RearLcd60fps.mod",
                 "UsbStreamingTest.mod",
             ],
         )
@@ -1056,6 +1059,8 @@ class TestIlce6400aSupport(unittest.TestCase):
         self.assertEqual(parsed["ModsTabLook.mod"].hook_count, 1)
         self.assertTrue(parsed["ModsTabLook.mod"].auto_on)
         self.assertEqual(parsed["PhotonBin6MP.mod"].hook_count, 1)
+        self.assertEqual(parsed["RearLcd60fps.mod"].hook_count, 1)
+        self.assertTrue(parsed["RearLcd60fps.mod"].has_reloc)
         self.assertTrue(parsed["PhotonBin6MP.mod"].flags & 0x20)
         self.assertTrue(parsed["UsbStreamingTest.mod"].flags & 0x10)
 
@@ -1068,6 +1073,7 @@ class TestIlce6400aSupport(unittest.TestCase):
             for mod_id in (
                 "mods_tab_look",
                 "menu_touch_full",
+                "rear_lcd_60fps",
                 "arrivederci",
                 "open_gate_sensor",
                 "open_gate_32",
@@ -1268,6 +1274,43 @@ class TestIlce6400aSupport(unittest.TestCase):
                 mlv2_6400a,
             )
             self.assertTrue(any("Switch target profile first" in e for e in cross_mod_plan["blocking_errors"]))
+
+
+class TestRearLcd60fpsMod(unittest.TestCase):
+    def test_catalog_and_unicorn_suites_for_ilce6400_and_ilce6400a(self):
+        from mods.rear_lcd_60fps.test_mod_v2_unicorn import ORIG_BACKUP_READ_14B, run_suite
+
+        mod_6400 = (PROJECT_ROOT / "mods" / "rear_lcd_60fps" / "RearLcd60fps.mod").read_bytes()
+        mod_6400a = (PROJECT_ROOT / "mods" / "ilce_6400a" / "RearLcd60fps.mod").read_bytes()
+
+        info_6400 = parse_smod(mod_6400, filename="RearLcd60fps.mod")
+        info_6400a = parse_smod(mod_6400a, filename="RearLcd60fps.mod")
+        self.assertEqual(info_6400.name, "Rear LCD 60fps")
+        self.assertEqual(info_6400a.name, "Rear LCD 60fps")
+        self.assertEqual(info_6400.bss_size, 32)
+        self.assertEqual(info_6400a.bss_size, 32)
+        self.assertEqual(info_6400.hooks[0]["target"], "0x0401f204")
+        self.assertEqual(info_6400a.hooks[0]["target"], "0x0405c204")
+        self.assertEqual(info_6400.hooks[0]["orig_hex"], ORIG_BACKUP_READ_14B.hex())
+        self.assertEqual(info_6400a.hooks[0]["orig_hex"], ORIG_BACKUP_READ_14B.hex())
+
+        libb_a = (
+            PROJECT_ROOT
+            / "firmware/extracted_a6400a_v101/firmware.tar_unpacked/0700_part_image/dev/nflasha15_unpacked/lib/libbackup.so"
+        )
+        if libb_a.is_file():
+            self.assertEqual(libb_a.read_bytes()[0x1204 : 0x1204 + 14], ORIG_BACKUP_READ_14B)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cat_6400 = build_catalog(root=PROJECT_ROOT, data_dir=Path(tmp) / "d1", target_id="ilce_6400")
+            m6400 = next(m for m in cat_6400["runtime_mods"] if m["id"] == "rear_lcd_60fps")
+            self.assertTrue(m6400["available"])
+            self.assertTrue(str(m6400["path"]).endswith("RearLcd60fps.mod"))
+
+        run_suite(mod_6400, "ilce_6400", bias_backup=0, bias_view=0)
+        run_suite(mod_6400, "ilce_6400", bias_backup=0x00300000, bias_view=-0x00400000)
+        run_suite(mod_6400a, "ilce_6400a", bias_backup=0, bias_view=0)
+        run_suite(mod_6400a, "ilce_6400a", bias_backup=0x00300000, bias_view=-0x00400000)
 
 
 if __name__ == "__main__":

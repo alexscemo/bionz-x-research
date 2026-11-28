@@ -9,7 +9,12 @@ from project_paths import PROJECT_ROOT
 from src.a6400.execution.guest_uipc import GuestUipc, UnsupportedUipc, BACKUP_SERVICE_QUEUE, UIPC_CMD_SND_SYNC_MSG
 from src.a6400.execution.guarded_bytes import UnverifiedGuestData
 from src.a6400.execution.interpreter_probe import InterpreterProbe
-from test_interpreter_probe import make_elf
+try:
+    from tests.test_interpreter_probe import make_elf
+except ModuleNotFoundError as exc:
+    if exc.name not in ("tests", "tests.test_interpreter_probe"):
+        raise
+    from test_interpreter_probe import make_elf
 
 
 class UipcServiceGuardTests(unittest.TestCase):

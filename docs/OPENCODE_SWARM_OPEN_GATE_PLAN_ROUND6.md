@@ -6,7 +6,7 @@
 
 ---
 
-## 0. Current Ground Truth After Live `A12`–`A19` (`E0729` + Live Follow-ups)
+## 0. Current Ground Truth After Live `A12`–`A19` (`E0753` + Live Follow-ups)
 
 Live `ILCE-6400` RAM experiments `A12`–`A19` (all `noreboot on`, fail-closed, cleanly restored to stock) established:
 
@@ -74,7 +74,7 @@ Live `ILCE-6400` RAM experiments `A12`–`A19` (all `noreboot on`, fail-closed, 
 - **Scope:** Trace `viewUnified2.so` / `libObj.so` `_169` Movie-mode layout selection, `CaptureUtilityImageSize()` (`0x638EDE4C`), and `size_rows[16]` / `rcv_desc` horizontal crop (`4896x3376` `A5` vs `5064x3376` `1.500:1`).
 - **Questions to answer:**
   1. Which exact function/table in `viewUnified2.so` or `libObj.so` forces the Movie 4K 24p rear LCD box to `16:9` (`640x360`) instead of `3:2` (`640x426`), and can an `SMOD v2` hook toggle it?
-  2. Per `E0729` §9 recommendation, if `size_rows[16]` + `rcv_desc` horizontal fields are set to `5064x3376` while keeping `fe_rec_0a`/`fe_rec_19` at `A5` (`idx1`/`idx3`) or stock (`idx6`/`idx9`), what happens in Unicorn/static geometry?
+  2. Per `E0753` §9 recommendation, if `size_rows[16]` + `rcv_desc` horizontal fields are set to `5064x3376` while keeping `fe_rec_0a`/`fe_rec_19` at `A5` (`idx1`/`idx3`) or stock (`idx6`/`idx9`), what happens in Unicorn/static geometry?
 
 ---
 

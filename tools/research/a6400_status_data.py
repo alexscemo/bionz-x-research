@@ -219,26 +219,58 @@ class StatusSnapshot:
 
 STATUS_SNAPSHOT = StatusSnapshot(
     schema_version=1,
-    as_of="2026-11-26",
+    as_of="2026-11-27",
     latest=EvidenceRef(
-        evidence_id="E9105",
-        path="docs/evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md",
-        date="2026-11-26",
-        title="ILCE-6100 RCRAW / AIF0 W2 and S_SetFOPD Gate Chain Mapped for F01",
+        evidence_id="E9202",
+        path="docs/evidence/9202-a6700-qemu-first-boot.md",
+        date="2026-11-27",
+        title="ILCE-6700 Linux 4.9.337 boots on a new sony-a6700 QEMU machine built from the camera device tree",
         demonstrated=(
-            "Static disassembly of captured ILCE-6100 av-cam.bin (58b2118d...) proves RCRAW_EN (0x643EE0F4) / "
-            "RDRAW_EN (0x643EE4B0) only drive FOPD (0x63777380) and AIF W0/W1, while AIF0 W2 (0xF3002480) is gated by "
-            "0x643EDF60 <- S_SetFOPD (0x63B483C0) <- SyncGetPrcFlow (0x63B2E80C) and DFS clock state (0x6455F1B0 in {2,3}), "
-            "with CalcSdevOutSize (0x63DBEFBA) hard-capped at <= 640x480; mapped SET_RAW_EXTERNAL_OUTPUT (0x63BEFFA0)."
+            "The stock 2.00 kernel runs from EL3 on a QEMU machine with GIC-400, the 2 MHz timer and five PL011 UARTs, "
+            "mounts its ext2 initrd as root and runs the real /sbin/init, which loads devno.ko and dma330.ko; the boot "
+            "stops when dma330 needs the unmodelled PL330."
         ),
         boundary=(
-            "Offline static analysis only; qualifying SET_RAW_EXTERNAL_OUTPUT (0x2044/0x2042 IPC, 0x00BF0274 gate) and "
-            "IMX284/IDT 0xF3000200..0xF3000422 capture in Unicorn/QEMU and on real hardware remains open (F01)."
+            "Only UART, GIC, timer and RAM are modelled; no UI, USB gadget or debugger exists for this body, and the "
+            "machine is not a verified model of the CXD90057 SoC."
         ),
-        tier="OFFLINE STATIC ANALYSIS",
+        tier="OFFLINE EMULATION (QEMU, camera-derived device tree)",
     ),
-    headline="ILCE-6400A SD boot & 10 mods | ILCE-6100 MLCR & Film Sims | L3 OSD surface",
+    headline="ILCE-6700 kernel boot & partitions | ILCE-6400A SD boot & 10 mods | ILCE-6100 MLCR & Film Sims",
     cards=(
+        EvidenceRef(
+            evidence_id="E9201",
+            path="docs/evidence/9201-a6700-camera-partition-capture-via-jiritsu.md",
+            date="2026-11-27",
+            title="ILCE-6700 partitions absent from the 2.00 update read from the running camera",
+            demonstrated=(
+                "Ten ILCE-6700 partitions (nflasha1, 2, 4, 6, 10, 11, 12, 13, 18, 22; 547,291,136 bytes) were read through "
+                "Jiritsu GET_FILE and an uploaded AArch64 RAM worker with per-chunk SHA-1 agreement; the first 2 MiB of live "
+                "nflasha7 equal the update image byte for byte, and no helper file remained on the camera."
+            ),
+            boundary=(
+                "Single pass of live snapshots; nflasha23 was not read; the BIONZ XR (CXD90057) images do not run on the "
+                "repository's BIONZ X machines, and the cause of the 4096-multiple GET_FILE failure is not identified."
+            ),
+            tier="PHYSICAL READ-ONLY CAPTURE (ILCE-6700)",
+        ),
+        EvidenceRef(
+            evidence_id="E9105",
+            path="docs/evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md",
+            date="2026-11-26",
+            title="ILCE-6100 RCRAW / AIF0 W2 and S_SetFOPD Gate Chain Mapped for F01",
+            demonstrated=(
+                "Static disassembly of captured ILCE-6100 av-cam.bin (58b2118d...) proves RCRAW_EN (0x643EE0F4) / "
+                "RDRAW_EN (0x643EE4B0) only drive FOPD (0x63777380) and AIF W0/W1, while AIF0 W2 (0xF3002480) is gated by "
+                "0x643EDF60 <- S_SetFOPD (0x63B483C0) <- SyncGetPrcFlow (0x63B2E80C) and DFS clock state (0x6455F1B0 in {2,3}), "
+                "with CalcSdevOutSize (0x63DBEFBA) hard-capped at <= 640x480; mapped SET_RAW_EXTERNAL_OUTPUT (0x63BEFFA0)."
+            ),
+            boundary=(
+                "Offline static analysis only; qualifying SET_RAW_EXTERNAL_OUTPUT (0x2044/0x2042 IPC, 0x00BF0274 gate) and "
+                "IMX284/IDT 0xF3000200..0xF3000422 capture in Unicorn/QEMU and on real hardware remains open (F01)."
+            ),
+            tier="OFFLINE STATIC ANALYSIS",
+        ),
         EvidenceRef(
             evidence_id="E0681",
             path="docs/evidence/0681-ilce-6400a-standalone-sd-boot-and-exfat-reader.md",

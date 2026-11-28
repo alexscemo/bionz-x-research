@@ -63,6 +63,35 @@
 #define MT_NODE_SEL_INDEX    0x14286c03u
 #define MT_NODE_IDX_CHILD    0x14286ba7u
 #define MT_NODE_SET_SEL_IDX  0x142870c7u
+#elif defined(TARGET_ILCE6400_8257)
+/* Official retail ILCE-6400 FW 2.00 (Sony CE Linux 8.2.5.7, libObj.so 20,860,436 B). */
+#define MT_SYS_GET_INST      0x06308da9u
+#define MT_GET_POS           0x06309091u
+#define MT_WGT_LOOKUP        0x062e2857u
+#define MT_WGT_IS_HIT        0x063050f9u
+#define MT_WGT_INH_MODE      0x0631e88du
+#define MT_VIEW_MGR_SLOT     0x0713ceacu
+#define MT_EVMGR_SLOT        0x0713cd70u
+#define MT_OP_NEW            0x05e15974u
+#define MT_EV_CTOR           0x06558fedu
+#define MT_EVMGR_PUSH        0x0655a599u
+#define MT_VT_MENU_TAB       0x15f1f1d0u
+#define MT_VT_VIEW_SETTING   0x15ec8270u
+#define MT_MENU_BINDING      0x15b91431u
+#define MT_MENU_REFRESH      0x15b92111u
+#define MT_MENU_MAIN_STATE   0x15b90535u
+#define MT_MENU_ENTER_SEL    0x15b92045u
+#define MT_POPUP_OPEN        0x15b95b61u
+#define MT_POPUP_CANCEL      0x15b9184du
+#define MT_POPUP_UP          0x15b9134du
+#define MT_POPUP_DOWN        0x15b91377u
+#define MT_POPUP_SET_ROW     0x15b96f11u
+#define MT_POPUP_CONFIRM     0x15b9638bu
+#define MT_POPUP_APPLY       0x157f8ca5u
+#define MT_VT_SETTING_NODE   0x16c18400u
+#define MT_NODE_SEL_INDEX    0x16925c17u
+#define MT_NODE_IDX_CHILD    0x16925bc7u
+#define MT_NODE_SET_SEL_IDX  0x169260dbu
 #else
 #define MT_SYS_GET_INST      0x06308d31u
 #define MT_GET_POS           0x06309019u
@@ -226,7 +255,11 @@ static uint32_t find_setting_menu_view(uint32_t menu) {
 }
 
 static void push_async_event(uint32_t event_id, uint8_t ev_type) {
+#ifdef TARGET_ILCE6400_8257
+    uint32_t mgr = rd32(MT_EVMGR_SLOT, 0u);
+#else
     uint32_t mgr = rd32(rd32(MT_EVMGR_SLOT, 0u), 0u);
+#endif
     if (!mgr || !event_id) {
         return;
     }

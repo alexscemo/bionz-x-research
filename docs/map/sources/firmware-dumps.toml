@@ -14,6 +14,8 @@ reviewed = "2026-11-26"
 records = [
   "E0707",
   "E9101",
+  "E9201",
+  "E9202",
   "E0414",
   "E0415",
   "E0524:reproducible",
@@ -36,6 +38,13 @@ kind = "source"
 name = "ILCE-6400 read-only partition set"
 aliases = ["a6400-nflasha-readonly", "dumps/a6400-nflasha-readonly", "38111_06.2021081003"]
 summary = "E0477 read-only capture of 18 nflasha partitions (1,360,986,112 bytes), a 1 MiB head read and three filesystem archives."
+
+[[entity]]
+id = "source.a6700-camera-dump"
+kind = "source"
+name = "ILCE-6700 camera-read partitions"
+aliases = ["a6700-live", "dumps/a6700-live", "a6700_jiritsu_dump", "E9201"]
+summary = "Ten nflash partitions absent from the ILCE-6700 2.00 update (547,291,136 bytes), read from the running camera through Jiritsu GET_FILE and a RAM worker."
 
 [[entity]]
 id = "proc.dump-integrity"
@@ -93,6 +102,34 @@ status = "inference"
 text = "The shared nflasha23 bytes show the same 2 MiB partition content on both bodies, which is consistent with but does not attest the ILCE-6400A MSC LUN 1 backing that E0674 left unattested."
 evidence = ["E0707"]
 
+[[claim]]
+id = "C08"
+entities = ["source.a6700-camera-dump", "proc.dump-integrity"]
+status = "verified-physical"
+text = "Ten ILCE-6700 partitions that the 2.00 update does not carry (nflasha1, 2, 4, 6, 10, 11, 12, 13, 18, 22; 547,291,136 bytes) were read from the running camera with per-chunk SHA-1 agreement; nine are FAT and nflasha4 has no filesystem signature. The first 2 MiB of live nflasha7 equal the update image byte for byte. nflasha23 was deliberately not read, there is a single pass, and mounted partitions are live snapshots."
+evidence = ["E9201"]
+
+[[claim]]
+id = "C09"
+entities = ["source.a6700-camera-dump"]
+status = "verified-offline"
+text = "On the ILCE-6700 the Senser level tables (A/B/C) contain no FileControl 0xff01 or MemoryDump 0xff03, and libJiritsu carries the same 0x1001/0x4001..0x4012 command table as the a6400A; GET_FILE with a /.. path reads any non-empty regular file and an uploaded /tmp/jiritsu/libJit.so is dlopened once per boot. /tmp is /dev/nflasha10 but /tmp/jiritsu is the nflasha6 mount (vfat, rw, sync), so the uploaded run.sh and libJit.so are written to nflasha6 and removed afterwards."
+evidence = ["E9201"]
+
+[[claim]]
+id = "C10"
+entities = ["source.a6700-camera-dump"]
+status = "inference"
+text = "Every GET_FILE read that failed with status 0x10000006 concerned a file whose size is a multiple of 4096, and every read that succeeded did not; padding each chunk by three bytes made 1,000+ chunk reads succeed. The cause inside the Jiritsu read path is not identified."
+evidence = ["E9201"]
+
+[[claim]]
+id = "C11"
+entities = ["source.a6700-camera-dump"]
+status = "verified-offline"
+text = "The ILCE-6700 2.00 Linux 4.9.337 kernel boots on a new sony-a6700 QEMU machine built from the camera's device tree (EL3 hand-off, GIC-400, 2 MHz timer, five PL011, initrd ext2 root, real /sbin/init) then loads devno, dma330, crypt-emmc and emmc.ko; with stub contracts for the crypt-emmc OTP window, engine status and data window, an SDHCI at 0xF10D6000 and a replayed eMMC hand-off the eMMC is detected (4096 MiB) and the boot stops at 'partition table invalid' because the emulated eMMC has no Sony partition table. The image's EL3 code passes the device tree at RAM_BASE+0x2000. No UI, USB or TCP debugger exists for this body."
+evidence = ["E9202"]
+
 [[frontier]]
 id = "F01"
 title = "Acquisition provenance and a6100 partition roles"
@@ -100,6 +137,14 @@ state = "open"
 entities = ["source.a6100-dump", "proc.dump-integrity"]
 evidence = ["E0707"]
 next = "Record the a6100 fetch conditions (service or normal mode, camera uptime, mount state) and read /proc/mounts read-only on the ILCE-6100 so its partition roles stop being inferred from the a6400; neither set is a whole-device image."
+
+[[frontier]]
+id = "F02"
+title = "ILCE-6700 second pass and nflasha23"
+state = "open"
+entities = ["source.a6700-camera-dump"]
+evidence = ["E9201"]
+next = "Repeat the camera read in a fresh power cycle for two-pass agreement, decide with the owner whether nflasha23 (PMBP, 64 MiB) may be read, and keep the personal-data rules for nflasha2, 11 and 12."
 
 [[hazard]]
 id = "H01"

@@ -11,7 +11,12 @@ from src.a6400.execution.guarded_bytes import UnverifiedGuestData
 from src.a6400.execution.interpreter_probe import InterpreterProbe
 from src.a6400.execution.guest_stdio import GuestStdio
 from project_paths import PROJECT_ROOT
-from test_interpreter_probe import make_elf
+try:
+    from tests.test_interpreter_probe import make_elf
+except ModuleNotFoundError as exc:
+    if exc.name not in ("tests", "tests.test_interpreter_probe"):
+        raise
+    from test_interpreter_probe import make_elf
 
 
 PROFILE = {'major': 249, 'minor': 7, 'initial_offset': 0,

@@ -29,6 +29,45 @@ STARTUP_TABLE_SIG = struct.pack("<7H", 0x0105, 0x0285, 0x0320, 0x0400, 0x0500, 0
 BSS_SCAN_PA = 0x04300000
 BSS_SCAN_SIZE = 4 * 1024 * 1024
 
+TARGET_PROFILES = {
+    "a6400": {"machine": "sony-a6400", "data_subdir": "artifacts/boot-inputs-a6400"},
+    "ilce_6400": {"machine": "sony-a6400", "data_subdir": "artifacts/boot-inputs-a6400"},
+    "a6100": {"machine": "sony-a6100", "data_subdir": "artifacts/boot-inputs-a6100"},
+    "ilce_6100": {"machine": "sony-a6100", "data_subdir": "artifacts/boot-inputs-a6100"},
+    "6100a": {"machine": "sony-a6100", "data_subdir": "artifacts/boot-inputs-a6100"},
+    "a6400a": {"machine": "sony-a6400a", "data_subdir": "artifacts/boot-inputs-6400a"},
+    "6400a": {"machine": "sony-a6400a", "data_subdir": "artifacts/boot-inputs-6400a"},
+    "ilce_6400a": {"machine": "sony-a6400a", "data_subdir": "artifacts/boot-inputs-6400a"},
+}
+
+
+def resolve_target(
+    args: argparse.Namespace,
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> tuple[str, Path, str]:
+    """Resolve (machine, data_dir, submicro_frames) from --target and explicit flags."""
+    target = getattr(args, "target", "") or ""
+    profile = TARGET_PROFILES.get(target.lower()) if target else None
+    if target and profile is None:
+        raise ValueError(f"Unknown --target {target!r}; choose from {sorted(TARGET_PROFILES)}")
+
+    machine = getattr(args, "machine", "") or (profile["machine"] if profile else "sony-a6400")
+    raw_data_dir = getattr(args, "data_dir", "") or (
+        str(project_root / profile["data_subdir"]) if profile else ""
+    )
+    if not raw_data_dir:
+        raise ValueError("Provide --target or --data-dir")
+    data_dir = Path(raw_data_dir).resolve()
+
+    submicro_frames = getattr(args, "submicro_frames", "") or ""
+    if not submicro_frames and profile is not None:
+        candidate = data_dir / "submicro-frames-powered.bin"
+        if candidate.is_file():
+            submicro_frames = str(candidate)
+
+    return machine, data_dir, submicro_frames
+
 
 def find_sequencer_table_va(avcam_path: Path) -> tuple[int, str]:
     """Locate the 43-step mode-sequencer startup table VA in av-cam.bin."""
@@ -156,7 +195,7 @@ def run_headless(args: argparse.Namespace) -> dict:
     qemu_dir = Path(args.qemu_dir or os.environ.get("A6400_QEMU_DIR")
                     or Path.home() / f"sony-a6400-qemu-{toolchain['qemu']['version']}")
     qemu_bin = qemu_dir / "build" / "qemu-system-arm"
-    data_dir = Path(args.data_dir).resolve()
+    machine, data_dir, submicro_frames = resolve_target(args)
     manifest_path = data_dir / "boot-manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else {}
     outputs = manifest.get("outputs", {})
@@ -186,15 +225,15 @@ def run_headless(args: argparse.Namespace) -> dict:
             "A6400_QEMU_DIR": str(qemu_dir),
             "A6400_QEMU_DATA_DIR": str(data_dir),
             "RUN_DIR": str(run_dir),
-            "MACHINE_NAME": args.machine,
+            "MACHINE_NAME": machine,
             "SERIAL": f"file:{serial_log}",
             "EVSEL_LATE_US": str(args.evsel_late_us),
             "REAR_CONTROLS": "1" if args.rear_controls else "0",
             "ULOGIO": args.ulogio or "",
             "QEMU_EXTRA": " ".join(extra),
         })
-        if args.submicro_frames:
-            sm_path = Path(args.submicro_frames).resolve()
+        if submicro_frames:
+            sm_path = Path(submicro_frames).resolve()
             env["SUBMICRO_FRAMES"] = str(sm_path)
             env["SUBMICRO_FRAMES_SHA"] = args.submicro_sha or digest(sm_path)
             env.pop("SUBMICRO_PAGE", None)
@@ -253,7 +292,7 @@ def run_headless(args: argparse.Namespace) -> dict:
 
         receipt = {
             "schema_version": 1,
-            "machine": args.machine,
+            "machine": machine,
             "target_id": manifest.get("target_id", "unknown"),
             "qemu_sha256": digest(qemu_bin) if qemu_bin.is_file() else None,
             "image_sha256": (outputs.get("emmc.img") or {}).get("sha256"),
@@ -279,8 +318,9 @@ def run_headless(args: argparse.Namespace) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--machine", default="sony-a6400")
-    parser.add_argument("--data-dir", required=True)
+    parser.add_argument("--target", default="", choices=["", *sorted(TARGET_PROFILES)])
+    parser.add_argument("--machine", default="")
+    parser.add_argument("--data-dir", default="")
     parser.add_argument("--submicro-frames", default="")
     parser.add_argument("--submicro-sha", default="")
     parser.add_argument("--ulogio", default="")
@@ -294,6 +334,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--screen-out", default="")
     parser.add_argument("--out", default="")
     args = parser.parse_args(argv)
+    if not args.target and not args.data_dir:
+        parser.error("Provide --target or --data-dir")
     receipt = run_headless(args)
     print(json.dumps(receipt, indent=2))
     return 0

@@ -1545,7 +1545,7 @@ static void cxd90045_create_ddrb_at(MemoryRegion *sysmem, hwaddr base,
     memory_region_init_io(&s->mmio, NULL, &cxd90045_ddrb_ops, s, name, 0x21c);
     memory_region_add_subregion_overlap(sysmem, base, &s->mmio, 0);
     qemu_register_reset(cxd90045_ddrb_reset, s);
-    vmstate_register(NULL, 0, &vmstate_cxd_ddrb, s);
+    vmstate_register(NULL, VMSTATE_INSTANCE_ID_ANY, &vmstate_cxd_ddrb, s);
 }
 
 static bool sony_get_ddrb_control(Object *obj, Error **errp)
@@ -2062,8 +2062,10 @@ static void sony_a6400_sio_log(void *opaque, int ch, uint32_t mode,
 static char *sony_a6400_sm_file;
 static uint8_t sony_a6400_sm_frames[384];
 static bool sony_a6400_sm_loaded;
+static bool sony_a6400_sm_synthetic;
 static bool sony_a6400_sm_lens_power;
 static SDBus *sony_a6400_sd_bus;
+static bool sony_a6400_sd_uhs_u3;
 static bool sony_a6400_rear_controls;
 static DeviceState *sony_a6400_rear_adc;
 static QKeyCode sony_a6400_adc_owner[2];
@@ -4028,8 +4030,10 @@ static const Cxd90045F292Rule cxd90045_combophy_mon_rules[] = {
 };
 
 static const Cxd90045F292Rule cxd90045_pbl_aic0_rules[] = {
+    { 0x000, CXD90045_F292_RF, "av-cam PBL AIC0 CTRL +0x00" },
     { 0x004, CXD90045_F292_RF, "av-cam PBL AIC0 DICARB +0x04" },
     { 0x008, CXD90045_F292_RF, "av-cam PBL AIC0 EICARB +0x08" },
+    { 0x00C, CXD90045_F292_RF, "av-cam PBL AIC0 MASK +0x0C" },
     { 0x010, CXD90045_F292_RF, "av-cam PBL AIC0 DIC0_VMC +0x10" },
     { 0x014, CXD90045_F292_RF, "av-cam PBL AIC0 DIC1_VMC +0x14" },
     { 0x018, CXD90045_F292_RF, "av-cam PBL AIC0 EIC0_VMC +0x18" },
@@ -4047,9 +4051,9 @@ static const Cxd90045F292Rule cxd90045_cal_nor_rules[] = {
 /*
  * GP-DMAC Unit 1 at 0xF0103000 (av-cam 0x63a68c42..0x63a693cd, twin of Unit 0
  * at 0xF0102000): models IRQ_CLR (+0x08 W1C), IRQ_EN (+0x10), DMA_EN (+0x30),
- * ARB_MASK (+0x34), and Ch0/Ch3 CFG/CTRL (+0x10C/+0x110, +0x16C/+0x170 with
- * self-clearing BIT(0) start and BIT(18) busy == 0). Unlisted offsets still
- * log as cxd90045.gpdmac1.unmodelled.
+ * ARB_MASK (+0x34), and Ch0/Ch3/Ch4 CFG/CTRL (+0x10C/+0x110, +0x16C/+0x170,
+ * +0x18C/+0x190 with self-clearing BIT(0) start and BIT(18) busy == 0).
+ * Unlisted offsets still log as cxd90045.gpdmac1.unmodelled.
  */
 typedef struct Cxd90045GpDmac1 {
     MemoryRegion mmio;
@@ -4067,6 +4071,8 @@ static bool cxd90045_gpdmac1_known(hwaddr off)
     case 0x110:
     case 0x16C:
     case 0x170:
+    case 0x18C:
+    case 0x190:
         return true;
     default:
         return false;
@@ -4086,7 +4092,7 @@ static uint64_t cxd90045_gpdmac1_read(void *opaque, hwaddr off, unsigned size)
         return 0;
     }
     uint32_t v = s->regs[w >> 2];
-    if (w == 0x110 || w == 0x170) {
+    if (w == 0x110 || w == 0x170 || w == 0x190) {
         v &= ~((1U << 18) | 1U); /* busy == 0, start self-cleared */
     }
     return (v >> ((off & 3) * 8)) & (size >= 4 ? 0xFFFFFFFFU : ((1U << (size * 8)) - 1));
@@ -4111,7 +4117,7 @@ static void cxd90045_gpdmac1_write(void *opaque, hwaddr off, uint64_t v,
         return;
     }
     s->regs[w >> 2] = (uint32_t)v;
-    if ((w == 0x110 || w == 0x170) && (v & 1U)) {
+    if ((w == 0x110 || w == 0x170 || w == 0x190) && (v & 1U)) {
         s->regs[w >> 2] &= ~1U;
     }
 }
@@ -4137,7 +4143,6 @@ static const MemoryRegionOps cxd90045_gpdmac1_ops = {
  */
 static bool sony_a6400_clkrst_model;
 static bool sony_a6400_pmic_reset;
-static bool sony_a6400_sd_uhs_u3;
 static bool sony_a6400_remote_suspend_bypass;
 static bool sony_a6400_still_capture;
 
@@ -4872,6 +4877,76 @@ static void sony_a6400_submicro_crc(uint8_t frame[128])
     frame[127] = crc >> 8;
 }
 
+/*
+ * Synthesize clean-room powered idle RX slots A (0x20), C (0x60), and B (0x30)
+ * from the verified ILCE-6400 contracts (E0526, E0527 §0.2, E0591, E0650,
+ * and Oein/a5000-emulator RE_SUBMICRO_LINK.md §4):
+ *   - Slot A [0..127]:  type 0x20, CAkey1 [28]=0x01 (POWER ON, Play/Menu idle),
+ *                       [29]=0xff (active-low upper keys idle); [2] bit 4 SD0
+ *                       presence is synced per exchange from sony_a6400_sd_bus.
+ *   - Slot C [128..255]: type 0x60 idle status packet.
+ *   - Slot B [256..383]: type 0x30 TLV packet carrying the 8 documented a6400
+ *                       TLVs: 0x00 (version 01 02 01 38), 0x01 (4B 0),
+ *                       0x02 (4B 0), 0x03 (powered 00 00 00 03), 0x0a (32B),
+ *                       0x0b (16B nominal battery), 0x10 (4B 0), 0x14 (12B 0).
+ */
+static void sony_a6400_init_synthetic_submicro(uint8_t frames[384])
+{
+    static const uint8_t tlv00[4]  = { 0x01, 0x02, 0x01, 0x38 };
+    static const uint8_t zero4[4]  = { 0x00, 0x00, 0x00, 0x00 };
+    static const uint8_t tlv03[4]  = { 0x00, 0x00, 0x00, 0x03 };
+    static const uint8_t tlv0a[32] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t tlv0b[16] = {
+        0x02, 0x40, 0x02, 0x00, 0xc0, 0x00, 0x00, 0x00,
+        0x31, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t zero12[12] = { 0 };
+    static const struct {
+        uint8_t id;
+        uint8_t len;
+        const uint8_t *data;
+    } tlvs[] = {
+        { 0x00, sizeof(tlv00),  tlv00  },
+        { 0x01, sizeof(zero4),  zero4  },
+        { 0x02, sizeof(zero4),  zero4  },
+        { 0x03, sizeof(tlv03),  tlv03  },
+        { 0x0a, sizeof(tlv0a),  tlv0a  },
+        { 0x0b, sizeof(tlv0b),  tlv0b  },
+        { 0x10, sizeof(zero4),  zero4  },
+        { 0x14, sizeof(zero12), zero12 },
+    };
+    uint8_t *slot_a = frames;
+    uint8_t *slot_c = frames + 128;
+    uint8_t *slot_b = frames + 256;
+    unsigned pos = 4;
+
+    memset(frames, 0, 384);
+
+    slot_a[0] = 0x20;
+    slot_a[28] = 0x01; /* POWER ON (bit 0 = 1), Play/Menu released */
+    slot_a[29] = 0xff; /* Active-low upper CAkey1 lines released */
+    sony_a6400_submicro_crc(slot_a);
+
+    slot_c[0] = 0x60;
+    sony_a6400_submicro_crc(slot_c);
+
+    slot_b[0] = 0x30;
+    for (size_t i = 0; i < ARRAY_SIZE(tlvs); i++) {
+        g_assert(pos + 4 + tlvs[i].len <= 126);
+        slot_b[pos] = tlvs[i].id;
+        slot_b[pos + 1] = tlvs[i].len;
+        memcpy(slot_b + pos + 4, tlvs[i].data, tlvs[i].len);
+        pos += 4 + tlvs[i].len;
+    }
+    slot_b[2] = pos - 4;
+    sony_a6400_submicro_crc(slot_b);
+
+}
 static DeviceState *sony_a6400_hdmi_cec_dev;
 static bool sony_a6400_sm_rail_on;
 
@@ -4890,6 +4965,7 @@ static bool sony_a6400_submicro_frame_valid(const uint8_t frame[128])
         pos += 4 + size;
     }
     return true;
+
 }
 
 static const uint8_t *sony_a6400_submicro_tlv(const uint8_t frame[128],
@@ -5094,6 +5170,20 @@ static void sony_a6400_set_sm_lens_power(Object *obj, bool enabled, Error **errp
     sony_a6400_sm_lens_power = enabled;
 }
 
+static bool sony_a6400_get_sm_synthetic(Object *obj, Error **errp)
+{
+    return sony_a6400_sm_synthetic;
+}
+
+static void sony_a6400_set_sm_synthetic(Object *obj, bool enabled, Error **errp)
+{
+    if (phase_check(PHASE_MACHINE_INITIALIZED)) {
+        error_setg(errp, "submicro-synthetic is a startup option");
+        return;
+    }
+    sony_a6400_sm_synthetic = enabled;
+}
+
 /*
  * "hostwin" (developer option, not a hardware model): a host file mapped as shared RAM at
  * PA 0x50000000 (16 MiB, between RAM bank 0 and bank 1, unused by the CXD90045 map). The host
@@ -5277,6 +5367,8 @@ static bool sony_a6400_peripherals;
 static bool sony_a6400_touchscreen;
 static bool sony_a6400_bcm4339;
 static bool sony_a6400_hdmi_cec;
+static bool sony_a6400_hdmi_plugged = true;
+static DeviceState *sony_a6400_hdmi_dev;
 static bool sony_a6400_audio_io;
 static bool sony_a6400_audio_mic_plugged;
 static char *sony_a6400_audio_input;
@@ -5379,6 +5471,25 @@ static void sony_set_hdmi_cec(Object *obj, bool enabled, Error **errp)
         return;
     }
     sony_a6400_hdmi_cec = enabled;
+}
+
+static bool sony_get_hdmi_plugged(Object *obj, Error **errp)
+{
+    if (sony_a6400_hdmi_dev) {
+        return object_property_get_bool(OBJECT(sony_a6400_hdmi_dev),
+                                        "hdmi-plugged", errp);
+    }
+    return (sony_a6400_hdmi_cec || sony_a6400_peripherals) &&
+           sony_a6400_hdmi_plugged;
+}
+
+static void sony_set_hdmi_plugged(Object *obj, bool enabled, Error **errp)
+{
+    sony_a6400_hdmi_plugged = enabled;
+    if (sony_a6400_hdmi_dev) {
+        object_property_set_bool(OBJECT(sony_a6400_hdmi_dev),
+                                 "hdmi-plugged", enabled, errp);
+    }
 }
 
 static bool sony_get_audio_io(Object *obj, Error **errp)
@@ -5653,6 +5764,7 @@ static void sony_a6400_init(MachineState *machine)
     int i;
 
     sony_a6400_sd_bus = NULL;
+    sony_a6400_hdmi_dev = NULL;
 
     for (unsigned c = 0; c < ncpu; c++) {
         Object *cpuobj = object_new(machine->cpu_type);
@@ -6354,7 +6466,12 @@ static void sony_a6400_init(MachineState *machine)
         qemu_register_reset(sony_a6400_rear_reset, NULL);
     }
 
-    if (sony_a6400_sm_file) {
+    if (sony_a6400_sm_file && *sony_a6400_sm_file && sony_a6400_sm_synthetic) {
+        error_report("sony-a6400: submicro-frames and submicro-synthetic "
+                     "are mutually exclusive");
+        exit(1);
+    }
+    if (sony_a6400_sm_file && *sony_a6400_sm_file) {
         gchar *data = NULL;
         gsize flen = 0;
 
@@ -6367,6 +6484,14 @@ static void sony_a6400_init(MachineState *machine)
         memcpy(sony_a6400_sm_frames, data, sizeof(sony_a6400_sm_frames));
         g_free(data);
         sony_a6400_sm_loaded = true;
+    } else if (sony_a6400_sm_synthetic) {
+        sony_a6400_init_synthetic_submicro(sony_a6400_sm_frames);
+        sony_a6400_sm_loaded = true;
+    } else {
+        sony_a6400_sm_loaded = false;
+
+    }
+    if (sony_a6400_sm_loaded) {
         sony_a6400_submicro_init_rail_state();
     }
 
@@ -6418,6 +6543,7 @@ static void sony_a6400_init(MachineState *machine)
         qdev_connect_gpio_out_named(
             sony_a6400_gpio, "out", 5 * 32 + 24,
             qemu_allocate_irq(caif_on_read_start_gpio, caif, 1));
+
     }
 
     /*
@@ -6463,6 +6589,9 @@ static void sony_a6400_init(MachineState *machine)
     if (hdmi_cec_on) {
         sony_a6400_hdmi_cec_dev =
             cxd90045_hdmi_cec_create(machine, sysmem, vph_dev);
+        sony_a6400_hdmi_dev = sony_a6400_hdmi_cec_dev;
+        object_property_set_bool(OBJECT(sony_a6400_hdmi_cec_dev), "hdmi-plugged",
+                                 sony_a6400_hdmi_plugged, &error_fatal);
     }
     if (bcm4339_on) {
         cxd90045_bcm4339_sdio_create(sysmem, CXD90045_MMC1_BASE,
@@ -6684,6 +6813,7 @@ static void sony_a6400_init(MachineState *machine)
         if (sony_a6400_sd_uhs_u3) {
             qdev_prop_set_uint8(card, "speed-class", 10);
             qdev_prop_set_uint8(card, "uhs-speed-grade", 3);
+
         }
         qdev_realize_and_unref(card, BUS(bus), &error_fatal);
         sony_a6400_sd_bus = bus;
@@ -6713,6 +6843,9 @@ static void sony_a6400_init(MachineState *machine)
         if (sd2_blk) {
             DeviceState *card2 = qdev_new(TYPE_SD_CARD);
             qdev_prop_set_drive_err(card2, "drive", sd2_blk, &error_fatal);
+            if (sony_a6400_sd_uhs_u3) {
+                qdev_prop_set_bit(card2, "x-sony-uhs-u3", true);
+            }
             qdev_realize_and_unref(card2, BUS(bus2), &error_fatal);
         }
     }
@@ -6741,6 +6874,12 @@ static void sony_cxd90045_common_machine_init(MachineClass *mc,
                                   sony_a6400_set_sm_file);
     object_class_property_set_description(OBJECT_CLASS(mc), "submicro-frames",
         "384-byte file: captured sub-micro RX slots A, C, B (E0527)");
+    object_class_property_add_bool(OBJECT_CLASS(mc), "submicro-synthetic",
+                                   sony_a6400_get_sm_synthetic,
+                                   sony_a6400_set_sm_synthetic);
+    object_class_property_set_description(OBJECT_CLASS(mc), "submicro-synthetic",
+        "Synthesize powered idle 384-byte sub-micro RX slots A, C, B without an "
+        "external capture file (E0526, E0527, E0591)");
     object_class_property_add_bool(OBJECT_CLASS(mc), "submicro-lens-power",
                                    sony_a6400_get_sm_lens_power,
                                    sony_a6400_set_sm_lens_power);
@@ -6900,6 +7039,11 @@ static void sony_cxd90045_common_machine_init(MachineClass *mc,
     object_class_property_set_description(OBJECT_CLASS(mc), "hdmi-cec",
         "Enable CXD90045 HDMI TX (0xF2A40000, DDC EDID + HPD + VPH Console 1) "
         "and CEC (0xF3C10000, virtual TV responder)");
+    object_class_property_add_bool(OBJECT_CLASS(mc), "hdmi-plugged",
+                                   sony_get_hdmi_plugged,
+                                   sony_set_hdmi_plugged);
+    object_class_property_set_description(OBJECT_CLASS(mc), "hdmi-plugged",
+        "Set virtual HDMI sink HPD/RSEN cable state when hdmi-cec=on");
     object_class_property_add_bool(OBJECT_CLASS(mc), "audio-io",
                                    sony_get_audio_io, sony_set_audio_io);
     object_class_property_set_description(OBJECT_CLASS(mc), "audio-io",

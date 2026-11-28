@@ -49,6 +49,54 @@ class TestQemuHeadlessReceipt(unittest.TestCase):
         self.assertTrue(parsed["boot"]["vph_ch51_enabled"])
         self.assertEqual(parsed["unmodelled"]["distinct_pairs"], 1)
 
+    def test_resolve_target_profiles(self) -> None:
+        from argparse import Namespace
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            a6100_dir = root / "artifacts" / "boot-inputs-a6100"
+            a6100_dir.mkdir(parents=True)
+            sm = a6100_dir / "submicro-frames-powered.bin"
+            sm.write_bytes(b"\x00" * 384)
+
+            machine, data_dir, submicro = qemu_headless_receipt.resolve_target(
+                Namespace(target="a6100", machine="", data_dir="", submicro_frames=""),
+                project_root=root,
+            )
+            self.assertEqual(machine, "sony-a6100")
+            self.assertEqual(data_dir, a6100_dir.resolve())
+            self.assertEqual(submicro, str(sm.resolve()))
+
+            # Explicit overrides win over --target defaults
+            override_dir = root / "custom"
+            machine, data_dir, submicro = qemu_headless_receipt.resolve_target(
+                Namespace(
+                    target="ilce_6400a",
+                    machine="sony-a6400",
+                    data_dir=str(override_dir),
+                    submicro_frames="/tmp/custom.bin",
+                ),
+                project_root=root,
+            )
+            self.assertEqual(machine, "sony-a6400")
+            self.assertEqual(data_dir, override_dir.resolve())
+            self.assertEqual(submicro, "/tmp/custom.bin")
+
+            # Fallback without --target requires --data-dir and defaults to sony-a6400
+            machine, data_dir, submicro = qemu_headless_receipt.resolve_target(
+                Namespace(target="", machine="", data_dir=str(override_dir), submicro_frames=""),
+                project_root=root,
+            )
+            self.assertEqual(machine, "sony-a6400")
+            self.assertEqual(data_dir, override_dir.resolve())
+            self.assertEqual(submicro, "")
+
+            with self.assertRaises(ValueError):
+                qemu_headless_receipt.resolve_target(
+                    Namespace(target="", machine="", data_dir="", submicro_frames=""),
+                    project_root=root,
+                )
+
 
 @unittest.skipIf(shutil.which("mkfs.fat") is None or shutil.which("mcopy") is None, "dosfstools/mtools required")
 class TestQemuBootInputs17Part(unittest.TestCase):

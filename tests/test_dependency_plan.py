@@ -8,7 +8,12 @@ from project_paths import PROJECT_ROOT
 from tools.research.dependency_plan import Planner, analyze_function
 from tools.research.rea_evidence_cache import EvidenceCache
 from tools.research.toolchain import rea_profile
-from test_storage_trace import module_fixture
+try:
+    from tests.test_storage_trace import module_fixture
+except ModuleNotFoundError as exc:
+    if exc.name not in ("tests", "tests.test_storage_trace"):
+        raise
+    from test_storage_trace import module_fixture
 
 
 class DependencyPlannerTests(unittest.TestCase):

@@ -17,6 +17,7 @@ The root now holds only standard project files and core directories:
 | `.mcp.json.example` | Portable workspace MCP server template (copy to ignored `.mcp.json` on Windows/WSL hosts) |
 | `.github/`, `docs/`, `src/`, `tools/`, `tests/`, `scripts/`, `legacy/`, `probes/` | GitHub CI/Release workflows & templates, source, tooling, and documentation |
 | `mods/`, `isp-studio/`, `a6400-lut-converter/`, `qemu-a6400/` | Camera mods, Rust BIONZ Look Lab, LUT pipeline, and native QEMU `sony-a6400` machine |
+| `emulators/` | Emulators for bodies outside the CXD90045 platform, one directory per body (`emulators/a6000/`: the `sony-a6000` QEMU machine) |
 | `android/` (`cinemahud/`, `raw-usb-ref/`), `camera-daemon/` | Track A Android clients (`raw-usb-ref/` moved from `android-client-ref/`) and Track B camera daemon |
 | `firmware/`, `backups/`, `artifacts/`, `reports/`, `scratch/` | Local preserved inputs, hardware dumps (`reports/a6400_hw_dump.txt`), and generated results |
 

@@ -11,8 +11,11 @@ Design rules (enforced in ``__post_init__``, not by convention):
   :class:`EvidenceRef`. A claim without a source cannot be constructed.
 * An ``unverified`` profile may not carry any claim at all. New bodies start as an
   explicit stub; nothing is guessed to make a table look complete.
-* Only one SoC family exists here: a profile *is* a BIONZ X ``CXD90045`` body, and
-  ``soc_verified`` records whether that body-level identity is evidence-backed.
+* The platform is the BIONZ X ``CXD90045``. One earlier SoC, ``CXD90014`` (ILCE-6000),
+  is accepted as well, but its profiles live in a separate registry
+  (``CXD90014_REGISTRY``), so code that walks ``DEFAULT_REGISTRY`` only sees
+  ``CXD90045`` bodies. ``soc_verified`` records whether the body-level identity is
+  evidence-backed.
 
 Nothing in this module touches a camera, a firmware image or the network.
 """
@@ -23,6 +26,9 @@ from dataclasses import dataclass, field
 from typing import Mapping
 
 SOC_BIONZ_X = "CXD90045"
+#: ILCE-6000 SoC (quad Cortex-A5); its profiles are kept out of DEFAULT_REGISTRY.
+SOC_CXD90014 = "CXD90014"
+SUPPORTED_SOCS = (SOC_BIONZ_X, SOC_CXD90014)
 
 #: A profile that carries only evidence-backed values.
 STATUS_VERIFIED = "verified"
@@ -161,8 +167,11 @@ class TargetProfile:
             raise ValueError(f"{self.target_id}: model_name is required")
         if self.status not in TARGET_STATUSES:
             raise ValueError(f"{self.target_id}: status must be one of {TARGET_STATUSES}, got {self.status!r}")
-        if self.soc != SOC_BIONZ_X:
-            raise ValueError(f"{self.target_id}: only the {SOC_BIONZ_X} BIONZ X family is modeled, got {self.soc!r}")
+        if self.soc not in SUPPORTED_SOCS:
+            raise ValueError(
+                f"{self.target_id}: only the {SOC_BIONZ_X} BIONZ X family (and {SOC_CXD90014}) "
+                f"is modeled, got {self.soc!r}"
+            )
         if self.status == STATUS_VERIFIED and not self.soc_verified:
             raise ValueError(f"{self.target_id}: a verified profile must set soc_verified")
         if self.status == STATUS_UNVERIFIED and self.soc_verified:
@@ -275,16 +284,27 @@ class TargetProfile:
 
 
 class TargetRegistry:
-    """Immutable registry of target profiles keyed by ``target_id``."""
+    """Immutable registry of target profiles of one SoC, keyed by ``target_id``.
 
-    def __init__(self, profiles: tuple[TargetProfile, ...]):
+    A registry holds a single SoC family (``CXD90045`` unless stated), so a runner that
+    walks it cannot be handed a body of another SoC.
+    """
+
+    def __init__(self, profiles: tuple[TargetProfile, ...], soc: str = SOC_BIONZ_X):
         if not profiles:
             raise ValueError("a target registry needs at least one profile")
+        if soc not in SUPPORTED_SOCS:
+            raise ValueError(f"unknown SoC {soc!r}; expected one of {SUPPORTED_SOCS}")
         seen: dict[str, TargetProfile] = {}
         for profile in profiles:
             if profile.target_id in seen:
                 raise ValueError(f"duplicate target_id {profile.target_id!r}")
+            if profile.soc != soc:
+                raise ValueError(
+                    f"{profile.target_id}: a {soc} registry cannot hold a {profile.soc} body"
+                )
             seen[profile.target_id] = profile
+        self.soc = soc
         self._profiles = seen
 
     def get(self, target_id: str) -> TargetProfile:

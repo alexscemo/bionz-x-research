@@ -860,7 +860,8 @@ class QemuUsbConnectionsNativeTests(unittest.TestCase):
         ext = msc.sony_ext_model_info()
         self.assertEqual((ext['model'], ext['product_code_wire_hex']), ('ILCE-6400', '0032858730'))
 
-        # Multi-sector 2048 B WRITE(10) = four 512B Bulk OUT packets into one 2048B TRB
+        # Multi-sector 2048 B WRITE(10) traverses a two-TRB Bulk-OUT chain
+        # while the host sends four 512B packets.
         pattern = bytes(((i * 29 + 11) & 0xFF) for i in range(2048))
         msc.write_10(8, pattern)
         self.assertEqual(msc.read_10(8, 4), pattern)
@@ -885,6 +886,19 @@ class QemuUsbConnectionsNativeTests(unittest.TestCase):
             msc.scsi_command(b'\xee\x00\x00\x00\x10\x00', data_in_len=16)
         msc.recover_from_stall()
         self.assertTrue(msc.test_unit_ready())
+
+    def test_msc_bot_chained_bulk_out_write_readback(self):
+        _proc, qmp, host = self._start_vm('msc')
+        self._set_vbus(qmp, True)
+        self._wait_for(lambda: self._read_u32(qmp, SRAM_MBOX + 0x08) == 1,
+                       label='MSC active')
+        self._connect_bus(qmp, host)
+
+        msc = MscBotClient(host)
+        msc.enumerate()
+        pattern = bytes(((i * 29 + 11) & 0xFF) for i in range(2048))
+        msc.write_10(8, pattern)
+        self.assertEqual(msc.read_10(8, 4), pattern)
 
     def test_pc_remote_ptp_handshake_liveview_and_interrupt_event(self):
         _proc, qmp, host = self._start_vm('ptp')
@@ -1028,6 +1042,157 @@ class QemuUsbConnectionsNativeTests(unittest.TestCase):
         self.assertEqual(self._read_u32(qmp, DWC3_DCTL) & (1 << 31), 0)
         self.assertTrue(self._read_u32(qmp, DWC3_DSTS) & DSTS_DEVCTRLHLT)
         self.assertEqual(self._read_u32(qmp, SRAM_MBOX + 0x10), 0x4020404A)
+
+
+@unittest.skipUnless(
+    (Path.home() / 'sony-a6400-qemu-11.1.3/build/qemu-system-arm').is_file(),
+    'Optional sony-a6400 QEMU build absent',
+)
+class QemuDwc3StrictBulkQTests(unittest.TestCase):
+    """QTest verification of cxd90045-dwc3 strict-bulk MSC chained OUT -> CSW=1 -> REQUEST SENSE."""
+
+    def test_dwc3_msc_wp_chained_write_then_request_sense(self):
+        qemu = Path.home() / 'sony-a6400-qemu-11.1.3/build/qemu-system-arm'
+        dwc3 = 0xF020C000
+        ram = 0x02000000
+        evt_ring = ram + 0x10000
+        trb_ep3 = ram + 0x20100
+        trb_ep4 = ram + 0x20200
+        buf_ep3 = ram + 0x21000
+        buf_ep3_csw = ram + 0x22000
+        buf_ep4 = ram + 0x23000
+
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            qt_sock = td_path / 'qtest.sock'
+            usb_sock = td_path / 'usb.sock'
+            srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            srv.bind(str(qt_sock))
+            srv.listen(1)
+            srv.settimeout(5.0)
+            proc = subprocess.Popen(
+                [
+                    str(qemu), '-M', 'sony-a6400', '-accel', 'qtest',
+                    '-display', 'none', '-monitor', 'none',
+                    '-qmp', f'unix:{td_path / "qmp.sock"},server=on,wait=off',
+                    '-qtest', f'unix:{qt_sock}',
+                    '-chardev', f'socket,id=usbhost,path={usb_sock},server=on,wait=off',
+                    '-global', 'cxd90045-dwc3.chardev=usbhost',
+                    '-global', 'cxd90045-dwc3.strict-ep0=on',
+                    '-global', 'cxd90045-dwc3.strict-bulk=on',
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                qt, _ = srv.accept()
+                srv.close()
+                qt.settimeout(5.0)
+                qf = qt.makefile('rw', buffering=1)
+                deadline = time.monotonic() + 5.0
+                while not usb_sock.exists() and time.monotonic() < deadline:
+                    time.sleep(0.05)
+
+                def qcmd(cmd: str) -> str:
+                    qf.write(cmd + '\n')
+                    line = qf.readline()
+                    self.assertTrue(line.startswith('OK'), f'{cmd} -> {line!r}')
+                    return line
+
+                def wr32(addr: int, val: int) -> None:
+                    qcmd(f'writel 0x{addr:x} 0x{val:x}')
+
+                def rd32(addr: int) -> int:
+                    return int(qcmd(f'readl 0x{addr:x}').split()[1], 16)
+
+                def wr_bytes(addr: int, data: bytes) -> None:
+                    for off in range(0, len(data), 4):
+                        w = int.from_bytes(data[off:off + 4].ljust(4, b'\x00'), 'little')
+                        wr32(addr + off, w)
+
+                def ep_cmd(ep: int, cmd: int, p0: int = 0, p1: int = 0, p2: int = 0) -> None:
+                    base = dwc3 + 0x0800 + ep * 16
+                    wr32(base + 0x0, p2)
+                    wr32(base + 0x4, p1)
+                    wr32(base + 0x8, p0)
+                    wr32(base + 0xC, cmd | (1 << 10))
+
+                def write_trb(pa: int, buf_pa: int, size: int, ctrl: int) -> None:
+                    wr_bytes(pa, struct.pack('<IIII', buf_pa, 0, size, ctrl))
+
+                wr32(dwc3 + 0x0400, evt_ring)
+                wr32(dwc3 + 0x0404, 0)
+                wr32(dwc3 + 0x0408, 0x100)
+                wr32(dwc3 + 0x040C, 0)
+                wr32(dwc3 + 0x0704, 0x80000000)
+                ep_cmd(3, 1, (512 << 3) | (2 << 1), (3 << 25) | (1 << 10) | (1 << 8), 0)
+                ep_cmd(3, 2, 1, 0, 0)
+                ep_cmd(4, 1, (512 << 3) | (2 << 1), (4 << 25) | (1 << 10) | (1 << 8), 0)
+                ep_cmd(4, 2, 1, 0, 0)
+                wr32(dwc3 + 0x0720, (1 << 3) | (1 << 4))
+
+                us = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                us.connect(str(usb_sock))
+                us.settimeout(2.0)
+                host = Ep0Host(us)
+                host.connect()
+                time.sleep(0.1)
+                qcmd('clock_step 1000000')
+
+                def drain_evts() -> None:
+                    cnt = rd32(dwc3 + 0x040C)
+                    if cnt:
+                        wr32(dwc3 + 0x040C, cnt)
+
+                write_trb(trb_ep4, buf_ep4, 512, (1 << 0) | (1 << 1) | (1 << 4) | (1 << 11))
+                ep_cmd(4, 6, 0, trb_ep4, 0)
+                cbw_wr = CBW_STRUCT.pack(
+                    CBW_SIGNATURE, 10, 2048, 0x00, 0, 10,
+                    b'\x2a\x00\x00\x00\x00\x08\x00\x00\x04\x00'.ljust(16, b'\x00'),
+                )
+                host.bulk_out(4, cbw_wr)
+                drain_evts()
+
+                write_trb(trb_ep4, buf_ep4, 1024, (1 << 0) | (1 << 2) | (1 << 4) | (1 << 11))
+                write_trb(trb_ep4 + 16, buf_ep4 + 1024, 1024, (1 << 0) | (1 << 1) | (1 << 4) | (1 << 11))
+                ep_cmd(4, 6, 0, trb_ep4, 0)
+                host.bulk_out_transfer(4, b'\xAA' * 2048, max_packet=512)
+                drain_evts()
+
+                wr_bytes(buf_ep3_csw, CSW_STRUCT.pack(CSW_SIGNATURE, 10, 2048, 1))
+                write_trb(trb_ep3, buf_ep3_csw, 13, (1 << 0) | (1 << 1) | (1 << 4) | (1 << 11))
+                ep_cmd(3, 6, 0, trb_ep3, 0)
+                write_trb(trb_ep4, buf_ep4, 512, (1 << 0) | (1 << 1) | (1 << 4) | (1 << 11))
+                ep_cmd(4, 6, 0, trb_ep4, 0)
+
+                csw = host.bulk_in(3)
+                self.assertEqual(CSW_STRUCT.unpack(csw), (CSW_SIGNATURE, 10, 2048, 1))
+                drain_evts()
+
+                cbw_rs = CBW_STRUCT.pack(
+                    CBW_SIGNATURE, 11, 18, 0x80, 0, 6,
+                    b'\x03\x00\x00\x00\x12\x00'.ljust(16, b'\x00'),
+                )
+                host.bulk_out(4, cbw_rs)
+                drain_evts()
+
+                wr_bytes(buf_ep3, b'\x70\x00\x07' + b'\x00' * 9 + b'\x27\x00' + b'\x00' * 4)
+                wr_bytes(buf_ep3_csw, CSW_STRUCT.pack(CSW_SIGNATURE, 11, 0, 0))
+                write_trb(trb_ep3, buf_ep3, 18, (1 << 0) | (1 << 4) | (1 << 11))
+                write_trb(trb_ep3 + 16, buf_ep3_csw, 13, (1 << 0) | (1 << 1) | (1 << 4) | (1 << 11))
+                ep_cmd(3, 6, 0, trb_ep3, 0)
+
+                sense = host.bulk_in(3)
+                csw2 = host.bulk_in(3)
+                self.assertEqual(len(sense), 18)
+                self.assertEqual((sense[2], sense[12]), (0x07, 0x27))
+                self.assertEqual(CSW_STRUCT.unpack(csw2), (CSW_SIGNATURE, 11, 0, 0))
+                us.close()
+                qf.close()
+                qt.close()
+            finally:
+                proc.kill()
+                proc.wait()
 
 
 if __name__ == '__main__':

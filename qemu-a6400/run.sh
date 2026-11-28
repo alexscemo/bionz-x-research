@@ -54,10 +54,13 @@
 # the Picture Profile node with one 4-byte .dynsym st_value write on the run's
 # disposable overlay; PP_PARTITION_OFFSET overrides the rootfs partition start.
 # SUBMICRO_PAGE (E0527 capture, empty for no micro) or SUBMICRO_FRAMES
-# (the verified 384-byte A/C/B extract from that same capture).
+# (the verified 384-byte A/C/B extract from that same capture), or
+# SUBMICRO_SYNTHETIC=1 (opt-in seed-free powered idle A/C/B synthesis in QEMU).
 # SUBMICRO_LENS_POWER=1 (opt-in lens rail status in slot B; no lens protocol).
+# HDMI_PLUGGED=0/1 (opt-in initial HDMI HPD cable state when HDMI_CEC=1 or PERIPHERALS=1).
 # IDT_CAM (opt-in original sabin/idt_cam.bin, captured boot profile only).
 # SD_IMAGE and SD_SHA256 (opt-in checked raw card; starts ejected).
+# SD_UHS_U3=1 (opt-in virtual UHS-I U3 / Class 10 / V30 speed-class advertising on mmc0/mmc2).
 # SNAPSHOT_OVERLAY (opt-in qcow2 with saved VM state) and LOADVM (opt-in snapshot tag
 # passed to QEMU -loadvm): resume an already-booted machine in < 1 s.
 # KERNEL and INITRD (Custom OS tests only): boot this kernel/initrd pair instead of the captured
@@ -71,6 +74,26 @@
 set -euo pipefail
 E="$(cd "$(dirname "$0")" && pwd)"
 
+file_size() {
+    stat -Lc '%s' -- "$1" 2>/dev/null || stat -Lf '%z' -- "$1"
+}
+
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum -- "$1" | cut -d' ' -f1
+    else
+        shasum -a 256 -- "$1" | cut -d' ' -f1
+    fi
+}
+
+sha256_check() {
+    if sha256sum --version 2>/dev/null | grep -q GNU; then
+        sha256sum --check --status -
+    else
+        shasum -a 256 -c -s -
+    fi
+}
+
 if [ "${ZMA1_JPEG_FILL:-0}" = 1 ] && [ "${ZMA1_STARTUP:-0}" != 1 ]; then
     echo "ZMA1_JPEG_FILL=1 requires ZMA1_STARTUP=1" >&2
     exit 1
@@ -80,18 +103,26 @@ fi
 # SUBMICRO_FRAMES_SHA declares a different 384-byte extract, e.g. the one
 # tools.research.qemu_packaged_inputs derives from the public updater's WBI.
 SUBMICRO_FRAME_SHA=${SUBMICRO_FRAMES_SHA:-6d5026e3932f3f46b47cc44a15008ced099dba46041deafbc1c058e4a0fa85ed}
-SUBMICRO_RX="${SUBMICRO_FRAMES:-}"
-if [ -n "$SUBMICRO_RX" ]; then
-    if [ -n "${SUBMICRO_PAGE:-}" ]; then
-        echo "Choose either SUBMICRO_PAGE or SUBMICRO_FRAMES, not both." >&2
+SUBMICRO_RX=""
+if [ "${SUBMICRO_SYNTHETIC:-0}" = 1 ]; then
+    if [ -n "${SUBMICRO_FRAMES:-}" ] || [ -n "${SUBMICRO_PAGE:-}" ]; then
+        echo "SUBMICRO_SYNTHETIC=1 cannot be combined with SUBMICRO_PAGE or SUBMICRO_FRAMES." >&2
         exit 1
     fi
-    SUBMICRO_SHA=$SUBMICRO_FRAME_SHA
-    SUBMICRO_SKIP=0
 else
-    SUBMICRO_RX="${SUBMICRO_PAGE-$E/../artifacts/qemu-a6400/e0526/camera-page-0x03443000.bin}"
-    SUBMICRO_SHA=14fba4e607b0efdb76ced74e0463355a279146c96bbba0abec89776b8972fb54
-    SUBMICRO_SKIP=$((0x3A4))
+    SUBMICRO_RX="${SUBMICRO_FRAMES:-}"
+    if [ -n "$SUBMICRO_RX" ]; then
+        if [ -n "${SUBMICRO_PAGE:-}" ]; then
+            echo "Choose either SUBMICRO_PAGE or SUBMICRO_FRAMES, not both." >&2
+            exit 1
+        fi
+        SUBMICRO_SHA=$SUBMICRO_FRAME_SHA
+        SUBMICRO_SKIP=0
+    else
+        SUBMICRO_RX="${SUBMICRO_PAGE-$E/../artifacts/qemu-a6400/e0526/camera-page-0x03443000.bin}"
+        SUBMICRO_SHA=14fba4e607b0efdb76ced74e0463355a279146c96bbba0abec89776b8972fb54
+        SUBMICRO_SKIP=$((0x3A4))
+    fi
 fi
 if [ -n "$SUBMICRO_RX" ]; then
     if [ ! -f "$SUBMICRO_RX" ] || [ ! -r "$SUBMICRO_RX" ]; then
@@ -100,7 +131,7 @@ if [ -n "$SUBMICRO_RX" ]; then
         echo 'SUBMICRO_PAGE= skips replay for serial-only diagnostics; it does not boot the powered menu.' >&2
         exit 1
     fi
-    if ! printf '%s  %s\n' "$SUBMICRO_SHA" "$SUBMICRO_RX" | sha256sum -c --status -; then
+    if ! printf '%s  %s\n' "$SUBMICRO_SHA" "$SUBMICRO_RX" | sha256_check; then
         printf 'E0527 sub-micro replay SHA-256 mismatch: %s\n' "$SUBMICRO_RX" >&2
         exit 1
     fi
@@ -166,12 +197,12 @@ if [ -n "${IDT_CAM:-}" ]; then
         if printf '%s  %s\n' \
             dd8f8d0cc74ad4b70100e5728cf8b159b5155e7fb50eaf1147b99c9054740209 "$AVCAM" \
             d7a9ae09d2195c1b5151e60f3ff1344715b619631cfad608d9a5fcf7a876c618 "$D/nflasha3-Image" \
-            | sha256sum --check --status 2>/dev/null; then
+            | sha256_check; then
             AVCAM_OK=1
         elif printf '%s  %s\n' \
             3029a174b393fee9b2624d27737c20bc60e71cbbb33736b2a9363b57184ee03d "$AVCAM" \
             9d51ab60df8246f10cb2afb12fb504d7f148fae437ee404f5b9837cc3b8f85ca "$D/nflasha3-Image" \
-            | sha256sum --check --status 2>/dev/null; then
+            | sha256_check; then
             AVCAM_OK=1
         fi
     fi
@@ -179,10 +210,10 @@ if [ -n "${IDT_CAM:-}" ]; then
         echo 'IDT_CAM requires the verified captured ILCE-6400 or ILCE-6400A kernel and av-cam.' >&2
         exit 1
     fi
-    if [ ! -f "$IDT_CAM" ] || [ "$(stat -Lc '%s' -- "$IDT_CAM")" != 176528 ] ||
+    if [ ! -f "$IDT_CAM" ] || [ "$(file_size "$IDT_CAM")" != 176528 ] ||
         ! printf '%s  %s\n' \
         d21e2c0b6b87f49f70ccf451781093037db8093b5a378587ec0029a16dcaef92 "$IDT_CAM" \
-        | sha256sum --check --status; then
+        | sha256_check; then
         echo 'IDT_CAM is not the original 176528-byte sabin/idt_cam.bin.' >&2
         exit 1
     fi
@@ -222,7 +253,7 @@ if [ -n "${IDT_CAM:-}" ]; then
     cp -- "$IDT_CAM" "$R/idt_cam.bin"
     if ! printf '%s  %s\n' \
         d21e2c0b6b87f49f70ccf451781093037db8093b5a378587ec0029a16dcaef92 "$R/idt_cam.bin" \
-        | sha256sum --check --status; then
+        | sha256_check; then
         echo 'IDT_CAM changed during staging.' >&2
         exit 1
     fi
@@ -242,14 +273,14 @@ if [ "${LINUX_BOOT:-0}" = 1 ]; then
     INITRD_LOAD_PA=0x10000000
 fi
 if [ -n "$INITRD_OVERRIDE" ]; then
-    ISZ=$(stat -Lc '%s' -- "$INITRD_OVERRIDE")
+    ISZ=$(file_size "$INITRD_OVERRIDE")
     CMD=$(printf '%s\n' "$CMD" | sed -E "s#initrd=0x[0-9a-fA-F]+,[^ ]+#initrd=${INITRD_LOAD_PA},0x$(printf '%08x' "$ISZ")#")
     if ! printf '%s\n' "$CMD" | grep -q "initrd=${INITRD_LOAD_PA},0x$(printf '%08x' "$ISZ")"; then
         echo "Could not size the initrd= token for the INITRD override." >&2
         exit 1
     fi
 elif [ "${LINUX_BOOT:-0}" = 1 ] && [ -f "$D/nflasha3-initrd" ]; then
-    ISZ=$(stat -Lc '%s' -- "$D/nflasha3-initrd")
+    ISZ=$(file_size "$D/nflasha3-initrd")
     CMD=$(printf '%s\n' "$CMD" | sed -E "s#initrd=0x[0-9a-fA-F]+,[^ ]+#initrd=${INITRD_LOAD_PA},0x$(printf '%08x' "$ISZ")#")
 fi
 
@@ -318,12 +349,14 @@ fi
 MACHINE="${MACHINE_NAME:-sony-a6400}"
 if [ -n "$SUBMICRO_RX" ]; then
     # A retained extract can itself be in RUN_DIR; never overwrite it.
-    SUBMICRO_STAGED=$(mktemp -- "$R/submicro-frames.XXXXXX")
+    SUBMICRO_STAGED=$(mktemp "$R/submicro-frames.XXXXXX")
     dd if="$SUBMICRO_RX" bs=1 skip="$SUBMICRO_SKIP" count=384 status=none \
         > "$SUBMICRO_STAGED"
     # Check what will actually be replayed, even if the source changed after preflight.
-    printf '%s  %s\n' "$SUBMICRO_FRAME_SHA" "$SUBMICRO_STAGED" | sha256sum -c --quiet - >&2
+    printf '%s  %s\n' "$SUBMICRO_FRAME_SHA" "$SUBMICRO_STAGED" | sha256_check >&2
     MACHINE="$MACHINE,submicro-frames=$SUBMICRO_STAGED"
+elif [ "${SUBMICRO_SYNTHETIC:-0}" = 1 ]; then
+    MACHINE="$MACHINE,submicro-synthetic=on"
 fi
 if [ -n "${CAMERA_MODEL:-}" ]; then
     MACHINE="$MACHINE,camera-model=$CAMERA_MODEL"
@@ -340,6 +373,16 @@ fi
 if [ "${HDMI_CEC:-0}" = 1 ]; then
     MACHINE="$MACHINE,hdmi-cec=on"
 fi
+if [ -n "${HDMI_PLUGGED:-}" ]; then
+    if [ "$HDMI_PLUGGED" = 1 ]; then
+        MACHINE="$MACHINE,hdmi-plugged=on"
+    elif [ "$HDMI_PLUGGED" = 0 ]; then
+        MACHINE="$MACHINE,hdmi-plugged=off"
+    else
+        echo "HDMI_PLUGGED must be 0 or 1." >&2
+        exit 1
+    fi
+fi
 if [ "${AUDIO_IO:-0}" = 1 ]; then
     MACHINE="$MACHINE,audio-io=on"
 fi
@@ -354,6 +397,9 @@ if [ -n "${EMOUNT_LENS:-}" ]; then
 fi
 if [ "${SUBMICRO_LENS_POWER:-0}" = 1 ]; then
     MACHINE="$MACHINE,submicro-lens-power=on"
+fi
+if [ "${SD_UHS_U3:-0}" = 1 ]; then
+    MACHINE="$MACHINE,sd-uhs-u3=on"
 fi
 if [ "${CAMPIG_ENABLE_READBACK:-0}" = 1 ]; then
     MACHINE="$MACHINE,campig-enable-readback=on"
@@ -480,12 +526,12 @@ KERNEL_PATH="${KERNEL_OVERRIDE:-$D/nflasha3-Image}"
 INITRD_PATH="${INITRD_OVERRIDE:-$D/nflasha3-initrd}"
 if [ -n "$KERNEL_OVERRIDE" ]; then
     printf 'kernel override: %s %s\n' \
-        "$(sha256sum -- "$KERNEL_PATH" | cut -d' ' -f1)" "$KERNEL_PATH" >&2
+        "$(sha256_of "$KERNEL_PATH")" "$KERNEL_PATH" >&2
 fi
 if [ -n "$INITRD_OVERRIDE" ]; then
     printf 'initrd override: %s %s (%s bytes)\n' \
-        "$(sha256sum -- "$INITRD_PATH" | cut -d' ' -f1)" "$INITRD_PATH" \
-        "$(stat -Lc '%s' -- "$INITRD_PATH")" >&2
+        "$(sha256_of "$INITRD_PATH")" "$INITRD_PATH" \
+        "$(file_size "$INITRD_PATH")" >&2
 fi
 LOADVM_ARGS=()
 if [ -n "${LOADVM:-}" ]; then
@@ -494,17 +540,26 @@ fi
 DTB_ARGS=()
 if [ -n "$DTB_OVERRIDE" ]; then
     printf 'dtb override: %s %s (%s bytes)\n' \
-        "$(sha256sum -- "$DTB_OVERRIDE" | cut -d' ' -f1)" "$DTB_OVERRIDE" \
-        "$(stat -Lc '%s' -- "$DTB_OVERRIDE")" >&2
+        "$(sha256_of "$DTB_OVERRIDE")" "$DTB_OVERRIDE" \
+        "$(file_size "$DTB_OVERRIDE")" >&2
     DTB_ARGS=(-dtb "$DTB_OVERRIDE")
 fi
 T=()
-if [ "${TIMEOUT:-0}" != 0 ]; then T=(timeout "$TIMEOUT"); fi
-exec "${T[@]}" "$Q/build/qemu-system-arm" -M "$MACHINE" -m 1G -nographic -serial "${SERIAL:-mon:stdio}" \
-  -kernel "$KERNEL_PATH" -initrd "$INITRD_PATH" "${DTB_ARGS[@]}" \
+if [ "${TIMEOUT:-0}" != 0 ]; then
+    if command -v timeout >/dev/null 2>&1; then
+        T=(timeout "$TIMEOUT")
+    elif command -v gtimeout >/dev/null 2>&1; then
+        T=(gtimeout "$TIMEOUT")
+    else
+        echo "TIMEOUT=$TIMEOUT requested but neither timeout nor gtimeout is installed." >&2
+        exit 1
+    fi
+fi
+exec ${T[@]+"${T[@]}"} "$Q/build/qemu-system-arm" -M "$MACHINE" -m 1G -nographic -serial "${SERIAL:-mon:stdio}" \
+  -kernel "$KERNEL_PATH" -initrd "$INITRD_PATH" ${DTB_ARGS[@]+"${DTB_ARGS[@]}"} \
   -append "$CMD ${EXTRA:-}" \
   -drive if=sd,format=qcow2,file="$EMMC_OVERLAY" \
   -device loader,file="$R/Backup.bin",addr="$BACKUP_PA",force-raw=on \
   -device loader,file="$R/av-cam.bin",addr="$AVCAM_PA",force-raw=on \
-  "${IDT_BOOT[@]}" "${EVSEL[@]}" "${P2S[@]}" "${SA[@]}" "${LIVEVIEW_ARGS[@]}" "${SD[@]}" \
-  "${LOADVM_ARGS[@]}" ${QEMU_EXTRA--icount shift=0,sleep=on}
+  ${IDT_BOOT[@]+"${IDT_BOOT[@]}"} ${EVSEL[@]+"${EVSEL[@]}"} ${P2S[@]+"${P2S[@]}"} ${SA[@]+"${SA[@]}"} ${LIVEVIEW_ARGS[@]+"${LIVEVIEW_ARGS[@]}"} ${SD[@]+"${SD[@]}"} \
+  ${LOADVM_ARGS[@]+"${LOADVM_ARGS[@]}"} ${QEMU_EXTRA--icount shift=0,sleep=on}

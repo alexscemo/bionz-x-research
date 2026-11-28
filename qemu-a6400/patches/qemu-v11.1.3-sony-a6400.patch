@@ -59,7 +59,7 @@ index 2127f95..6898ead 100644
                     "Cortex-A9MPCore peripheral can only use Cortex-A9 CPU");
          return;
 diff --git a/hw/sd/sd.c b/hw/sd/sd.c
-index 780e9f6..5027148 100644
+index 780e9f6..85f89e6 100644
 --- a/hw/sd/sd.c
 +++ b/hw/sd/sd.c
 @@ -164,6 +164,11 @@ struct SDState {
@@ -92,7 +92,14 @@ index 780e9f6..5027148 100644
      case 3001 ... 3600: /* SD_VOLTAGE_3_3V */
      case 2001 ... 3000: /* SD_VOLTAGE_3_0V */
          break;
-@@ -444,7 +460,7 @@ static void sd_set_scr(SDState *sd)
+@@ -440,11 +456,14 @@ static void sd_set_scr(SDState *sd)
+     sd->scr[0] |= 2;            /* Spec Version 2.00 or Version 3.0X */
+     sd->scr[1] = (2 << 4)       /* SDSC Card (Security Version 1.01) */
+                  | 0b0101;      /* 1-bit or 4-bit width bus modes */
++    if (sd->size > SDSC_MAX_CAPACITY) {
++        sd->scr[1] = (sd->scr[1] & 0x0f) | (3 << 4); /* SDHC Security Version 2.00 */
++    }
+     sd->scr[2] = 0x00;          /* Extended Security is not supported. */
      if (sd->spec_version >= SD_PHY_SPECv3_01_VERS) {
          sd->scr[2] |= 1 << 7;   /* Spec Version 3.0X */
      }
@@ -101,7 +108,7 @@ index 780e9f6..5027148 100644
      /* reserved for manufacturer usage */
      sd->scr[4] = 0x00;
      sd->scr[5] = 0x00;
-@@ -537,7 +553,7 @@ static void emmc_set_ext_csd(SDState *sd, uint64_t size)
+@@ -537,7 +556,7 @@ static void emmc_set_ext_csd(SDState *sd, uint64_t size)
      sd->ext_csd[205] = 0x46; /* Min read perf for 4bit@26Mhz */
      sd->ext_csd[EXT_CSD_CARD_TYPE] = 0b11;
      sd->ext_csd[EXT_CSD_STRUCTURE] = 2;
@@ -110,7 +117,7 @@ index 780e9f6..5027148 100644
      sd->ext_csd[EXT_CSD_RPMB_MULT] = sd->rpmb_part_size / (128 * KiB);
      sd->ext_csd[EXT_CSD_PARTITION_SUPPORT] = 0b111;
  
-@@ -729,6 +745,30 @@ static void sd_set_cardstatus(SDState *sd)
+@@ -729,6 +748,33 @@ static void sd_set_cardstatus(SDState *sd)
  static void sd_set_sdstatus(SDState *sd)
  {
      memset(sd->sd_status, 0, 64);
@@ -130,18 +137,21 @@ index 780e9f6..5027148 100644
 +        sd->sd_status[10] = 0x90; /* AU_SIZE = 4 MiB */
 +        sd->sd_status[11] = 0x00;
 +        sd->sd_status[12] = 0x08;
-+        sd->sd_status[13] = 0x01;
++        sd->sd_status[13] = 0x04;
 +        break;
 +    default:
 +        break;
 +    }
 +    if (sd->uhs_speed_grade == 1 || sd->uhs_speed_grade == 3) {
 +        sd->sd_status[14] = (sd->uhs_speed_grade << 4) | 0x09;
++        if (sd->uhs_speed_grade == 3) {
++            sd->sd_status[15] = 0x1e; /* V30 (30 MB/s) */
++        }
 +    }
  }
  
  static const uint8_t sd_tuning_block_pattern4[64] = {
-@@ -932,6 +972,9 @@ static void sd_reset(DeviceState *dev)
+@@ -932,6 +978,9 @@ static void sd_reset(DeviceState *dev)
      sect = sd_addr_to_wpnum(size) + 1;
  
      sd->state = sd_idle_state;
@@ -151,7 +161,26 @@ index 780e9f6..5027148 100644
  
      /* card registers */
      sd->rca = sd_is_emmc(sd) ? 0x0001 : 0x0000;
-@@ -1464,7 +1507,7 @@ static void sd_function_switch(SDState *sd, uint32_t arg)
+@@ -998,8 +1047,16 @@ static bool sd_ocr_vmstate_needed(void *opaque)
+ {
+     SDState *sd = opaque;
+ 
+-    /* Include the OCR state (and timer) if it is not yet powered up */
+-    return !FIELD_EX32(sd->ocr, OCR, CARD_POWER_UP);
++    /* Include the OCR state (and timer) if it is not yet powered up.
++     *
++     * The captured a6400 eMMC is smaller than 2 GiB, but its guest enables
++     * block addressing in CMD1, so sd_cmd_SEND_OP_COND() sets CARD_CAPACITY
++     * at run time.  sd_ocr_powerup() only restores that bit from the card
++     * size, so without saving OCR a loadvm of a powered-up eMMC would clear
++     * CARD_CAPACITY and the guest's sector addresses would be decoded as
++     * byte addresses (bogus block reads).  Always carry OCR for the eMMC.
++     */
++    return !FIELD_EX32(sd->ocr, OCR, CARD_POWER_UP) || sd_is_emmc(sd);
+ }
+ 
+ static const VMStateDescription sd_ocr_vmstate = {
+@@ -1464,7 +1521,7 @@ static void sd_function_switch(SDState *sd, uint32_t arg)
      sd->data[10] = 0x80;    /* Supported group 2 functions */
      sd->data[11] = 0x43;
      sd->data[12] = 0x80;    /* Supported group 1 functions */
@@ -160,7 +189,7 @@ index 780e9f6..5027148 100644
  
      memset(&sd->data[14], 0, 3);
      for (i = 0; i < 6; i ++) {
-@@ -1809,6 +1852,22 @@ static sd_rsp_type_t sd_cmd_DE_SELECT_CARD(SDState *sd, SDRequest req)
+@@ -1809,6 +1866,22 @@ static sd_rsp_type_t sd_cmd_DE_SELECT_CARD(SDState *sd, SDRequest req)
      return sd_invalid_state_for_cmd(sd, req);
  }
  
@@ -183,7 +212,7 @@ index 780e9f6..5027148 100644
  /* CMD8 */
  static sd_rsp_type_t sd_cmd_SEND_IF_COND(SDState *sd, SDRequest req)
  {
-@@ -2272,6 +2331,11 @@ static sd_rsp_type_t sd_cmd_SEND_OP_COND(SDState *sd, SDRequest req)
+@@ -2272,6 +2345,11 @@ static sd_rsp_type_t sd_cmd_SEND_OP_COND(SDState *sd, SDRequest req)
          return sd_invalid_state_for_cmd(sd, req);
      }
  
@@ -195,7 +224,7 @@ index 780e9f6..5027148 100644
      /*
       * If it's the first ACMD41 since reset, we need to decide
       * whether to power up. If this is not an enquiry ACMD41,
-@@ -2300,7 +2364,8 @@ static sd_rsp_type_t sd_cmd_SEND_OP_COND(SDState *sd, SDRequest req)
+@@ -2300,7 +2378,8 @@ static sd_rsp_type_t sd_cmd_SEND_OP_COND(SDState *sd, SDRequest req)
          sd->state = sd_ready_state;
          return sd_r1;
      } else {
@@ -205,7 +234,7 @@ index 780e9f6..5027148 100644
              /*
               * We accept any voltage.  10000 V is nothing.
               *
-@@ -2309,6 +2374,12 @@ static sd_rsp_type_t sd_cmd_SEND_OP_COND(SDState *sd, SDRequest req)
+@@ -2309,6 +2388,12 @@ static sd_rsp_type_t sd_cmd_SEND_OP_COND(SDState *sd, SDRequest req)
               */
              sd->state = sd_ready_state;
          }
@@ -218,7 +247,7 @@ index 780e9f6..5027148 100644
          return sd_r3;
      }
  }
-@@ -2665,7 +2736,7 @@ static size_t sd_write_data(SDState *sd, const void *buf, size_t length)
+@@ -2665,7 +2750,7 @@ static size_t sd_write_data(SDState *sd, const void *buf, size_t length)
      int i;
      const uint8_t *value = buf;
  
@@ -227,7 +256,7 @@ index 780e9f6..5027148 100644
          return length;
      }
  
-@@ -2813,7 +2884,7 @@ static size_t sd_read_data(SDState *sd, void *buf, size_t length)
+@@ -2813,7 +2898,7 @@ static size_t sd_read_data(SDState *sd, void *buf, size_t length)
      uint32_t io_len;
      uint8_t *value = buf;
  
@@ -236,7 +265,7 @@ index 780e9f6..5027148 100644
          memset(buf, dummy_byte, length);
          return length;
      }
-@@ -2965,7 +3036,7 @@ static const SDProto sd_proto_sd = {
+@@ -2965,7 +3050,7 @@ static const SDProto sd_proto_sd = {
          [8]  = {0,  sd_bcr,  "SEND_IF_COND", sd_cmd_SEND_IF_COND},
          [9]  = {0,  sd_ac,   "SEND_CSD", sd_cmd_SEND_CSD},
          [10] = {0,  sd_ac,   "SEND_CID", sd_cmd_SEND_CID},
@@ -245,7 +274,7 @@ index 780e9f6..5027148 100644
          [12] = {0,  sd_ac,   "STOP_TRANSMISSION", sd_cmd_STOP_TRANSMISSION},
          [13] = {0,  sd_ac,   "SEND_STATUS", sd_cmd_SEND_STATUS},
          [15] = {0,  sd_ac,   "GO_INACTIVE_STATE", sd_cmd_GO_INACTIVE_STATE},
-@@ -3117,9 +3188,14 @@ static void sd_realize(DeviceState *dev, Error **errp)
+@@ -3117,9 +3202,14 @@ static void sd_realize(DeviceState *dev, Error **errp)
              return;
          }
  
@@ -261,7 +290,7 @@ index 780e9f6..5027148 100644
              if (blk_size > SDSC_MAX_CAPACITY) {
                  if (sd_is_emmc(sd) &&
                      !QEMU_IS_ALIGNED(blk_size, 1 << HWBLOCK_SHIFT)) {
-@@ -3135,7 +3211,8 @@ static void sd_realize(DeviceState *dev, Error **errp)
+@@ -3135,7 +3225,8 @@ static void sd_realize(DeviceState *dev, Error **errp)
                                        "multiples of 512K", errp);
                      return;
                  }
@@ -271,7 +300,7 @@ index 780e9f6..5027148 100644
                  sd_blk_size_error(sd, blk_size, pow2ceil(blk_size),
                                    "a power of 2", errp);
                  return;
-@@ -3210,9 +3287,12 @@ static const Property sdmmc_common_properties[] = {
+@@ -3210,9 +3301,12 @@ static const Property sdmmc_common_properties[] = {
  static const Property sd_properties[] = {
      DEFINE_PROP_UINT8("spec_version", SDState,
                        spec_version, SD_PHY_SPECv3_01_VERS),

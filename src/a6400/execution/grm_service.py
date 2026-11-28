@@ -36,7 +36,7 @@ flagged with its provenance), and no pool is invented for it.
 """
 
 import struct
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 # Verified queue ID for synchronous GRM-MA requests (ma_init)
 GRM_MA_SERVICE_QUEUE = 0x014c0424

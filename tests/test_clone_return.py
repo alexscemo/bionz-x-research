@@ -8,7 +8,12 @@ from unicorn import arm_const as arm
 from project_paths import PROJECT_ROOT
 from src.a6400.execution.guest_threads import GuestThreads, EXPECTED_PTHREAD_CLONE_FLAGS
 from src.a6400.execution.interpreter_probe import InterpreterProbe
-from test_interpreter_probe import make_elf
+try:
+    from tests.test_interpreter_probe import make_elf
+except ModuleNotFoundError as exc:
+    if exc.name not in ("tests", "tests.test_interpreter_probe"):
+        raise
+    from test_interpreter_probe import make_elf
 
 
 class CloneReturnTests(unittest.TestCase):

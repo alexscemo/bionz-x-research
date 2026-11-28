@@ -8,7 +8,7 @@ title = "Imaging pipeline: color, RAW, RCRAW and recording paths"
 scope = """
 av-cam CC 3D LUT and gamma, the Arrivederci/ARRI color work, debayer/PSF/detail stages, RAW develop, IMX284, Open Gate and high-bit-depth paths, AIF DMA, the RCRAW probes, and the candidate mobile GPU 36-exposure ARW roll pipelines (SpektraFilm and fotufilm-engine)."""
 evidence_span = "see record index"
-reviewed = "2026-11-24"
+reviewed = "2026-11-27"
 records = [
   "E0505",
   "E0555",
@@ -28,7 +28,6 @@ records = [
   "E0689",
   "E0720",
   "E0721",
-  "E0732",
   "E0722",
   "E0723",
   "E0724",
@@ -36,9 +35,12 @@ records = [
   "E0726",
   "E0727",
   "E0728",
-  "E0729",
-  "E0730",
-  "E0731",
+  "E0752",
+  "E0753",
+  "E0754",
+  "E0755",
+  "E0739",
+  "E0741",
   "E9105",
 ]
 
@@ -66,8 +68,9 @@ summary = "av-cam debayering, PSF/tap tables, SigItpBayer/MovItp/PP_Detail, the 
 id = "img.recording-paths"
 kind = "process"
 name = "Open Gate, high-bit-depth and RAW video paths"
-aliases = ["Open Gate 3:2", "ZIMA_AVC", "AIF", "SET_RAW_EXTERNAL_OUTPUT", "rec_fmt_tbl", "0x63E11750", "recording-format id"]
-summary = "Feasibility of 3:2 Open Gate, 4K/6K low-fps, 10-bit and RAW/YCC paths, the AIF DMA channel map and the 8-bit ZIMA_AVC ceiling."
+aliases = ["Open Gate 3:2", "ZIMA_AVC", "AIF", "SET_RAW_EXTERNAL_OUTPUT", "CAMERA_SCN_EXTERNAL_RAW_RECORD.so", "0x40BD", "SuperSlowManagerMainLsi"]
+inventory = ["firmware.elf:nflasha15_unpacked/scenario/CAMERA_SCN_EXTERNAL_RAW_RECORD.so"]
+summary = "Feasibility of 3:2 Open Gate, 4K/6K low-fps, 10-bit and RAW/YCC paths, the AIF DMA channel map, the unwired 0x40BD 3G-SDI FS-RAW stub, DDR-B SHS RAW buffering, QFHD HDMI UYVY transport, and the 8-bit ZIMA_AVC ceiling."
 
 [[entity]]
 id = "img.rcraw"
@@ -215,80 +218,30 @@ evidence = ["E9105"]
 id = "C18"
 entities = ["img.recording-paths"]
 status = "verified-offline"
-text = "av-cam recording-format selection returns an id from the 16-byte sentinel-terminated table at 0x63E11750 (19 entries; (3840,2160) -> id 0, (4096,2160) -> id 1, section word 2 vs 3 -> id 19/20); an unmatched (w,h) writes -1 and the four per-id descriptor copiers at 0x63763D00/0x63763D44/0x63763D60/0x63763D1C then read the record before each table, so editing the table without editing the request key explains the A10/A11 full-screen stride tearing."
-evidence = ["E0729"]
+text = "All 19 IMX284 modes in ILCE-6400 av-cam.bin (90d515cf...) output 11/12/14-bit Bayer RAW (never 8-bit), while CAMERA_SCN_EXTERNAL_RAW_RECORD.so (842fa541...) sends UIPC 0x40BD (0x00DC0000 -> 0x00030001) paired with OBJDISPLAY::SequenceSetSdiLineoutInternalOn (3G-SDI FS-RAW) to av-cam.bin idx 0xA6 (0x63BE0648, gated by *0x64408588 == 0x00BF0274 in 0x63BE06E0), where [0x64407C40+0x878..0x880] has no pipeline readers and completion field [r4+0x6D4] (0x63BDC8D8) is only zero-initialized at 0x63D73B68; DmmConfig.bin (3e68b4f4...) maps 1,024 MiB DDR-B (0x80000000..0xC0000000, tag 0x0012) and 384 MiB DDR-A (0x24000000..0x3C000000, tag 0x0010) with SuperSlowManagerMainLsi unit 0x0332 set to size 0, and hdmi.ko (cc70cc59...) fixes 8-bit TMDS (addr_0803_1_0 = 0) with 3840x2160p24/25/30 YCbCr 4:2:2 cells and 1..254 range clipping (hdmi_core_set_csc_range_clip)."
+evidence = ["E0739"]
 
 [[claim]]
 id = "C19"
 entities = ["img.recording-paths"]
-status = "verified-offline"
-text = "The userspace size request in libmpr.so transports a picture-size id, not a (w,h) pair: 0x272570 is a (w,h,kind)-to-id table search and RecStartAvcHdContent (0x2B4F6C) stores that id at request+4, while no code in the AviSeqRec region packs a (w,h) pair; av-cam.bin carries 32 (3840,2160) u16 pairs (14 of them in a previously unlisted family at 0x63E369D0..0x63E37C80), and the entry edge of 0x63957ED8 is absent from every static encoding (absolute LE/BE, self-relative, adjacent halves, TBH, BL/BLX/B/ldr+add/ADR/movw-movt). The userspace-to-av-cam segment of the Round-5 graph is therefore not verified, and the premise that userspace sends (3840,2160) over UIPC is refuted as stated."
-evidence = ["E0729"]
+status = "inference"
+text = "Within ILCE-6400 hardware limits (8-bit ZIMA_AVC ceiling, <= 640x480 FOPD/AIF0 W2 cap, unwired 0x40BD SDI stub, and 104 MB/s UHS-I SDR104 bus), >=10-bit Bayer RAW video is bounded to three architectures: (1) continuous 2K (1996x1122 or 1996x1332 @ 24-29.97p) via hardware 0xF3030000 ARW 2.3 cRAW2 (1.0 B/px, 11-bit endpoints, 53.7-79.7 MB/s) or 10-bit packing (67.1 MB/s @ 24p) to UHS-I V60/V90 SD, (2) 1.0 GiB DDR-B RAM-ring-buffered cRAW2 bursts (~5.4-6.9 s @ 3840x2160p24, ~2.2-3.3 s @ 4896x2760p30 or 6000x3376p24) spooled to SD post-capture, and (3) continuous 3840x2160p24/25/30 Clean HDMI UYVY tunneling packing 7 bits/byte in 0x40..0xBF (14.51 MB/frame, surviving 1..254 range clipping) for uncompressed 4K 10/12/14-bit Bayer or 4896x2760p30 cRAW2."
+evidence = ["E0620", "E0715", "E0739"]
 
 [[claim]]
 id = "C20"
 entities = ["img.recording-paths"]
 status = "verified-offline"
-text = "av-cam has a second (w,h)-keyed record walk at 0x639D7E5E (base 0x63E3645C, stride 0x54) that matches [rec+4]/[rec+6] and [rec+0xC]/[rec+0x10] against [obj+0x6EC..0x704] and caches the record at [obj+0x7E8]; it terminates at a 0x16 marker at 0x63E3699C and therefore does not consume the 14-record (3840,2160) family at 0x63E369F0, whose base (like the four vdf_tbl bases) has no reference under 16-bit ldr+add, 32-bit ldr.w literal, movw/movt, absolute u32 LE/BE, self-relative, adjacent u16 halves, TBH, or .data pointer slots."
-evidence = ["E0729"]
-
-[[claim]]
-id = "C21"
-entities = ["img.recording-paths"]
-status = "verified-physical"
-text = "Live ILCE-6400 Open Gate tests A12-A19 confirm E0729's rec_fmt_tbl contract (A12 restores clean 16:9 with ref=0) and isolate dual-pipe stride behavior: tbl_0x34[0]=6528 alone (A16) yields continuous L/R with horizontal stride lines (ref=157), adding desc_0xAC[0] w[5,7,9]=1684/1728 (A13/A14) yields a clean left half and shifted right half (ref=18/10) because 0x63761C64 (mov.w r4,#3840 -> 1920 right-pipe offset) remained 1920, while desc_0xAC w[38]=1728 (A15/A17) and unaligned 0x03761C64=3240 (1620, A18/A19) halt the pipeline (black screen, ref=16..29); live Movie 4K 24p .bss copies at PA 0x041F1C38 (tbl_0x34) and PA 0x041F2AC8 (desc_0xAC) were captured over TCP."
-evidence = ["E0730"]
-
-[[claim]]
-id = "C22"
-entities = ["img.recording-paths"]
-status = "verified-offline"
-text = "av-cam's text logger 0x6394EC5C (6,181 branch sites: 5,630 BL + 551 B.W; 5,597 with a literal format string, 3,975 distinct) emits through 0x6394E4E4 into platform-pool message objects {u16 type, u16 category, u32 level, u32 length, u32 unused, 8-byte timestamp} + payload at +0x18, and keeps a 0x9FF0-byte level-3 duplication budget at 0x64378A10 (PA 0x04378A10, state magic 0x000000B5 at 0x64378A00) with 0x10+len slot accounting and no wrap; no static 0x9FF0 array or absolute pointer to the state exists, so an avlog reader must use the falsifiable exact-termination walk and the 7 always-safe pages (PA 0x04378000/0x0444C000/0x044B0000/0x0434F000/0x04367000/0x045C5000/0x045C6000) that also expose ref=NN at 0x64367AF0 and the noreboot byte at 0x6434FD7E."
-evidence = ["E0731"]
-
-[[claim]]
-id = "C23"
-entities = ["img.recording-paths"]
-status = "verified-offline"
-text = "0x63761C58 returns W/2 for rec ids 19/20 only (all three call sites pass selector 1; 0x635D9BB0 is __aeabi_uidivmod), and the value is added to the per-core DMA parameter word +0x14/+0x30 that 0x63762E20 commits to 0xF3851C18/0xF3951C18/0xF3A51C18 through pure setters, with no mask, range or alignment check anywhere; A18 patched both width writers (0x63761C64 and 0x63762F32) to 3240 and was still black, so the unaligned 1620 offset is the only delta from A14, 3200->1600 is 25x64-aligned and 3264->1632 is 32-aligned, and the per-id tbl_0x34 words +0x10/+0x20 (69120) and +0x1C (101888) are width-independent (id 0 stride 7680 and id 1 stride 8192 share them) and must stay stock."
-evidence = ["E0731"]
-
-[[claim]]
-id = "C24"
-entities = ["img.recording-paths"]
-status = "verified-offline"
-text = "vdf_tbl at 0x63DF199C is statically referenced by 0x6371B764 (16-bit ldr+add pc, literal 0x006D6234) and selected by a class x 1920-threshold map at 0x63CAEADA that returns the same index for 3200/3240/3264/3840, so a width change alters record contents only; ZIMA_AVC (0x63E3B554, 168 x 40 B) is indexed by a caller-supplied index, holds 14 (3840,2160) pairs and a hard-coded 3840x2160 fallback at 0x639DCF9C/0x639DCFA2; DmmConfig.bin is the kernel dmm.ko extent/unit rule table with no w/h/stride field and the sabin/sa_avce_* blobs carry no geometry; ZIMA_SCALER_A/B and dv_venc_initialize() do not exist as statically reachable objects; and libmpr.so emits no pasp/VPRF/hvc1 box, writing tkhd from arguments (0x870738/0x870746) and stsd/avc1 from a descriptor (+0x08/+0x0A -> 0x870A96/0x870A9A) as two independent inputs."
-evidence = ["E0731"]
-
-[[claim]]
-id = "C25"
-entities = ["img.recording-paths"]
-status = "verified-offline"
-text = "Exact-3:2 FE geometry 5064x3376 (=3376*1.5, versus A5's 4896x3376 = 1.4502:1 Sony mode-15 width) needs exactly seven fields that keep the stock invariants m_left+H+m_right=6024, centre 3004, and 4-pixel Bayer phase: size_rows[16/17] +0x14/+0x1C/+0x24 = 472/5064/488 (VA 0x63E25444/4C/54 and 0x63E25490/98/A0) and rcv_desc mode-16 +0x0C/+0x0E/+0x1E/+0x20 = 484/5064/472/5088 (VA 0x63E1979A/9C/AC/AE); there is no 16/64 alignment law on this path (stock 6024 mod 16 = 8), the tables are initialised data (not .bss) while rt_t14[16] at 0x64201A0C is .bss and re-derived, and a stock FE record still implies W=6000 (+0x24=3004, +0x44+ +0xEC=6024), so patching only size_rows plus rcv_desc is the decisive authority test."
-evidence = ["E0731"]
-
-[[claim]]
-id = "C26"
-entities = ["img.recording-paths"]
-status = "verified-offline"
-text = "The Movie rear-LCD box is a pattern-selected cell of a 6x9 {f64 x,y,w,h} table at viewUnified2.so VA/file 0x77D090 (group stride 0x120, cell stride 0x20, consumed by 0x2CC9B0 as base+0x120*group+0x20*pattern), whose 16:9 cells are (0,60,640,360) at 0x77D110/150/230/270/470/4B0/590/5D0 and whose stock 3:2 cells are (0,26,640,428); selection is enum-driven (getPanelDisplayPattern 0x2BF8EC returning 0..8, group selector 0x2CC958, aspect getter 0x19D9E0, isPanelAspect16_9 true for enum 2/4) and the movie REC layout family is _169-only, so the only levers are the data edit 60.0->26.0 and 360.0->428.0 (cell bytes +0x0E 4e->3a, +0x1E 76->7a) or the one-byte 0x2BFA3C 04 20 -> 00 20 pattern swap."
-evidence = ["E0731"]
-
-[[frontier]]
-id = "F04"
-title = "Native 3200x2160 / 3264x2160 Open Gate with a 3:2 container and LCD box"
-state = "open"
-entities = ["img.recording-paths"]
-evidence = ["E0729", "E0730", "E0731"]
-next = "Run the ordered B-series: (1) read-only avlog Part A plus two reads of PA 0x04378A10 around a known S-Ele Refresh to explain the live 0 and confirm the logger state machine; (2) RAM step B1 = E0731 section 3.7 rows 1-13 for 3200 only, separating dual-pipe geometry from encoder tables; (3) B2 adds the 14 ZIMA_AVC pairs and the conditional vdf_tbl[4] row; (4) host-side viewUnified2.so data patch P1 for a 3:2 LCD box independent of stream width; (5) only then the tkhd/stsd container caves, since 3200-wide coded data alone leaves a stale 3840x2160 container."
+text = "Unlocking ExlHelper output_aspect = 0 (3:2) on stock unbinned IMX284 Mode 16/17 (6000x3376 @ 24p/25p, FE <= 3445 avoiding E0728 Lost CAMOUT_V) and Mode 15 (4896x2760 @ 30p) invokes Sony's 0x6376E17C / 0x63CE2232 horizontal crop to extract 5064x3376 (17.09 MP 5.1K) and 4140x2760 (11.43 MP 4.1K) supersampled into 3240x2160 (validated by 0x63D67224 height == 2160 and MprLibCore::EncOpen .text +0x87025A/+0x870266 / +0x870696/+0x8706A2), while diffing all 13 IMX284 reglist columns isolates reg 0x0001 = 0x41 (16:9 window in cols 6,7,9,10,11) vs 0x40 (full-gate 3:2 continuous in cols 3,4,12, including Mode 10 0x44 1996x1332 unity capacitive averaging)."
+evidence = ["E0728", "E0741"]
 
 [[frontier]]
 id = "F01"
 title = "From RCRAW enable to an actual RAW/high-bit-depth recording"
 state = "open"
 entities = ["img.rcraw", "img.recording-paths"]
-evidence = ["E0634", "E0635", "E0621", "E9105", "E0732"]
-next = "Static proof (E9105) rules out both RCRAW_EN (FOPD/W0) and SyncGetPrcFlow/AIF0 W2 (CalcSdevOutSize <= 640x480) as full-sensor video RAW paths. Next: qualify SET_RAW_EXTERNAL_OUTPUT (0x63BEFFA0, 0x2044/0x2042 IPC, 0x00BF0274 gate) and IMX284/IDT 0xF3000200..0xF3000422 capture in Unicorn/QEMU and on real hardware."
+evidence = ["E0634", "E0635", "E0621", "E9105", "E0739", "E0755"]
+next = "Static and Unicorn proofs rule out RCRAW_EN (FOPD/W0), SyncGetPrcFlow/AIF0 W2 (CalcSdevOutSize <= 640x480, E9105), and SET_RAW_EXTERNAL_OUTPUT (0x40BD unwired 3G-SDI FS-RAW stub, E0739). Next: qualify Movie-mode CamPig/IDT (0xF3000200..0xF3000422, idt_opdtop_set_intn_capdat @ 0x63B3BD1C) + 0xF3030000 cRAW2 frame-by-frame capture into DDR-B (0x80000000, for 2K SD streaming and 4K-6K RAM bursts) and VPH ch52 (0xF3441280) 3840x2160 UYVY HDMI byte transparency in QEMU before any supervised camera test."
 
 [[frontier]]
 id = "F02"

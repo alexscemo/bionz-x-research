@@ -28,6 +28,7 @@ datas = [
 if os.environ.get("BIONZX_APP_VERSION_FILE"):
     datas.append((os.environ["BIONZX_APP_VERSION_FILE"], "."))
 for optional_mod in (
+    ROOT / "mods" / "rear_lcd_60fps" / "RearLcd60fps.mod",
     ROOT / "mods" / "open_gate" / "OpenGateSensor.mod",
     ROOT / "mods" / "open_gate" / "OpenGate32.mod",
 ):

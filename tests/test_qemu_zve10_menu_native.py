@@ -10,7 +10,7 @@ import unittest
 import uuid
 
 from project_paths import PROJECT_ROOT
-from tools.research.qemu_boot_probe import Qmp
+from tools.research.qemu_boot_probe import Qmp, QmpDisconnected
 
 BINARY = os.environ.get('BIONZX_QEMU_TEST_BINARY')
 INITIAL_RGB_SHA256 = '37d9e8d2c79e60b79d802b3ba1a454ddbab323dae9fc18ac8f71b822f50abfa8'
@@ -48,7 +48,7 @@ class NativeMenuBootLayoutTests(unittest.TestCase):
                 qmp = Qmp(('127.0.0.1', port), deadline)
                 self.addCleanup(qmp.close)
                 return process, qmp
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, QmpDisconnected):
                 time.sleep(0.05)
         return process, None
 

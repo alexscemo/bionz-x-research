@@ -7,6 +7,7 @@
 #else
 #define ML_ANCHOR_ADDR  0x1615ec40u
 #define MTL_HOOK_ADDR   0x064b54b6u
+#define MTL_HOOK_ADDR_FW200 0x064b5526u
 #endif
 #define ML_ANCHOR_MAGIC 0x444f4d53u
 #define ML_STATE_BYTES  8192u

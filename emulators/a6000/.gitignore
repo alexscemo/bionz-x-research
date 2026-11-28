@@ -1,0 +1,8 @@
+# Local inputs and outputs of the A6000 emulator. Never commit: Sony firmware,
+# data derived from it, and anything from your own camera.
+/firmware/
+/data/
+/state/
+/dumps/
+/provision/a6kcopy
+/provision/*.cpio

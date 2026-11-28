@@ -365,6 +365,183 @@ class TestImagerMmioAndRealFirmware(unittest.TestCase):
         self.assertEqual(call_sel(1, 450, 1000), (1, 0x0010, 404, 1))
         self.assertEqual(call_sel(2, 450, 1000), (1, 0x0010, 440, 1))
 
+    def test_real_a6400_external_raw_40bd_stub_and_dmm_ddrb_unicorn(self) -> None:
+        ext_root = PROJECT_ROOT / "firmware" / "extracted_a6400" / "firmware.tar_unpacked"
+        avcam_path = ext_root / "0700_part_image" / "dev" / "nflasha3_unpacked" / "av-cam.bin"
+        scn_path = (
+            ext_root
+            / "0700_part_image"
+            / "dev"
+            / "nflasha15_unpacked"
+            / "scenario"
+            / "CAMERA_SCN_EXTERNAL_RAW_RECORD.so"
+        )
+        dmm_path = ext_root / "0800_appli" / "setting" / "DmmConfig.bin"
+        if not (avcam_path.is_file() and scn_path.is_file() and dmm_path.is_file()):
+            self.skipTest("unpacked a6400 firmware inputs not present")
+
+        from unicorn import (
+            UC_ARCH_ARM,
+            UC_HOOK_CODE,
+            UC_MODE_THUMB,
+            UC_PROT_EXEC,
+            UC_PROT_READ,
+            UC_PROT_WRITE,
+            Uc,
+        )
+        from unicorn.arm_const import (
+            UC_ARM_REG_LR,
+            UC_ARM_REG_R0,
+            UC_ARM_REG_R1,
+            UC_ARM_REG_SP,
+        )
+
+        avcam = avcam_path.read_bytes()
+        scn = scn_path.read_bytes()
+        dmm = dmm_path.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(scn).hexdigest(),
+            "842fa541b4c2c60089a5b98f365554dd3120e7111da86dbecfe8887befd7104e",
+        )
+        self.assertEqual(
+            hashlib.sha256(dmm).hexdigest(),
+            "3e68b4f482ba24fceea1b572c8e2c5ee132f3fdd93ade64e634df47448bd3abd",
+        )
+
+        # 1. Verify DmmConfig.bin DDR-A (384 MiB @ 0x24000000), DDR-B (1024 MiB @ 0x80000000),
+        # and unprovisioned SuperSlowManagerMainLsi unit 0x0332 (size 0).
+        extents = {}
+        for off in range(0x50, 0x300, 20):
+            pa, _attr, tag, sz, _flg = struct.unpack_from("<5I", dmm, off)
+            if pa == 0 and sz == 0:
+                break
+            extents[tag] = (pa, sz)
+        self.assertEqual(extents[0x0010], (0x24000000, 0x18000000))
+        self.assertEqual(extents[0x0012], (0x80000000, 0x40000000))
+        self.assertEqual(
+            struct.unpack_from("<4I", dmm, 0x11940),
+            (0x00000275, 0x00000000, 0x00000332, 0xFFFFFFFF),
+        )
+
+        # 2. Verify all 19 IMX284 sensor modes are >= 11-bit (never 8-bit).
+        bit_depths = [
+            (struct.unpack_from("<8I", avcam, 0x63E12610 - ORIL_BASE + m * 0x20)[4] >> 8) & 0xFF
+            for m in range(19)
+        ]
+        self.assertTrue(all(bits in (11, 12, 14) for bits in bit_depths), bit_depths)
+
+        # 3. Verify only one Thumb-2 store targets struct offset #0x6D4 across av-cam.bin .text
+        # (the zero-initializer at 0x63D73B68).
+        stores_6d4 = []
+        for off in range(0, 0x820000, 2):
+            hw1, hw2 = struct.unpack_from("<HH", avcam, off)
+            if (hw1 & 0xFFDF) in (0xF880, 0xF8A0, 0xF8C0) and (hw2 & 0xFFF) == 0x6D4:
+                stores_6d4.append(ORIL_BASE + off)
+        self.assertEqual(stores_6d4, [0x63D73B68])
+
+        # 4. Execute CAMERA_SCN_EXTERNAL_RAW_RECORD.so and av-cam.bin 0x40BD handlers in Unicorn.
+        mapped_size = (len(avcam) + 0xFFF) & ~0xFFF
+        uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+        uc.mem_map(ORIL_BASE, mapped_size, UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC)
+        uc.mem_write(ORIL_BASE, avcam)
+
+        scn_base = 0x20000000
+        stack = 0x10000000
+        uc.mem_map(scn_base, 0x10000, UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC)
+        uc.mem_map(stack, 0x10000, UC_PROT_READ | UC_PROT_WRITE)
+        uc.mem_write(scn_base, scn[:0xA78])
+        uc.mem_write(scn_base + 0x8A78, scn[0xA78:0xBF8])
+        for plt_off in range(0x5A4, 0x610, 12):
+            uc.mem_write(scn_base + plt_off, struct.pack("<3I", 0xE3A00000, 0xE12FFF1E, 0xE1A00000))
+
+        alloc_msg = stack + 0x6000
+        sent: dict[str, object] = {}
+
+        def hook_plt(u: Uc, address: int, _size: int, _user_data: object) -> None:
+            off = address - scn_base
+            if off == 0x5C8:
+                p_msg = u.reg_read(UC_ARM_REG_R1)
+                u.mem_write(p_msg, struct.pack("<I", alloc_msg + 4))
+            elif off == 0x5D4 and u.reg_read(UC_ARM_REG_R0) == 0x00030001:
+                sent["dest_q"] = u.reg_read(UC_ARM_REG_R0)
+                mptr = u.reg_read(UC_ARM_REG_R1)
+                sent["src_q"] = struct.unpack("<I", u.mem_read(mptr - 4, 4))[0]
+                sent["payload"] = bytes(u.mem_read(mptr, 20))
+                u.emu_stop()
+
+        uc.hook_add(UC_HOOK_CODE, hook_plt, begin=scn_base + 0x58C, end=scn_base + 0x610)
+        for fn_off, expected_op in ((0x0934, 0), (0x0910, 1), (0x08EC, 2), (0x08C8, 3)):
+            sent.clear()
+            uc.mem_write(alloc_msg, b"\x00" * 32)
+            uc.reg_write(UC_ARM_REG_SP, stack + 0x8000)
+            uc.reg_write(UC_ARM_REG_R0, 7)
+            uc.reg_write(UC_ARM_REG_R1, 0x12345678)
+            uc.reg_write(UC_ARM_REG_LR, (scn_base + 0x061E) | 1)
+            uc.emu_start((scn_base + fn_off) | 1, scn_base + 0x061E, timeout=10000, count=500)
+            payload = sent["payload"]
+            assert isinstance(payload, bytes)
+            self.assertEqual((sent["dest_q"], sent["src_q"]), (0x00030001, 0x00DC0000))
+            self.assertEqual(payload[0], 5)
+            self.assertEqual(struct.unpack_from("<H", payload, 2)[0], 0x40BD)
+            self.assertEqual((payload[8], payload[9]), (expected_op, 7))
+            self.assertEqual(struct.unpack_from("<I", payload, 10)[0], 0x12345678)
+
+        # Resolve 0x40BD -> command index 0xA6 and verify gate 0x63BE06E0 + handlers 0x63BE0648 / 0x63BDC8D8.
+        uc.reg_write(UC_ARM_REG_SP, stack + 0x8000)
+        uc.reg_write(UC_ARM_REG_R0, 0x40BD)
+        uc.reg_write(UC_ARM_REG_LR, ORIL_BASE | 1)
+        uc.emu_start(0x63BDB174 | 1, ORIL_BASE, timeout=50000, count=5000)
+        idx = uc.reg_read(UC_ARM_REG_R0)
+        self.assertEqual(idx, 0xA6)
+        self.assertEqual(
+            struct.unpack("<4I", uc.mem_read(0x645773C8 + idx * 16, 16)),
+            (0x40BD, 0x63BE0649, 0, 0x63BD9249),
+        )
+
+        flag_va = stack + 0x1000
+        uc.mem_write(0x643334E8 + 0xE0, b"\x01")
+        for key_val, expected_flag in ((0, 0), (0x00BF0274, 1)):
+            uc.mem_write(0x64408588, struct.pack("<I", key_val))
+            uc.mem_write(flag_va, b"\x01")
+            uc.reg_write(UC_ARM_REG_SP, stack + 0x8000)
+            uc.reg_write(UC_ARM_REG_R0, flag_va)
+            uc.reg_write(UC_ARM_REG_LR, ORIL_BASE | 1)
+            uc.emu_start(0x63BE06E0 | 1, ORIL_BASE, timeout=10000, count=200)
+            self.assertEqual(uc.mem_read(flag_va, 1)[0], expected_flag)
+
+        # Feed the ON message (payload[8]=1) to 0x63BE0648 and check 0x63BDC8D8 completion polling.
+        msg_va = stack + 0x2000
+        uc.mem_write(msg_va - 4, struct.pack("<I", 0x00DC0000))
+        msg = bytearray(20)
+        msg[0] = 5
+        struct.pack_into("<H", msg, 2, 0x40BD)
+        msg[8] = 1
+        msg[9] = 7
+        struct.pack_into("<I", msg, 10, 0x12345678)
+        uc.mem_write(msg_va, bytes(msg))
+        uc.reg_write(UC_ARM_REG_SP, stack + 0x8000)
+        uc.reg_write(UC_ARM_REG_R0, msg_va)
+        uc.reg_write(UC_ARM_REG_LR, ORIL_BASE | 1)
+        uc.emu_start(0x63BE0648 | 1, ORIL_BASE, timeout=20000, count=500)
+        self.assertEqual(uc.reg_read(UC_ARM_REG_R0), 1)
+        self.assertEqual(
+            struct.unpack("<3I", uc.mem_read(0x64407C40 + 0x878, 12)),
+            (1, 7, 0x12345678),
+        )
+
+        ctx_va, state_r4, reply_va = stack + 0x3000, stack + 0x4000, stack + 0x5000
+        uc.mem_write(ctx_va + 8, struct.pack("<I", state_r4))
+        for d4_val, expected_ret, expected_code in ((0, 0, 0), (1, 0xC, 0xF000)):
+            uc.mem_write(state_r4 + 0x6D4, struct.pack("<I", d4_val))
+            uc.mem_write(reply_va, b"\x00" * 16)
+            uc.reg_write(UC_ARM_REG_SP, stack + 0x8000)
+            uc.reg_write(UC_ARM_REG_R0, ctx_va)
+            uc.reg_write(UC_ARM_REG_R1, reply_va)
+            uc.reg_write(UC_ARM_REG_LR, ORIL_BASE | 1)
+            uc.emu_start(0x63BDC8D8 | 1, ORIL_BASE, timeout=10000, count=200)
+            self.assertEqual(uc.reg_read(UC_ARM_REG_R0), expected_ret)
+            self.assertEqual(struct.unpack("<I", uc.mem_read(reply_va + 8, 4))[0], expected_code)
+
 
 if __name__ == "__main__":
     unittest.main()

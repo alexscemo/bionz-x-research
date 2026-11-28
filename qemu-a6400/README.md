@@ -5,7 +5,7 @@ Out-of-tree QEMU v11.1.3 overlay and patch for the Sony ILCE-6400 (`CXD90045` / 
 An explicit [adapted ZV-E10 menu experiment](../docs/ZVE10_ADAPTED_MENU.md)
 uses this board with a separate boot policy and checked private inputs.
 
-## Prerequisites (WSL2 Ubuntu)
+## Prerequisites (WSL2 Ubuntu or macOS)
 
 Install the QEMU build dependencies in WSL2 Ubuntu:
 
@@ -14,6 +14,16 @@ sudo apt update
 sudo apt install -y build-essential git meson ninja-build pkg-config \
   libglib2.0-dev libpixman-1-dev libfdt-dev zlib1g-dev python3-venv \
   python3-tomli libsdl2-dev
+```
+
+Or on macOS (Apple Silicon / Intel via Homebrew):
+
+```bash
+brew install meson ninja pkg-config glib pixman sdl2 dtc
+bash qemu-a6400/setup-qemu.sh
+cd "$HOME/sony-a6400-qemu-11.1.3/build"
+../configure --target-list=arm-softmmu --enable-sdl --disable-werror --disable-docs
+ninja -j"$(sysctl -n hw.ncpu)" qemu-system-arm qemu-img qemu-io
 ```
 
 ## Setup & Build
@@ -86,12 +96,16 @@ use `[` and `]`. Wheel turns and AF/MF–AEL selector toggles are immediate
 edges; MENU, directional presses and the AF/MF–AEL button still use a hold
 for firmware debounce. Press Ctrl+C in the launch terminal to stop the local run.
 
-A powered menu replay needs the [E0527](../docs/evidence/0527-qemu-a6400-real-submicro-frames-power-on-holds.md)
-fixture. Use `SUBMICRO_PAGE=/path/to/camera-page-0x03443000.bin` or
-`SUBMICRO_FRAMES=/path/to/submicro-frames.bin` for the verified 384-byte A/C/B
-extract. The launcher checks the original fixture digest before staging the
-overlay. An explicit empty `SUBMICRO_PAGE=` is useful for serial diagnostics,
-not for a powered menu test.
+A powered menu replay needs a sub-micro RX source on SIO channel 3:
+- **Captured / WBI extract ([E0527](../docs/evidence/0527-qemu-a6400-real-submicro-frames-power-on-holds.md)):**
+  Use `SUBMICRO_PAGE=/path/to/camera-page-0x03443000.bin` or
+  `SUBMICRO_FRAMES=/path/to/submicro-frames.bin` for the verified 384-byte A/C/B
+  extract. The launcher checks the original fixture digest before staging the
+  overlay.
+- **Seed-free synthetic sub-micro (`SUBMICRO_SYNTHETIC=1` / `-M submicro-synthetic=on`, or `--submicro-synthetic` in `rear_panel.py`):**
+  Synthesizes clean-room CRC-16/CCITT-FALSE-valid 384-byte idle RX frames (Slot A `0x20` with `CAkey1` POWER ON and live `mmc0` SD presence, Slot C `0x60`, and Slot B `0x30` with powered TLV `0x03 = 00 00 00 03`, version `01 02 01 38`, nominal battery `0x0b`, and `0x0a`/`0x10`/`0x14`) without requiring an external capture file. Cannot be combined with `SUBMICRO_PAGE` or `SUBMICRO_FRAMES`.
+- **Serial-only diagnostics:** An explicit empty `SUBMICRO_PAGE=` leaves SIO ch3 silent (the default `-M sony-a6400` baseline) and does not boot the powered menu.
+- **HDMI hotplug (`HDMI_PLUGGED=0|1` / QMP `/machine` `hdmi-plugged`):** When `HDMI_CEC=1` or `PERIPHERALS=1` is enabled, `hdmi-plugged` defaults to `true` and can be toggled at startup or runtime via QMP (`qom-set` on `/machine` `hdmi-plugged`) to drive `0xF2A40000` HPD/RSEN (`reg 0x3004`/`0x3005`), DDC EDID, CEC ACK/NACK, and VPH Console 1 TMDS; sub-micro frames do not synthesize an unverified HDMI TLV bit.
 
 For the captured boot, `SUBMICRO_LENS_POWER=1` opts in to the slot-B
 rail-status reply, while `EMOUNT_LENS=selp1650` (or `sigma1850`, `sel2470gm`,
@@ -216,6 +230,7 @@ QEMU_EXTRA="-icount shift=0,sleep=on -net none -qmp unix:$QMP,server=on,wait=off
    `/dev/mmca*` nodes or QMP success do not prove a mount. For the distinct
    card-present-at-boot control, use `SD_IMAGE` and `SD_SHA256` with
    `python3 -m tools.research.qemu_boot_probe --sd-at-boot --inputs "$A6400_QEMU_DATA_DIR" --report-dir artifacts/qemu-a6400/NEW-SD-BOOT --guest-command "cat /proc/partitions"`.
+   By default, QEMU's `sd-card` reports Class 0 in `ACMD13` `SD_STATUS`. Opting in to `SD_UHS_U3=1` (`-M sd-uhs-u3=on`, or `--sd-uhs-u3` in `rear_panel.py`, setting `sd-card.x-sony-uhs-u3=on` on `mmc0`/`mmc2`) advertises `SPEED_CLASS = 0x04` (Class 10), `AU_SIZE = 0x9` (4 MiB), `UHS_SPEED_GRADE = 3` (`U3`, 30 MB/s) with `UHS_AU_SIZE = 9` (`0x39`), `VIDEO_SPEED_CLASS = 30` (`V30`), and SDHC/SDXC `SD_SECURITY` + `SD_SPEC4` in `SCR` for XAVC S 4K card-admission experiments without altering default `-M sony-a6400` SD behavior.
 2. **Playback:** Compare Play with the slot empty and with the fixture inserted.
    Send QMP `send-key` with qcode `p` and `hold-time` 250, or use the rear
    panel's Play button. Capture the original display on both heads with QMP

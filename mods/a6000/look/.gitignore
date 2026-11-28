@@ -1,0 +1,5 @@
+# built binary, register snapshots from the camera, updater downloads
+/gammamod
+/snaps/
+/firmware_port/
+*.bin

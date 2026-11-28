@@ -789,8 +789,19 @@ nak:
 }
 
 #define STRICT_BULK_MAX_BYTES (256U * 1024U)
+#define STRICT_BULK_MAX_CHAIN_TRBS 64U
 #define TRBCTL_NORMAL         1U
 #define TRBCTL_LINK           8U
+
+typedef struct StrictBulkOutSegment {
+    CxdDwc3Trb trb;
+    uint64_t trb_pa;
+    uint64_t buf_pa;
+    uint32_t capacity;
+    uint32_t offset;
+    uint32_t bytes;
+    uint32_t ctrl;
+} StrictBulkOutSegment;
 
 static CxdDwc3Ep *strict_resolve_bulk_in_ep(CxdDwc3State *s, uint32_t ep_idx,
                                             bool *ambiguous)
@@ -941,13 +952,222 @@ nak:
     strict_reply(s, reply);
 }
 
+static void strict_bulk_out_chained(CxdDwc3State *s, CxdDwc3Ep *ep,
+                                   uint32_t logical, uint32_t phys,
+                                   const uint8_t *payload, uint32_t length,
+                                   uint32_t max_packet, uint32_t ring_bytes,
+                                   uint64_t ring)
+{
+    StrictBulkOutSegment segments[STRICT_BULK_MAX_CHAIN_TRBS];
+    uint64_t visited[STRICT_BULK_MAX_CHAIN_TRBS];
+    uint32_t descriptor_count = 0, segment_count = 0;
+    uint32_t total_capacity = 0, remaining = length, event_count = 0;
+    uint64_t trb_pa = ep->trb_addr;
+    char reply[64];
+
+    while (segment_count == 0 || remaining != 0) {
+        CxdDwc3Trb trb;
+        uint32_t ctrl, kind, capacity, offset, available, bytes;
+        bool chain, last;
+
+        if (descriptor_count >= STRICT_BULK_MAX_CHAIN_TRBS ||
+            (trb_pa & 15U) || !strict_ram_range(trb_pa, sizeof(trb))) {
+            strict_reply(s, "ERROR bulk-out-chain-bounds\n");
+            return;
+        }
+        for (uint32_t i = 0; i < descriptor_count; i++) {
+            if (visited[i] == trb_pa) {
+                strict_reply(s, "ERROR bulk-out-chain-loop\n");
+                return;
+            }
+        }
+        visited[descriptor_count++] = trb_pa;
+        if ((trb_pa < ring + ring_bytes && ring < trb_pa + sizeof(trb)) ||
+            !address_space_access_valid(&address_space_memory, trb_pa,
+                                        sizeof(trb), true,
+                                        MEMTXATTRS_UNSPECIFIED) ||
+            dma_memory_read(&address_space_memory, trb_pa, &trb,
+                            sizeof(trb), MEMTXATTRS_UNSPECIFIED) != MEMTX_OK) {
+            strict_reply(s, "ERROR trb-dma-read\n");
+            return;
+        }
+        trb.bpl = le32_to_cpu(trb.bpl);
+        trb.bph = le32_to_cpu(trb.bph);
+        trb.size = le32_to_cpu(trb.size);
+        trb.ctrl = le32_to_cpu(trb.ctrl);
+        ctrl = trb.ctrl;
+        if (!(ctrl & TRB_CTRL_HWO)) {
+            if (segment_count == 0) {
+                goto notify_nak;
+            }
+            strict_reply(s, "ERROR bulk-out-chain-incomplete\n");
+            return;
+        }
+        kind = (ctrl >> 4) & 0x3fU;
+        if (kind == TRBCTL_LINK) {
+            if (trb.size != 0 || (ctrl & TRB_CTRL_LST)) {
+                strict_reply(s, "ERROR unsupported-bulk-out-link\n");
+                return;
+            }
+            trb_pa = ((uint64_t)trb.bph << 32) | trb.bpl;
+            continue;
+        }
+        if (kind != TRBCTL_NORMAL || (trb.size & 0xff000000U) ||
+            (ctrl & (TRB_CTRL_LST | TRB_CTRL_CHN)) ==
+                (TRB_CTRL_LST | TRB_CTRL_CHN) ||
+            (ctrl & (1U << 3))) { /* CSP has different short-packet rules. */
+            strict_reply(s, "ERROR unsupported-bulk-out-trb\n");
+            return;
+        }
+        capacity = trb.size & 0x00ffffffU;
+        offset = segment_count == 0 ? ep->out_offset : 0;
+        if (capacity > STRICT_BULK_MAX_BYTES || offset > capacity ||
+            capacity > STRICT_BULK_MAX_BYTES - total_capacity) {
+            strict_reply(s, "ERROR unsupported-bulk-out-length\n");
+            return;
+        }
+        available = capacity - offset;
+        bytes = MIN(remaining, available);
+        chain = (ctrl & TRB_CTRL_CHN) != 0;
+        last = (ctrl & TRB_CTRL_LST) != 0;
+        if (remaining > available && !chain) {
+            strict_reply(s, "ERROR unsupported-bulk-out-length\n");
+            return;
+        }
+        if (!chain && !last) {
+            strict_reply(s, "ERROR unsupported-bulk-out-chain\n");
+            return;
+        }
+        StrictBulkOutSegment *segment = &segments[segment_count++];
+        segment->trb = trb;
+        segment->trb_pa = trb_pa;
+        segment->buf_pa = ((uint64_t)trb.bph << 32) | trb.bpl;
+        segment->capacity = capacity;
+        segment->offset = offset;
+        segment->bytes = bytes;
+        segment->ctrl = ctrl;
+        total_capacity += capacity;
+        remaining -= bytes;
+        if (remaining != 0) {
+            trb_pa += sizeof(trb);
+        }
+    }
+
+    bool short_packet = length < max_packet;
+    StrictBulkOutSegment *last_segment = &segments[segment_count - 1];
+    bool complete = short_packet ||
+        ((last_segment->ctrl & TRB_CTRL_LST) != 0 &&
+         last_segment->offset + last_segment->bytes ==
+             last_segment->capacity);
+
+    for (uint32_t i = 0; i < segment_count; i++) {
+        StrictBulkOutSegment *segment = &segments[i];
+        bool full = segment->offset + segment->bytes == segment->capacity;
+        bool terminal_short = short_packet && i + 1 == segment_count;
+
+        if (segment->bytes > 0 &&
+            (!strict_ram_range(segment->buf_pa, segment->capacity) ||
+             !address_space_access_valid(&address_space_memory,
+                                         segment->buf_pa, segment->capacity,
+                                         true, MEMTXATTRS_UNSPECIFIED) ||
+             (segment->buf_pa < ring + ring_bytes &&
+              ring < segment->buf_pa + segment->capacity))) {
+            strict_reply(s, "ERROR payload-dma-write\n");
+            return;
+        }
+        for (uint32_t j = 0; segment->bytes > 0 && j < segment_count; j++) {
+            if (segment->buf_pa < segments[j].trb_pa + sizeof(CxdDwc3Trb) &&
+                segments[j].trb_pa < segment->buf_pa + segment->capacity) {
+                strict_reply(s, "ERROR bulk-out-buffer-overlaps-trb\n");
+                return;
+            }
+        }
+        if ((segment->ctrl & TRB_CTRL_IOC) && full && !terminal_short &&
+            !(complete && i + 1 == segment_count &&
+              (segment->ctrl & TRB_CTRL_LST))) {
+            event_count++;
+        }
+    }
+    event_count += complete ? 1U : 0U;
+    if (s->gevntcount + event_count * 4U > ring_bytes) {
+        strict_reply(s, "ERROR event-ring-unavailable\n");
+        return;
+    }
+
+    uint32_t packet_offset = 0;
+    for (uint32_t i = 0; i < segment_count; i++) {
+        StrictBulkOutSegment *segment = &segments[i];
+        if (segment->bytes > 0 &&
+            dma_memory_write(&address_space_memory,
+                             segment->buf_pa + segment->offset,
+                             payload + packet_offset, segment->bytes,
+                             MEMTXATTRS_UNSPECIFIED) != MEMTX_OK) {
+            strict_reply(s, "ERROR payload-dma-write\n");
+            return;
+        }
+        packet_offset += segment->bytes;
+    }
+    for (uint32_t i = 0; i < segment_count; i++) {
+        StrictBulkOutSegment *segment = &segments[i];
+        uint32_t new_offset = segment->offset + segment->bytes;
+        bool full = new_offset == segment->capacity;
+        bool terminal_short = short_packet && i + 1 == segment_count;
+        bool terminal = terminal_short ||
+            (full && (segment->ctrl & TRB_CTRL_LST));
+
+        if (full || terminal_short) {
+            segment->trb.size = cpu_to_le32(segment->capacity - new_offset);
+            segment->trb.ctrl = cpu_to_le32(segment->ctrl & ~TRB_CTRL_HWO);
+            if (dma_memory_write(&address_space_memory, segment->trb_pa,
+                                 &segment->trb, sizeof(segment->trb),
+                                 MEMTXATTRS_UNSPECIFIED) != MEMTX_OK) {
+                strict_reply(s, "ERROR trb-dma-write\n");
+                return;
+            }
+        }
+        if (full) {
+            ep->trb_addr = segment->trb_pa + sizeof(CxdDwc3Trb);
+            ep->out_offset = 0;
+            if ((segment->ctrl & TRB_CTRL_IOC) && !terminal) {
+                dwc3_push_depevt(s, phys, DEPEVT_XFERINPROG, 0, 0);
+            }
+        } else {
+            ep->trb_addr = segment->trb_pa;
+            ep->out_offset = new_offset;
+        }
+        if (terminal) {
+            complete = true;
+        }
+    }
+    if (complete) {
+        ep->trb_active = false;
+        ep->out_offset = 0;
+        dwc3_push_depevt(s, phys, DEPEVT_XFERCOMPLETE,
+                         DEPEVT_STATUS_LST |
+                         (short_packet ? DEPEVT_STATUS_SHORT : 0), 0);
+    }
+    ep->nrdy_pending = false;
+    snprintf(reply, sizeof(reply), "ACK %u %u\n", logical, length);
+    strict_reply(s, reply);
+    return;
+
+notify_nak:
+    ep->out_offset = 0;
+    if (!ep->nrdy_pending && (ep->cfg1 & (1U << 10))) {
+        dwc3_push_depevt(s, phys, DEPEVT_XFERNOTREADY, 0, 0);
+        ep->nrdy_pending = true;
+    }
+    snprintf(reply, sizeof(reply), "NAK %u\n", logical);
+    strict_reply(s, reply);
+}
+
 static void strict_bulk_out(CxdDwc3State *s, uint32_t logical,
                             const uint8_t *payload, uint32_t length)
 {
     CxdDwc3Ep *ep = NULL;
     CxdDwc3Trb trb;
     char reply[64];
-    uint32_t phys = 0, ctrl, capacity, max_packet, new_offset;
+    uint32_t phys = 0, ctrl, kind, capacity, max_packet, new_offset;
     unsigned ep_type;
     uint32_t ring_bytes = s->gevntsiz & 0xFFFCU;
     uint64_t ring = ((uint64_t)s->gevntadrhi << 32) | s->gevntadrlo;
@@ -1005,8 +1225,19 @@ static void strict_bulk_out(CxdDwc3State *s, uint32_t logical,
     if (!(ctrl & TRB_CTRL_HWO)) {
         goto notify_nak;
     }
+    kind = (ctrl >> 4) & 0x3fU;
+    if (kind == TRBCTL_LINK || (ctrl & TRB_CTRL_CHN)) {
+        max_packet = (ep->cfg0 >> 3) & 0x7ffU;
+        if (max_packet == 0 || length > max_packet) {
+            strict_reply(s, "ERROR unsupported-bulk-out-length\n");
+            return;
+        }
+        strict_bulk_out_chained(s, ep, logical, phys, payload, length,
+                                max_packet, ring_bytes, ring);
+        return;
+    }
     capacity = le32_to_cpu(trb.size);
-    if (((ctrl >> 4) & 0x3fU) != TRBCTL_NORMAL ||
+    if (kind != TRBCTL_NORMAL ||
         (ctrl & (TRB_CTRL_LST | TRB_CTRL_CHN)) != TRB_CTRL_LST ||
         capacity > STRICT_BULK_MAX_BYTES) {
         strict_reply(s, "ERROR unsupported-bulk-out-trb\n");

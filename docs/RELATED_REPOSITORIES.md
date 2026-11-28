@@ -8,6 +8,8 @@ relevant entries before implementing a new contract or repeating an experiment.
 
 - Initial catalog: 2026-11-16, based on the twelve upstream READMEs linked below.
   Descriptions summarize upstream scope, not findings reproduced in this project.
+- 2026-11-27: added voxivoid/a6000-qemu, from its README at commit `62cf3bc`, by
+  its author; its machine was ported and re-run here (see the linked receipt).
 - This is a reference catalog, not a dependency manifest, compatibility matrix,
   source audit or authorization to run upstream tools. No upstream tools were
   cloned or executed to create it.
@@ -46,6 +48,7 @@ relevant entries before implementing a new contract or repeating an experiment.
 | Repository | Upstream scope | Research starting points | Transfer boundary |
 | --- | --- | --- | --- |
 | [Oein/a5000-emulator](https://github.com/Oein/a5000-emulator) | ILCE-5000 full-system QEMU emulation | [README](https://github.com/Oein/a5000-emulator/blob/HEAD/README.md): QEMU overlay, device models, boot hand-off and hardware notes | Earlier camera generation. Re-derive each contract for `CXD90045`; emulated or host-injected behavior is not automatically original-firmware behavior. |
+| [voxivoid/a6000-qemu](https://github.com/voxivoid/a6000-qemu) | ILCE-6000 full-system QEMU emulation (fork of Oein/a5000-emulator) | [README](https://github.com/voxivoid/a6000-qemu/blob/HEAD/README.md): NAND two-stage boot, USB, NFC, Wi-Fi, HDMI; ported here as `sony-a6000` ([receipt](evidence/external-a6000-emulator/README.md)) | `CXD90014` body. Same transfer limits as the a5000 entry; boots only with the owner's NAND dump. |
 | [cokeenet/zve10-qemu](https://github.com/cokeenet/zve10-qemu) | ZV-E10 / `CXD90045` firmware execution, system mapping and menu research | [README](https://github.com/cokeenet/zve10-qemu/blob/HEAD/README.md): QEMU workstream, firmware/system reports, display and menu work | Same SoC family is a comparison lead, not an a6400 profile. Separate stock execution, instrumentation and menu-port results; hardware recovery instructions are not approved procedures here. |
 
 ## Firmware formats and storage layouts

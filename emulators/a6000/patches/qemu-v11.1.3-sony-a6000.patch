@@ -1,0 +1,1032 @@
+diff --git a/hw/arm/Kconfig b/hw/arm/Kconfig
+index 9e6577c..f312d4a 100644
+--- a/hw/arm/Kconfig
++++ b/hw/arm/Kconfig
+@@ -739,3 +739,27 @@ config SONY_A6400
+     select SPLIT_IRQ
+     select UNIMP
+     select CXD4115_TIMER
++
++config SONY_A6000
++    bool
++    default y
++    depends on TCG && ARM
++    select A9MPCORE
++    select ARM_MPTIMER
++    select PL011 # UART
++    select PL310 # L2 cache controller
++    select UNIMP
++    select CXD4115_TIMER
++    select CXD90014_SYSCTL
++    select CXD90014_SA
++    select CXD90014_IDT
++    select A6K_NFC
++    select CXD90014_DDRC
++    select CXD90014_NAND
++    select CXD90014_DMAC
++    select CXD90014_USBHDC
++    select DMP_SMAPH
++    select CXD90014_HDMI
++    select SDHCI
++    select AR6003_SDIO
++    select SD
+diff --git a/hw/arm/meson.build b/hw/arm/meson.build
+index f0bc619..34196bf 100644
+--- a/hw/arm/meson.build
++++ b/hw/arm/meson.build
+@@ -114,3 +114,5 @@ arm_common_ss.add(files('boot.c'))
+ arm_common_ss.add(when: 'CONFIG_SONY_A6400', if_true: files('sony_a6400.c', '../misc/cxd90014_sio.c', '../misc/cxd90014_gpio.c', '../misc/cxd90014_adc.c', '../misc/cxd90014_evsel.c', '../misc/cxd90014_regfile.c', '../misc/cxd90014_vph.c', '../display/dmp_smaph.c', '../display/dmp_shader.c', '../display/cxd90045_hdmi_cec.c', '../misc/cxd90014_sa.c', '../misc/cxd90014_p2s.c', '../misc/cxd90045_camcore.c', '../misc/cxd90045_i2c.c', '../misc/cxd90045_tpu.c', '../misc/cxd90045_touch.c', '../misc/cxd90045_bcm4339.c', '../misc/cxd90045_audio.c', '../misc/cxd90045_lens.c', '../usb/cxd90045_dwc3.c', '../misc/cxd90045_cam.c', '../misc/cxd90045_jpeg.c'))
+ 
+ hw_common_arch += {'arm': arm_common_ss}
++# sony-a6000 (CXD90014) shares these device models with sony-a6400
++arm_common_ss.add(when: 'CONFIG_SONY_A6000', if_true: files('sony_a6000.c', '../misc/cxd90014_sio.c', '../misc/cxd90014_gpio.c', '../misc/cxd90014_adc.c', '../misc/cxd90014_evsel.c', '../misc/cxd90014_regfile.c', '../misc/cxd90014_vph.c', '../display/dmp_smaph.c', '../display/dmp_shader.c', '../misc/cxd90014_sa.c', '../misc/cxd90014_p2s.c'))
+diff --git a/hw/block/Kconfig b/hw/block/Kconfig
+index 737dbcd..c28b38b 100644
+--- a/hw/block/Kconfig
++++ b/hw/block/Kconfig
+@@ -32,3 +32,6 @@ config VHOST_USER_BLK
+ 
+ config SWIM
+     bool
++
++config CXD90014_NAND
++    bool
+diff --git a/hw/block/meson.build b/hw/block/meson.build
+index d646323..34daba7 100644
+--- a/hw/block/meson.build
++++ b/hw/block/meson.build
+@@ -19,3 +19,4 @@ system_ss.add(when: 'CONFIG_VHOST_USER_BLK', if_true: files('vhost-user-blk.c'))
+ system_ss.add(when: 'CONFIG_VHOST_USER_BLK', if_true: files('virtio-blk-common.c'))
+ 
+ subdir('dataplane')
++system_ss.add(when: 'CONFIG_CXD90014_NAND', if_true: files('cxd90014_nand.c'))
+diff --git a/hw/block/trace-events b/hw/block/trace-events
+index dbaa5ca..4bc96e7 100644
+--- a/hw/block/trace-events
++++ b/hw/block/trace-events
+@@ -111,3 +111,7 @@ swim_iwmctrl_read(int reg, const char *name, unsigned size, uint64_t value) "reg
+ swim_iwmctrl_write(int reg, const char *name, unsigned size, uint64_t value) "reg=%d [%s] size=%u value=0x%"PRIx64
+ swim_switch_to_ism(void) "switch from IWM to ISM mode"
+ swim_switch_to_iwm(void) "switch from ISM to IWM mode"
++
++# cxd90014_nand.c
++cxd_nand_arm7_cmd(uint32_t cmd, uint32_t res, uint32_t out) "ARM7 cmd %u -> result %u out %u"
++cxd_nand_op(const char *op, uint32_t blk, uint32_t page, uint32_t n) "%s blk 0x%x page %u n %u"
+diff --git a/hw/display/Kconfig b/hw/display/Kconfig
+index b3593fe..bfa2abe 100644
+--- a/hw/display/Kconfig
++++ b/hw/display/Kconfig
+@@ -153,3 +153,9 @@ config MAC_PVG_PCI
+     bool
+     depends on MAC_PVG && PCI
+     default y if PCI_DEVICES
++
++config DMP_SMAPH
++    bool
++
++config CXD90014_HDMI
++    bool
+diff --git a/hw/display/meson.build b/hw/display/meson.build
+index ffecedb..a727228 100644
+--- a/hw/display/meson.build
++++ b/hw/display/meson.build
+@@ -143,3 +143,5 @@ endif
+ system_ss.add(when: 'CONFIG_OMAP', if_true: files('omap_lcdc.c'))
+ 
+ modules += { 'hw-display': hw_display_modules }
++system_ss.add(when: 'CONFIG_DMP_SMAPH', if_true: files('a6k_fbview.c'))
++system_ss.add(when: 'CONFIG_CXD90014_HDMI', if_true: files('cxd90014_hdmi.c'))
+diff --git a/hw/display/trace-events b/hw/display/trace-events
+index c5e7e42..2aec49d 100644
+--- a/hw/display/trace-events
++++ b/hw/display/trace-events
+@@ -227,3 +227,12 @@ apple_gfx_iosfc_unmap_memory(void *a, void *b, void *c, void *d, void *e, void *
+ apple_gfx_iosfc_unmap_memory_region(void* mem, void *region) "unmapping @ %p from memory region %p"
+ apple_gfx_iosfc_raise_irq(uint32_t vector) "vector=0x%x"
+ 
++
++# dmp_smaph.c
++dmp_smaph_job(const char *what, uint64_t addr, uint64_t len) "%s 0x%" PRIx64 " len 0x%" PRIx64
++
++# cxd90014_hdmi.c
++cxd90014_hdmi_write(uint64_t off, uint32_t v) "+0x%03" PRIx64 " = 0x%x"
++cxd90014_hdmi_hpd(int on) "hpd %d"
++cxd90014_hdmi_tmds(int on, unsigned vic) "tmds %d (AVI VIC %u)"
++cxd90014_hdmi_ddc_read(unsigned addr, unsigned segm, unsigned off, unsigned count, int nack) "DDC read addr 0x%02x segm %u offset 0x%02x count %u nack %d"
+diff --git a/hw/dma/Kconfig b/hw/dma/Kconfig
+index 98fbb1b..76e58f5 100644
+--- a/hw/dma/Kconfig
++++ b/hw/dma/Kconfig
+@@ -30,3 +30,6 @@ config SIFIVE_PDMA
+ config XLNX_CSU_DMA
+     bool
+     select REGISTER
++
++config CXD90014_DMAC
++    bool
+diff --git a/hw/dma/meson.build b/hw/dma/meson.build
+index cc7810b..50434c1 100644
+--- a/hw/dma/meson.build
++++ b/hw/dma/meson.build
+@@ -12,3 +12,6 @@ system_ss.add(when: 'CONFIG_OMAP', if_true: files('omap_dma.c', 'soc_dma.c'))
+ system_ss.add(when: 'CONFIG_RASPI', if_true: files('bcm2835_dma.c'))
+ system_ss.add(when: 'CONFIG_SIFIVE_PDMA', if_true: files('sifive_pdma.c'))
+ system_ss.add(when: 'CONFIG_XLNX_CSU_DMA', if_true: files('xlnx_csu_dma.c'))
++system_ss.add(when: 'CONFIG_CXD90014_DMAC', if_true: files('cxd90014_dmac.c'))
++system_ss.add(when: 'CONFIG_CXD90014_DMAC', if_true: files('cxd90014_mdma.c'))
++system_ss.add(when: 'CONFIG_CXD90014_DMAC', if_true: files('cxd90014_aif.c'))
+diff --git a/hw/dma/trace-events b/hw/dma/trace-events
+index 4c09790..436d46c 100644
+--- a/hw/dma/trace-events
++++ b/hw/dma/trace-events
+@@ -47,3 +47,17 @@ pl330_iomem_read(uint32_t addr, uint32_t data) "addr: 0x%08"PRIx32" data: 0x%08"
+ 
+ # xilinx_axidma.c
+ xilinx_axidma_loading_desc_fail(uint32_t res) "error:%u"
++
++# cxd90014_dmac.c
++cxd_dmac_done(int ch, uint32_t n) "ch%d chain of %u done"
++cxd_mdma_copy(int ch, uint32_t src, uint32_t dst, uint64_t len) "ch%d 0x%08x -> 0x%08x len 0x%" PRIx64
++
++# cxd90014_aif.c
++cxd_aif_start(uint64_t base, int ch, uint32_t ctrl, uint32_t addr, uint32_t size) "group 0x%08" PRIx64 " ch%d start ctrl 0x%x addr 0x%08x size 0x%x"
++cxd_aif_done(uint64_t base, uint32_t mask) "group 0x%08" PRIx64 " channels 0x%x done"
++cxd_aif_status(uint64_t base, uint32_t v) "group 0x%08" PRIx64 " status read 0x%x"
++cxd_aif_inject(uint64_t base, int ch, uint32_t addr, uint32_t size, uint32_t lines) "group 0x%08" PRIx64 " ch%d live-view frame at bus 0x%08x, 0x%x B x %u lines"
++cxd_mdma_periph_tx(int ch, uint32_t src, uint64_t len) "ch%d 0x%08x -> fifo len %" PRIu64
++cxd_mdma_periph_done(int ch, int64_t us) "ch%d tx done t=%" PRId64
++cxd_mdma_periph_rx_arm(int ch, uint32_t dst, uint64_t len) "ch%d fifo -> 0x%08x armed len %" PRIu64
++cxd_mdma_periph_rx(int ch, uint32_t dst, uint64_t len) "ch%d fifo -> 0x%08x %" PRIu64 " bytes"
+diff --git a/hw/gpio/trace-events b/hw/gpio/trace-events
+index cea896b..f7a5229 100644
+--- a/hw/gpio/trace-events
++++ b/hw/gpio/trace-events
+@@ -46,3 +46,6 @@ stm32l4x5_gpio_read(char *gpio, uint64_t addr) "GPIO%s addr: 0x%" PRIx64 " "
+ stm32l4x5_gpio_write(char *gpio, uint64_t addr, uint64_t data) "GPIO%s addr: 0x%" PRIx64 " val: 0x%" PRIx64 ""
+ stm32l4x5_gpio_update_idr(char *gpio, uint32_t old_idr, uint32_t new_idr) "GPIO%s from: 0x%x to: 0x%x"
+ stm32l4x5_gpio_pins(char *gpio, uint16_t disconnected, uint16_t high) "GPIO%s disconnected pins: 0x%x levels: 0x%x"
++
++# cxd90014_gpio.c
++cxd90014_gpio_in(int port, uint32_t value) "P%d in 0x%08x"
+diff --git a/hw/misc/Kconfig b/hw/misc/Kconfig
+index 1543ee6..d934b09 100644
+--- a/hw/misc/Kconfig
++++ b/hw/misc/Kconfig
+@@ -258,3 +258,18 @@ config XLNX_ZYNQ_DDRC
+     bool
+ 
+ source macio/Kconfig
++
++config CXD90014_SA
++    bool
++
++config CXD90014_IDT
++    bool
++
++config A6K_NFC
++    bool
++
++config CXD90014_DDRC
++    bool
++
++config CXD90014_SYSCTL
++    bool
+diff --git a/hw/misc/arm_l2x0.c b/hw/misc/arm_l2x0.c
+index 039f1b0..c206e8c 100644
+--- a/hw/misc/arm_l2x0.c
++++ b/hw/misc/arm_l2x0.c
+@@ -43,6 +43,7 @@ struct L2x0State {
+     uint32_t tag_ctrl;
+     uint32_t filter_start;
+     uint32_t filter_end;
++    uint32_t evreg[6];
+ };
+ 
+ static const VMStateDescription vmstate_l2x0 = {
+@@ -90,6 +91,12 @@ static uint64_t l2x0_priv_read(void *opaque, hwaddr offset,
+         return s->filter_start;
+     case 0xC04:
+         return s->filter_end;
++    case 0x200 ... 0x214:
++        /* event counter control/config/values, interrupt mask */
++        return s->evreg[(offset - 0x200) / 4];
++    case 0x218: /* MIS */
++    case 0x21C: /* RIS */
++        return 0;
+     case 0xF40:
+         return 0;
+     case 0xF60:
+@@ -132,6 +139,11 @@ static void l2x0_priv_write(void *opaque, hwaddr offset,
+     case 0xC04:
+         s->filter_end = value;
+         break;
++    case 0x200 ... 0x214:
++        s->evreg[(offset - 0x200) / 4] = value;
++        break;
++    case 0x220: /* INT_CLR */
++        break;
+     case 0xF40:
+         return;
+     case 0xF60:
+diff --git a/hw/misc/cxd90014_adc.c b/hw/misc/cxd90014_adc.c
+index 8616085..e65d2bf 100644
+--- a/hw/misc/cxd90014_adc.c
++++ b/hw/misc/cxd90014_adc.c
+@@ -8,6 +8,11 @@
+  * its input.ko ADC key ranges all end at or below 0x304, so 1023 reads
+  * as "released" there too (E0526).
+  *
++ * Per-channel idle levels (cxd90014_adc_set_idle / cxd90014_adc_idle,
++ * default 1023) come from voxivoid/a6000-qemu (commit 62cf3bc): the
++ * ILCE-6000 mode dial sits on ADC ladders whose rest level is a dial
++ * position, not "released".
++ *
+  * Original description (a5000):
+  * From av-cam.bin (docs/RE_AVCAM_IRQ_BOOT.md, 0x4391722c result reader):
+  *   +0x00 channel mask   +0x04 bit0 start   +0x08 mode (2 = continuous [?])
+@@ -36,6 +41,9 @@ struct AdcState {
+     MemoryRegion mr;
+     uint32_t reg[0x100 / 4];
+     uint16_t result[12];
++    /* sony-a6000: released level per channel (voxivoid/a6000-qemu) */
++    uint16_t idle[12];
++    bool idle_set;
+     QEMUTimer *t;
+     qemu_irq irq;
+ };
+@@ -99,12 +107,39 @@ void cxd90014_adc_set(DeviceState *dev, int ch, uint16_t level)
+     }
+ }
+ 
++/*
++ * Idle (released) level of a channel, kept across resets (sony-a6000, from
++ * voxivoid/a6000-qemu).  Default 1023; a position-type input such as the
++ * A6000 mode dial (two ladders, one of them inside a band at every dial
++ * position) sets it to the band it rests in.
++ */
++void cxd90014_adc_set_idle(DeviceState *dev, int ch, uint16_t level)
++{
++    AdcState *s = CXD_ADC(dev);
++    if (!s->idle_set) {
++        for (int i = 0; i < 12; i++) {
++            s->idle[i] = 1023;
++        }
++        s->idle_set = true;
++    }
++    if (ch >= 0 && ch < 12) {
++        s->idle[ch] = level & 0x3ff;
++        s->result[ch] = s->idle[ch];
++    }
++}
++
++uint16_t cxd90014_adc_idle(DeviceState *dev, int ch)
++{
++    AdcState *s = CXD_ADC(dev);
++    return s->idle_set && ch >= 0 && ch < 12 ? s->idle[ch] : 1023;
++}
++
+ static void adc_reset(DeviceState *dev)
+ {
+     AdcState *s = CXD_ADC(dev);
+     memset(s->reg, 0, sizeof(s->reg));
+     for (int i = 0; i < 12; i++) {
+-        s->result[i] = 1023;
++        s->result[i] = s->idle_set ? s->idle[i] : 1023;
+     }
+     timer_del(s->t);
+ }
+diff --git a/hw/misc/cxd90014_gpio.c b/hw/misc/cxd90014_gpio.c
+index d87d14c..d7e9940 100644
+--- a/hw/misc/cxd90014_gpio.c
++++ b/hw/misc/cxd90014_gpio.c
+@@ -6,7 +6,9 @@
+  * (GPL-2.0, Park SungHyun).  Changes for the a6400 (E0526): trace points
+  * removed; pin IRQ pulse 50 us instead of 1 ms; the a5000 board-specific reset levels (keys, shutter, lens
+  * detect) are replaced by the "reset-high" property ("port.pin,..."), set
+- * by the board from the a6400 key table.
++ * by the board from the a6400 key table.  The "pulse-us" property
++ * (default 50) lets sony-a6000 (voxivoid/a6000-qemu, commit 62cf3bc) keep
++ * the a5000 1 ms pulse.
+  *
+  * Register triples (value / set / clear), from the kernel hw_gpio_* code:
+  *   +0x00/04/08 direction (1 = output [?])   +0x10 pin input data
+@@ -48,6 +50,7 @@ struct GpioState {
+     QEMUTimer *drop[NIRQ];
+     DropArg drop_args[NIRQ];
+     char *reset_high;
++    uint32_t pulse_us;              /* pin IRQ pulse width */
+     uint32_t ext_reset[NPORT];
+ };
+ 
+@@ -87,7 +90,7 @@ static void pulse(GpioState *s, int port, int pin)
+          */
+         qemu_set_irq(s->irq[n], 1);
+         timer_mod(s->drop[n], qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
+-                  50 * SCALE_US);
++                  (int64_t)s->pulse_us * SCALE_US);
+     }
+ }
+ 
+@@ -238,6 +241,8 @@ static const VMStateDescription vmstate_cxd_gpio = {
+ 
+ static const Property gpio_props[] = {
+     DEFINE_PROP_STRING("reset-high", GpioState, reset_high),
++    /* default 50 us (a6400, E0527); sony-a6000 sets 1000 as in a5000 */
++    DEFINE_PROP_UINT32("pulse-us", GpioState, pulse_us, 50),
+ };
+ 
+ static void gpio_class_init(ObjectClass *klass, const void *data)
+diff --git a/hw/misc/cxd90014_vph.c b/hw/misc/cxd90014_vph.c
+index 523dd61..1f4aa3f 100644
+--- a/hw/misc/cxd90014_vph.c
++++ b/hw/misc/cxd90014_vph.c
+@@ -6,6 +6,9 @@
+  * (GPL-2.0, Park SungHyun), unchanged except this header.  The a6400
+  * av-cam references the same pages (SYSV 0xF3402000: 66 literals; VPH
+  * 0xF3440000/0xF3445000/0xF3446000) and registers liro-98/101/102 (E0529).
++ * The "scan-without-arm" property (default off) is for sony-a6000
++ * (voxivoid/a6000-qemu, commit 62cf3bc): it restores the a5000
++ * composition, which the ILCE-6000 firmware needs to keep its OSD on.
+  *
+  * Original description (a5000):
+  *
+@@ -68,6 +71,14 @@ struct VphState {
+     uint32_t aif_started;           /* bit k: AIF channel k was armed since the last vsync */
+     uint32_t osd_visible;           /* ch53 was armed in the frame that just ended */
+     uint32_t line_visible;          /* ch54 was armed in the frame that just ended */
++    /*
++     * "scan-without-arm" (default off, sony-a6000 sets it): compose as the
++     * original a5000 model of Oein/a5000-emulator does, whether or not the
++     * guest armed a channel in the frame, with +0x140 as plain storage.
++     * The per-frame arm and panel-stage rules below were measured on an
++     * ILCE-6400 and are not established for CXD90014.
++     */
++    bool scan_without_arm;
+     QEMUTimer *tick, *lower, *vtick, *vlower;
+     qemu_irq irq_sysv, irq_v101, irq_v102;
+     qemu_irq vd_out;                /* -> evsel engine frame (source 29) */
+@@ -165,7 +176,7 @@ static void vph_tick(void *opaque)
+     /* Compose the frame now, with this frame's arm state, exactly like the hardware scanout.
+      * Lazy composition on screendump would sample an arbitrary moment and could show a blank
+      * surface for a frame the guest did arm. */
+-    if (s->con) {
++    if (s->con && !s->scan_without_arm) {
+         vph_update(s);
+     }
+     s->aif_started = 0;
+@@ -290,7 +301,8 @@ static void vph_compose(VphState *s, uint32_t *dst, uint32_t W, uint32_t H,
+     }
+     /* Same per-frame contract as hardware: no composition unless the guest armed the channel for
+      * this frame (and left the enable bit set). */
+-    if (osd_armed && (R(AIF(ko)) & 2u) && base && lb && lb <= 16384 && lines < 4096) {
++    if ((s->scan_without_arm || (osd_armed && (R(AIF(ko)) & 2u))) &&
++        base && lb && lb <= 16384 && lines < 4096) {
+         g_autofree uint8_t *row = g_malloc(lb);
+         uint32_t ow = lb / bpp;
+         uint32_t oh = osd_scale ? H : MIN(lines, H);
+@@ -346,7 +358,8 @@ static bool vph_update(void *opaque)
+      * on the camera -- exactly the divergence this model exists to remove.
+      */
+     bool osd_on = (R(0x144) & 2u) != 0;
+-    bool yuv_on = (R(0x144) & 1u) != 0 || vph_panel_stage_running(s);
++    bool yuv_on = (R(0x144) & 1u) != 0 ||
++                  (!s->scan_without_arm && vph_panel_stage_running(s));
+     /*
+      * A channel armed between two vsyncs belongs to the frame being scanned, so
+      * the pending arm composes as well as the arm latched at the last vsync.
+@@ -360,7 +373,7 @@ static bool vph_update(void *opaque)
+         surf = qemu_console_surface(s->con);
+     }
+     vph_compose(s, surface_data(surf), W, H, yuv_on, 0, 2,
+-                (R(0x404) & 1) ? 4 : 2, false, osd_on && osd_armed);
++                (R(0x404) & 1) ? 4 : 2, false, s->scan_without_arm || (osd_on && osd_armed));
+     qemu_console_update_full(s->con);
+     return true;
+ }
+@@ -442,7 +455,7 @@ static void vph_write(void *opaque, hwaddr off, uint64_t v, unsigned size)
+      * VPH_140_PANEL_MODE.  A guest clear is accepted but does not take effect,
+      * because the physical panel stage keeps running and the guest's read-back
+      * is what its supervisor loop compares against. */
+-    if (off == 0x140) {
++    if (off == 0x140 && !s->scan_without_arm) {
+         uint32_t keep = R(0x140) & VPH_140_STICKY;
+         uint32_t next = keep | (uint32_t)v;
+         if (next != (uint32_t)v) {
+@@ -576,11 +589,16 @@ static const VMStateDescription vmstate_cxd_vph = {
+     }
+ };
+ 
++static const Property vph_props[] = {
++    DEFINE_PROP_BOOL("scan-without-arm", VphState, scan_without_arm, false),
++};
++
+ static void vph_class_init(ObjectClass *klass, const void *data)
+ {
+     DeviceClass *dc = DEVICE_CLASS(klass);
+     dc->realize = vph_realize;
+     dc->vmsd = &vmstate_cxd_vph;
++    device_class_set_props(dc, vph_props);
+     device_class_set_legacy_reset(dc, vph_reset);
+ }
+ 
+diff --git a/hw/misc/meson.build b/hw/misc/meson.build
+index 23265f6..f035b4c 100644
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -168,3 +168,13 @@ system_ss.add(when: 'CONFIG_SBSA_REF', if_true: files('sbsa_ec.c'))
+ 
+ # HPPA devices
+ system_ss.add(when: 'CONFIG_LASI', if_true: files('lasi.c'))
++system_ss.add(when: 'CONFIG_CXD90014_SYSCTL', if_true: files('cxd90014_sysctl.c'))
++system_ss.add(when: 'CONFIG_CXD90014_SYSCTL', if_true: files('cxd90014_jog.c'))
++system_ss.add(when: 'CONFIG_CXD90014_SYSCTL', if_true: files('cxd90014_campig.c'))
++system_ss.add(when: 'CONFIG_CXD90014_SYSCTL', if_true: files('cxd90014_ldec.c'))
++system_ss.add(when: 'CONFIG_A6K_NFC', if_true: files('a6k_nfc.c'))
++system_ss.add(when: 'CONFIG_CXD90014_SYSCTL', if_true: files('cxd90014_lens.c'))
++system_ss.add(when: 'CONFIG_CXD90014_IDT', if_true: files('cxd90014_idt.c'))
++system_ss.add(when: 'CONFIG_CXD90014_IDT', if_true: files('cxd90014_opd.c'))
++system_ss.add(when: 'CONFIG_CXD90014_DDRC', if_true: files('cxd90014_ddrc.c'))
++system_ss.add(when: 'CONFIG_CXD90014_HDMI', if_true: files('cxd90014_cec.c'))
+diff --git a/hw/misc/trace-events b/hw/misc/trace-events
+index c9a868b..056c47c 100644
+--- a/hw/misc/trace-events
++++ b/hw/misc/trace-events
+@@ -442,3 +442,59 @@ iommu_testdev_dma_read(uint64_t gva, uint32_t len) "gva=0x%" PRIx64 " len=%u"
+ iommu_testdev_dma_verify(uint32_t expected, uint32_t actual) "expected=0x%x actual=0x%x"
+ iommu_testdev_dma_result(uint32_t result) "DMA completed result=0x%x"
+ iommu_testdev_dma_armed(bool armed) "armed=%d"
++
++# cxd90014_sio.c
++cxd_sio_xfer(int ch, uint32_t len) "ch%d transfer (len-1 %u)"
++cxd_sio_data(int ch, uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3) "ch%d fifo %08x %08x %08x %08x"
++cxd_sio_wr(int ch, uint32_t off, uint64_t v) "ch%d wr +0x%03x = 0x%08" PRIx64
++cxd_sio_rd(int ch, uint32_t off, uint32_t v) "ch%d rd +0x%03x -> 0x%08x"
++
++# a6k_nfc.c
++a6k_nfc_power(int on) "SW P7.10 = %d"
++a6k_nfc_sel(int level) "SEL P7.14 = %d"
++a6k_nfc_rfdet(int level) "RFDET P0.8 = %d"
++a6k_nfc_setparam(const char *hex) "set parameter %s"
++a6k_nfc_unpowered_tx(const char *hex) "TX while SW = 0 ignored (first-comm frame): %s"
++a6k_nfc_cmd(int cmd, int n, int len, int powered) "reader command 0x%02x n=%d len=%d (chip powered %d)"
++a6k_nfc_xfer(const char *dir, int len, int off) "%s %d bytes (offset %d)"
++a6k_nfc_resp(int len, const char *hex) "reply %d bytes %s"
++a6k_nfc_timeout(int rx_off, int resp_len) "no reply (read %d, reply %d bytes)"
++
++# cxd90014_p2s.c
++cxd_p2s_start(uint32_t cnt, uint32_t b0, uint32_t b1, uint32_t b2, uint32_t b3) "start cnt 0x%02x payload %08x %08x %08x %08x"
++cxd_p2s_done(void) "transfer done, IRQ 38"
++
++# cxd90014_campig.c
++cxd_campig_frame(uint64_t base, uint32_t paths) "0x%08" PRIx64 " frame done, status |= 0x%08x"
++cxd_campig_sg_start(uint64_t base, uint32_t ctl, uint32_t v, uint32_t h, uint32_t line, int64_t us) "0x%08" PRIx64 " sgc1 frame ctl 0x%x V %u H %u A@line %u len %" PRId64 " us"
++cxd_campig_sg_event(uint64_t base, char ev) "0x%08" PRIx64 " sgc1 event %c"
++cxd_campig_sg_stop(uint64_t base) "0x%08" PRIx64 " sgc1 stopped"
++cxd_campig_iif_end(uint64_t base) "0x%08" PRIx64 " iif frame end, +0x410 bit0 cleared"
++
++# cxd90014_ddrc.c
++cxd_ddrc_rd(uint64_t off, uint32_t v) "rd +0x%03" PRIx64 " -> 0x%08x"
++cxd_ddrc_wr(uint64_t off, uint64_t v) "wr +0x%03" PRIx64 " = 0x%08" PRIx64
++
++# cxd90014_sa.c
++cxd_sa_start(uint32_t core, uint32_t n, uint32_t entry, uint32_t prog, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3) "SA%u start #%u entry 0x%08x +0x008 0x%08x mbox %08x %08x %08x %08x"
++cxd_sa_done(uint32_t core, uint32_t factor, uint32_t mask) "SA%u done, factor A 0x%02x mask 0x%02x"
++
++# cxd90014_idt.c
++cxd_idt_start(uint32_t n, uint32_t en, uint32_t geom, uint32_t mode) "frame #%u start, +0x444 0x%x +0xC0C 0x%08x +0x418 0x%x"
++cxd_idt_event(uint32_t n, int ev, uint32_t st, uint32_t en) "frame #%u event %d (3 = event 2 by fallback), status 0x%08x enable 0x%x"
++cxd_idt_wr(uint32_t pa, uint32_t v, uint32_t m) "wr 0x%08x = 0x%08x (mask 0x%08x)"
++
++# cxd90014_opd.c
++cxd_opd_start(uint32_t ctrl, uint32_t en0, uint32_t en1, uint32_t en2, uint32_t en3) "start, +0x00C 0x%x, unit enables 0x%02x 0x%02x 0x%02x 0x%02x"
++cxd_opd_done(uint32_t units) "done, status bit 0 set in units 0x%x"
++cxd_opd_wr(uint32_t pa, uint32_t v, uint32_t m) "wr 0x%08x = 0x%08x (mask 0x%08x)"
++# cxd90014_cec.c
++cxd90014_cec_tx(unsigned len, unsigned hdr, int op, unsigned result) "TX len %u hdr 0x%02x op %d -> status 0x%x"
++cxd90014_cec_tx_done(unsigned result) "TX done status 0x%x"
++cxd90014_cec_rx(unsigned len, unsigned hdr, int op) "RX len %u hdr 0x%02x op %d"
++# cxd90014_lens.c
++a6k_lens_state(int from, int to) "state %d -> %d (0 off, 1 handshake, 2 uart)"
++a6k_lens_frame(uint64_t len, int type, int b4, int id, int64_t us) "body frame len %" PRIu64 " type %d b4 0x%02x first block 0x%02x t=%" PRId64
++a6k_lens_block(int id, uint64_t a, uint64_t b) "request block 0x%02x (A %" PRIu64 ", reply B %" PRIu64 ")"
++a6k_lens_reply(uint64_t len, uint64_t pos, uint64_t taken, int id, int64_t us) "reply len %" PRIu64 " at %" PRIu64 " taken %" PRIu64 " first block 0x%02x t=%" PRId64
++a6k_lens_in(int n, int level, int64_t us) "in%d = %d t=%" PRId64
+diff --git a/hw/net/meson.build b/hw/net/meson.build
+index 84f142d..fa1d529 100644
+--- a/hw/net/meson.build
++++ b/hw/net/meson.build
+@@ -70,3 +70,4 @@ stub_ss.add(files('rocker/rocker-stubs.c'))
+ system_ss.add(files('rocker/rocker-hmp-cmds.c'))
+ 
+ subdir('can')
++system_ss.add(when: 'CONFIG_AR6003_SDIO', if_true: files('ar6003_fw.c'))
+diff --git a/hw/net/trace-events b/hw/net/trace-events
+index 001a20b..36ae94e 100644
+--- a/hw/net/trace-events
++++ b/hw/net/trace-events
+@@ -528,3 +528,15 @@ xen_netdev_rx(int dev, int idx, int status, int flags) "vif%u idx %d status %d f
+ ethlite_pkt_lost(uint32_t rx_ctrl) "rx_ctrl:0x%" PRIx32
+ ethlite_pkt_size_too_big(uint64_t size) "size:0x%" PRIx64
+ ethlite_pkt_tx_size_too_big(uint64_t size) "size:0x%" PRIx64
++
++# ar6003_fw.c
++ar6003_diag(const char *op, uint32_t addr, uint32_t val) "diag %s 0x%06x = 0x%08x"
++ar6003_bmi(uint32_t cmd, uint32_t a, uint32_t b) "BMI cmd %u 0x%x 0x%x"
++ar6003_htc_tx(int eid, uint32_t len, uint32_t tlen) "HTC T->H ep %d len %u trailer %u"
++ar6003_htc_rx(int eid, uint8_t flags, uint32_t len) "HTC H->T ep %d flags 0x%x len %u"
++ar6003_htc_svc(uint16_t svc, int eid) "HTC connect service 0x%x -> ep %d"
++ar6003_wmi_cmd(int vif, uint16_t id, uint32_t len) "WMI cmd vif %d id 0x%04x len %u"
++ar6003_wmi_evt(int vif, uint16_t id, uint32_t len) "WMI evt vif %d id 0x%04x len %u"
++ar6003_air(const char *what, int vif, int idx) "air %s vif %d %d"
++ar6003_eapol(const char *what, int vif, int msg) "EAPOL %s vif %d msg %d"
++ar6003_net(const char *what, int vif, uint32_t len) "net %s vif %d len %u"
+diff --git a/hw/sd/Kconfig b/hw/sd/Kconfig
+index 633b9af..9f70cfd 100644
+--- a/hw/sd/Kconfig
++++ b/hw/sd/Kconfig
+@@ -23,3 +23,7 @@ config SDHCI_PCI
+ config CADENCE_SDHCI
+     bool
+     select SDHCI
++
++config AR6003_SDIO
++    bool
++    select SD
+diff --git a/hw/sd/core.c b/hw/sd/core.c
+index eaa186f..064ec8b 100644
+--- a/hw/sd/core.c
++++ b/hw/sd/core.c
+@@ -33,6 +33,14 @@ static inline const char *sdbus_name(SDBus *sdbus)
+     return sdbus->qbus.name;
+ }
+ 
++/*
++ * Any device on an sd-bus implements SDCardClass (class_size >=
++ * sizeof(SDCardClass)); SDIO cards that do not share SDState (e.g.
++ * ar6003-sdio) are not TYPE_SDMMC_COMMON, so look the class up directly.
++ */
++#define SDBUS_CARD_GET_CLASS(card) \
++    ((SDCardClass *)object_get_class(OBJECT(card)))
++
+ static SDState *get_card(SDBus *sdbus)
+ {
+     /* We only ever have one child on the bus so just return it */
+@@ -41,7 +49,7 @@ static SDState *get_card(SDBus *sdbus)
+     if (!kid) {
+         return NULL;
+     }
+-    return SDMMC_COMMON(kid->child);
++    return (SDState *)kid->child;
+ }
+ 
+ static void sdbus_write_dump(const char *bus_name, const void *buf, size_t len)
+@@ -70,7 +78,7 @@ uint8_t sdbus_get_dat_lines(SDBus *sdbus)
+     uint8_t dat_lines = 0b1111; /* 4 bit bus width */
+ 
+     if (slave) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(slave);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(slave);
+ 
+         if (sc->get_dat_lines) {
+             dat_lines = sc->get_dat_lines(slave);
+@@ -87,7 +95,7 @@ bool sdbus_get_cmd_line(SDBus *sdbus)
+     bool cmd_line = true;
+ 
+     if (slave) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(slave);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(slave);
+ 
+         if (sc->get_cmd_line) {
+             cmd_line = sc->get_cmd_line(slave);
+@@ -104,7 +112,7 @@ void sdbus_set_voltage(SDBus *sdbus, uint16_t millivolts)
+ 
+     trace_sdbus_set_voltage(sdbus_name(sdbus), millivolts);
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         assert(sc->set_voltage);
+         sc->set_voltage(card, millivolts);
+@@ -118,7 +126,7 @@ size_t sdbus_do_command(SDBus *sdbus, SDRequest *req,
+ 
+     trace_sdbus_command(sdbus_name(sdbus), req->cmd, req->arg);
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         return sc->do_command(card, req, resp, respsz);
+     }
+@@ -132,7 +140,7 @@ void sdbus_write_byte(SDBus *sdbus, uint8_t value)
+ 
+     sdbus_write_dump(sdbus_name(sdbus), &value, 1);
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         sc->write_data(card, &value, 1);
+     }
+@@ -144,7 +152,7 @@ void sdbus_write_data(SDBus *sdbus, const void *buf, size_t length)
+ 
+     sdbus_write_dump(sdbus_name(sdbus), buf, length);
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         while (length > 0) {
+             size_t written = sc->write_data(card, buf, length);
+@@ -163,7 +171,7 @@ uint8_t sdbus_read_byte(SDBus *sdbus)
+     uint8_t value = 0;
+ 
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         sc->read_data(card, &value, 1);
+     }
+@@ -177,7 +185,7 @@ void sdbus_read_data(SDBus *sdbus, void *buf, size_t length)
+     SDState *card = get_card(sdbus);
+ 
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         while (length > 0) {
+             size_t read = sc->read_data(card, buf, length);
+@@ -196,7 +204,7 @@ bool sdbus_receive_ready(SDBus *sdbus)
+     SDState *card = get_card(sdbus);
+ 
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         return sc->receive_ready(card);
+     }
+@@ -209,7 +217,7 @@ bool sdbus_data_ready(SDBus *sdbus)
+     SDState *card = get_card(sdbus);
+ 
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         return sc->data_ready(card);
+     }
+@@ -222,7 +230,7 @@ bool sdbus_get_inserted(SDBus *sdbus)
+     SDState *card = get_card(sdbus);
+ 
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         return sc->get_inserted(card);
+     }
+@@ -235,7 +243,7 @@ bool sdbus_get_readonly(SDBus *sdbus)
+     SDState *card = get_card(sdbus);
+ 
+     if (card) {
+-        SDCardClass *sc = SDMMC_COMMON_GET_CLASS(card);
++        SDCardClass *sc = SDBUS_CARD_GET_CLASS(card);
+ 
+         return sc->get_readonly(card);
+     }
+@@ -263,6 +271,16 @@ void sdbus_set_readonly(SDBus *sdbus, bool readonly)
+     }
+ }
+ 
++void sdbus_set_card_irq(SDBus *sdbus, bool level)
++{
++    SDBusClass *sbc = SD_BUS_GET_CLASS(sdbus);
++    BusState *qbus = BUS(sdbus);
++
++    if (sbc->set_card_irq) {
++        sbc->set_card_irq(qbus->parent, level);
++    }
++}
++
+ void sdbus_reparent_card(SDBus *from, SDBus *to)
+ {
+     SDState *card = get_card(from);
+@@ -281,7 +299,7 @@ void sdbus_reparent_card(SDBus *from, SDBus *to)
+         return;
+     }
+ 
+-    sc = SDMMC_COMMON_GET_CLASS(card);
++    sc = SDBUS_CARD_GET_CLASS(card);
+     readonly = sc->get_readonly(card);
+ 
+     sdbus_set_inserted(from, false);
+diff --git a/hw/sd/meson.build b/hw/sd/meson.build
+index b43d45b..2ec1be3 100644
+--- a/hw/sd/meson.build
++++ b/hw/sd/meson.build
+@@ -10,3 +10,4 @@ system_ss.add(when: 'CONFIG_ASPEED_SOC', if_true: files('aspeed_sdhci.c'))
+ system_ss.add(when: 'CONFIG_ALLWINNER_H3', if_true: files('allwinner-sdhost.c'))
+ system_ss.add(when: 'CONFIG_NPCM7XX', if_true: files('npcm7xx_sdhci.c'))
+ system_ss.add(when: 'CONFIG_CADENCE_SDHCI', if_true: files('cadence_sdhci.c'))
++system_ss.add(when: 'CONFIG_AR6003_SDIO', if_true: files('ar6003_sdio.c'))
+diff --git a/hw/sd/sdhci.c b/hw/sd/sdhci.c
+index c872b92..d77c1bb 100644
+--- a/hw/sd/sdhci.c
++++ b/hw/sd/sdhci.c
+@@ -217,10 +217,26 @@ static uint8_t sdhci_slotint(SDHCIState *s)
+          ((s->norintsts & SDHC_NIS_REMOVE) && (s->wakcon & SDHC_WKUP_ON_RMV));
+ }
+ 
++/*
++ * SDIO card interrupt: level-sensitive status bit, follows the card's line
++ * while enabled in NORINTSTSEN, cannot be cleared by a W1C write.
++ */
++static void sdhci_update_cardint(SDHCIState *s)
++{
++    if (s->card_irq && (s->norintstsen & SDHC_NISEN_CARDINT)) {
++        s->norintsts |= SDHC_NIS_CARDINT;
++    } else {
++        s->norintsts &= ~SDHC_NIS_CARDINT;
++    }
++}
++
+ /* Return true if IRQ was pending and delivered */
+ static bool sdhci_update_irq(SDHCIState *s)
+ {
+-    bool pending = sdhci_slotint(s);
++    bool pending;
++
++    sdhci_update_cardint(s);
++    pending = sdhci_slotint(s);
+ 
+     qemu_set_irq(s->irq, pending);
+ 
+@@ -270,6 +286,14 @@ static void sdhci_set_inserted(DeviceState *dev, bool level)
+     }
+ }
+ 
++static void sdhci_set_card_irq(DeviceState *dev, bool level)
++{
++    SDHCIState *s = (SDHCIState *)dev;
++
++    s->card_irq = level;
++    sdhci_update_irq(s);
++}
++
+ static void sdhci_set_readonly(DeviceState *dev, bool level)
+ {
+     SDHCIState *s = (SDHCIState *)dev;
+@@ -1618,6 +1642,7 @@ static void sdhci_bus_class_init(ObjectClass *klass, const void *data)
+     SDBusClass *sbc = SD_BUS_CLASS(klass);
+ 
+     sbc->set_inserted = sdhci_set_inserted;
++    sbc->set_card_irq = sdhci_set_card_irq;
+     sbc->set_readonly = sdhci_set_readonly;
+ }
+ 
+diff --git a/hw/sd/trace-events b/hw/sd/trace-events
+index c6811f3..a758ed1 100644
+--- a/hw/sd/trace-events
++++ b/hw/sd/trace-events
+@@ -75,3 +75,11 @@ pl181_data_engine_idle(void) "data engine idle"
+ # aspeed_sdhci.c
+ aspeed_sdhci_read(uint64_t addr, uint32_t size, uint64_t data) "@0x%" PRIx64 " size %u: 0x%" PRIx64
+ aspeed_sdhci_write(uint64_t addr, uint32_t size, uint64_t data) "@0x%" PRIx64 " size %u: 0x%" PRIx64
++
++# ar6003_sdio.c
++ar6003_power(int on) "power %d"
++ar6003_cmd(uint8_t cmd, uint32_t arg) "CMD%u arg 0x%08x"
++ar6003_cmd52(int wr, int fn, uint32_t addr, uint8_t data) "CMD52 wr %d fn %d addr 0x%05x data 0x%02x"
++ar6003_cmd53(int wr, int fn, uint32_t addr, uint32_t len, int blk, int inc) "CMD53 wr %d fn %d addr 0x%05x len %u blk %d inc %d"
++ar6003_irq(int level) "card irq %d"
++ar6003_cccr_res(void) "CCCR RES"
+diff --git a/hw/timer/trace-events b/hw/timer/trace-events
+index 634ba1d..81ad335 100644
+--- a/hw/timer/trace-events
++++ b/hw/timer/trace-events
+@@ -128,3 +128,7 @@ imx_epit_get_freq(uint32_t freq) "ptimer frequency is %u"
+ imx_epit_read(const char *name, uint32_t value) "(%s) = 0x%08x"
+ imx_epit_write(const char *name, uint64_t value) "(%s, value = 0x%08" PRIx64 ")"
+ imx_epit_cmp(uint32_t sr) "sr was %d"
++
++# cxd4115_timer.c
++cxd4115_write(uint32_t ch, uint32_t off, uint32_t val) "ch%u +0x%x = 0x%08x"
++cxd4115_fire(uint32_t ch, uint32_t ctrl) "ch%u match ctrl=0x%x"
+diff --git a/hw/usb/Kconfig b/hw/usb/Kconfig
+index de95686..c6668db 100644
+--- a/hw/usb/Kconfig
++++ b/hw/usb/Kconfig
+@@ -146,3 +146,6 @@ config XLNX_USB_SUBSYS
+ config USB_CHIPIDEA
+     bool
+     select USB_EHCI_SYSBUS
++
++config CXD90014_USBHDC
++    bool
+diff --git a/hw/usb/meson.build b/hw/usb/meson.build
+index ba55c28..67f0647 100644
+--- a/hw/usb/meson.build
++++ b/hw/usb/meson.build
+@@ -91,3 +91,6 @@ endif
+ system_ss.add(when: ['CONFIG_USB', 'CONFIG_XEN_BUS', libusb], if_true: files('xen-usb.c'))
+ 
+ modules += { 'hw-usb': hw_usb_modules }
++
++# Sony A6000 (CXD90014) device controller + HDMAC + VBUS glue
++system_ss.add(when: 'CONFIG_CXD90014_USBHDC', if_true: files('cxd90014_usbhdc.c'))
+diff --git a/hw/usb/trace-events b/hw/usb/trace-events
+index 41897b4..7e300cc 100644
+--- a/hw/usb/trace-events
++++ b/hw/usb/trace-events
+@@ -379,3 +379,17 @@ canokey_handle_data_out(uint8_t ep_out, uint32_t out_len) "ep %d len %d"
+ canokey_handle_data_in(uint8_t ep_in, uint32_t in_len) "ep %d len %d"
+ canokey_realize(void)
+ canokey_unrealize(void)
++
++# cxd90014_usbhdc.c
++cxd_usbhdc_read(uint64_t off, uint32_t v) "hdc read 0x%"PRIx64" -> 0x%x"
++cxd_usbhdc_write(uint64_t off, uint32_t v) "hdc write 0x%"PRIx64" = 0x%x"
++cxd_usbhdc_epcmd(int n, uint32_t v, uint32_t ctrl) "EPCMD%d = 0x%x -> EPCTRL 0x%x"
++cxd_usbhdc_dmac(int k, uint32_t v, uint32_t tci) "DMAC%d = 0x%x DMATCI %u"
++cxd_usbhdc_dma_end(int k, uint32_t tc, uint32_t tci, uint32_t dmas) "DMA ch%d end TC %u/%u DMAS 0x%x"
++cxd_usbhdc_hdmac_write(uint64_t off, uint64_t v) "hdmac write 0x%"PRIx64" = 0x%"PRIx64
++cxd_usbhdc_cable(const char *what, uint32_t gen) "%s gen %u"
++cxd_usbhdc_setup(uint8_t type, uint8_t req, uint16_t value, uint16_t index, uint16_t len) "SETUP %02x %02x %04x %04x %u"
++cxd_usbhdc_pkt(const char *dir, int n, uint32_t total) "%s EP%d total %u"
++cxd_usbhdc_au_rx(uint8_t type, uint8_t ep, uint32_t id, uint32_t arg, uint32_t len) "A6KU rx type 0x%x ep 0x%x id %u arg 0x%x len %u"
++cxd_usbhdc_au_tx(uint8_t type, uint8_t ep, uint32_t id, uint32_t arg, uint32_t len) "A6KU tx type 0x%x ep 0x%x id %u arg 0x%x len %u"
++cxd_usbhdc_req_done(uint8_t type, uint8_t ep, uint32_t id, uint32_t status) "request type 0x%x ep 0x%x id %u status %u"
+diff --git a/include/hw/misc/cxd90014_adc.h b/include/hw/misc/cxd90014_adc.h
+index e3839bc..73875d9 100644
+--- a/include/hw/misc/cxd90014_adc.h
++++ b/include/hw/misc/cxd90014_adc.h
+@@ -1,5 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0-or-later */
+-/* Adapted from Oein/a5000-emulator (GPL-2.0). */
++/* Adapted from Oein/a5000-emulator (GPL-2.0); idle levels from
++ * voxivoid/a6000-qemu (commit 62cf3bc). */
+ /* CXD90014 ADC unit — analog inputs driven by the board (key ladders). */
+ #ifndef HW_MISC_CXD90014_ADC_H
+ #define HW_MISC_CXD90014_ADC_H
+@@ -8,5 +9,8 @@
+ 
+ /* Set the 10-bit level of channel ch (0..11) as the next scans read it. */
+ void cxd90014_adc_set(DeviceState *dev, int ch, uint16_t level);
++/* Released level of channel ch, kept across resets (default 1023). */
++void cxd90014_adc_set_idle(DeviceState *dev, int ch, uint16_t level);
++uint16_t cxd90014_adc_idle(DeviceState *dev, int ch);
+ 
+ #endif
+diff --git a/include/hw/sd/sd.h b/include/hw/sd/sd.h
+index 2162fb5..5d8b098 100644
+--- a/include/hw/sd/sd.h
++++ b/include/hw/sd/sd.h
+@@ -162,6 +162,11 @@ struct SDBusClass {
+      */
+     void (*set_inserted)(DeviceState *dev, bool inserted);
+     void (*set_readonly)(DeviceState *dev, bool readonly);
++    /*
++     * SDIO: the card drives its interrupt line (DAT[1]) at @level; the
++     * controller reports it as the card interrupt (level semantics).
++     */
++    void (*set_card_irq)(DeviceState *dev, bool level);
+ };
+ 
+ /* Functions to be used by qdevified callers (working via
+@@ -234,5 +239,6 @@ void sdbus_reparent_card(SDBus *from, SDBus *to);
+ /* Functions to be used by SD devices to report back to qdevified controllers */
+ void sdbus_set_inserted(SDBus *sd, bool inserted);
+ void sdbus_set_readonly(SDBus *sd, bool inserted);
++void sdbus_set_card_irq(SDBus *sd, bool level);
+ 
+ #endif /* HW_SD_H */
+diff --git a/include/hw/sd/sdhci.h b/include/hw/sd/sdhci.h
+index a9da620..0c8713f 100644
+--- a/include/hw/sd/sdhci.h
++++ b/include/hw/sd/sdhci.h
+@@ -103,6 +103,9 @@ struct SDHCIState {
+      * to be protected. Set wp_inverted to invert the signal.
+      */
+     bool wp_inverted;
++
++    /* SDIO card interrupt line level (sdbus_set_card_irq), not reset */
++    bool card_irq;
+ };
+ typedef struct SDHCIState SDHCIState;
+ 
+diff --git a/target/arm/cpu.c b/target/arm/cpu.c
+index 787e4dc..7b64628 100644
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -1311,6 +1311,10 @@ static const Property arm_cpu_reset_cbar_property =
+ static const Property arm_cpu_reset_hivecs_property =
+             DEFINE_PROP_BOOL("reset-hivecs", ARMCPU, reset_hivecs, false);
+ 
++static const Property arm_cpu_sctlr_fetch_delay_property =
++            DEFINE_PROP_BOOL("sctlr-fetch-delay", ARMCPU, sctlr_fetch_delay,
++                             false);
++
+ static const Property arm_cpu_has_el2_property =
+             DEFINE_PROP_BOOL("has_el2", ARMCPU, has_el2, true);
+ 
+@@ -1569,6 +1573,8 @@ static void arm_cpu_post_init(Object *obj)
+ 
+     if (!arm_feature(&cpu->env, ARM_FEATURE_M)) {
+         qdev_property_add_static(DEVICE(obj), &arm_cpu_reset_hivecs_property);
++        qdev_property_add_static(DEVICE(obj),
++                                 &arm_cpu_sctlr_fetch_delay_property);
+     }
+ 
+     if (arm_feature(&cpu->env, ARM_FEATURE_V8)) {
+diff --git a/target/arm/cpu.h b/target/arm/cpu.h
+index c0492c8..f31377f 100644
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -1116,6 +1116,12 @@ struct ArchCPU {
+     uint64_t reset_cbar;
+     uint32_t reset_auxcr;
+     bool reset_hivecs;
++    /*
++     * An AArch32 SCTLR write that sets M (0 -> 1) does not end the TB: the
++     * MMU takes effect for instruction fetch at the next branch (see
++     * do_coproc_insn).  Board opt-in only (sony-a6000).
++     */
++    bool sctlr_fetch_delay;
+     uint8_t reset_l0gptsz;
+ 
+     /*
+diff --git a/target/arm/tcg/translate.c b/target/arm/tcg/translate.c
+index 86c3c30..6c7c075 100644
+--- a/target/arm/tcg/translate.c
++++ b/target/arm/tcg/translate.c
+@@ -1726,6 +1726,7 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
+     TCGv_ptr tcg_ri = NULL;
+     bool need_exit_tb = false;
+     uint32_t syndrome;
++    TCGv_i64 sctlr_old = NULL;
+ 
+     /*
+      * Note that since we are an implementation which takes an
+@@ -1932,6 +1933,14 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
+             return;
+         }
+ 
++        if (s->sctlr_fetch_delay && cpnum == 15 && !is64 && opc1 == 0 &&
++            crn == 1 && crm == 0 && opc2 == 0 && ri->fieldoffset &&
++            !s->condjmp && !s->condexec_mask) {
++            /* SCTLR: keep the old value for the MMU-enable check below */
++            sctlr_old = tcg_temp_new_i64();
++            tcg_gen_ld_i64(sctlr_old, tcg_env, ri->fieldoffset);
++        }
++
+         if (is64) {
+             TCGv_i32 tmplo, tmphi;
+             TCGv_i64 tmp64 = tcg_temp_new_i64();
+@@ -1972,6 +1981,32 @@ static void do_coproc_insn(DisasContext *s, int cpnum, int is64,
+          */
+         need_exit_tb = true;
+     }
++    if (need_exit_tb && sctlr_old && !(tb_cflags(s->base.tb) & CF_USE_ICOUNT)) {
++        /*
++         * Board opt-in (sony-a6000): an SCTLR write that turns the MMU on
++         * (M 0 -> 1) does not end the TB, so the straight-line instructions
++         * after it are still fetched with the MMU off until the next branch
++         * ends the TB; hflags were rebuilt above, and data accesses see the
++         * new state at once (the TLB is flushed by sctlr_write).  Cortex-A5
++         * does this from its prefetch: the CXD90014 kernel's resume path
++         * (cxd90014_cpu_resume -> resume_turn_on_mmu, PA 0x80052480) runs
++         * "mcr SCTLR; nop; mov pc, r1" from an XN identity section with no
++         * ISB (sony-a6000 docs/reference/RE_WARM_RESUME.md section 3.3).  Same idea
++         * as the XScale ARM_CP_SUPPRESS_TB_END case in helper.c, but only
++         * for this transition; every other SCTLR write ends the TB.
++         */
++        TCGv_i64 t = tcg_temp_new_i64();
++        TCGLabel *cont = gen_new_label();
++
++        tcg_gen_ld_i64(t, tcg_env, ri->fieldoffset);
++        tcg_gen_andc_i64(t, t, sctlr_old);
++        tcg_gen_andi_i64(t, t, SCTLR_M);
++        tcg_gen_brcondi_i64(TCG_COND_NE, t, 0, cont);
++        gen_pc_plus_diff(s, cpu_R[15], curr_insn_len(s));
++        tcg_gen_exit_tb(NULL, 0);
++        gen_set_label(cont);
++        need_exit_tb = false;
++    }
+     if (need_exit_tb) {
+         gen_lookup_tb(s);
+     }
+@@ -6383,6 +6418,7 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
+     dc->condjmp = 0;
+     dc->pc_save = dc->base.pc_first;
+     dc->aarch64 = false;
++    dc->sctlr_fetch_delay = cpu->sctlr_fetch_delay;
+     dc->thumb = EX_TBFLAG_AM32(tb_flags, THUMB);
+     dc->be_data = EX_TBFLAG_ANY(tb_flags, BE_DATA) ? MO_BE : MO_LE;
+     condexec = EX_TBFLAG_AM32(tb_flags, CONDEXEC);
+diff --git a/target/arm/tcg/translate.h b/target/arm/tcg/translate.h
+index a3d0315..5e403f2 100644
+--- a/target/arm/tcg/translate.h
++++ b/target/arm/tcg/translate.h
+@@ -148,6 +148,8 @@ typedef struct DisasContext {
+     bool bt;
+     /* True if any CP15 access is trapped by HSTR_EL2 */
+     bool hstr_active;
++    /* ARMCPU::sctlr_fetch_delay (AArch32 SCTLR.M 0->1, see translate.c) */
++    bool sctlr_fetch_delay;
+     /* True if memory operations require alignment */
+     bool align_mem;
+     /* True if PSTATE.IL is set */

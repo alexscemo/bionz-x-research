@@ -15,10 +15,11 @@ An open-source toolkit for Sony **BIONZ X** cameras (such as the **a6400**, **a6
 
 If you just want to add mods to your Sony **`ILCE-6400`** (or **`ILCE-6400A` / `ILCE-6100`**), use the graphical **BIONZ X Mod Manager** on Windows:
 
-1. **Install the app:** Download `BionzX-Mod-Manager-Setup.exe` (or the portable zip) from the [`mod-manager-v*` GitHub Releases](https://github.com/ivica00/bionz-x-research/releases). Double-click it, approve the administrator prompt and click **Install**. It is about 15 MB, works offline and installs nothing else (no Python, pip, Zadig or Visual C++ packages; the window uses the WebView2/Edge that Windows already has). *(Developers and macOS/Linux: run [`scripts/launch_mod_manager.bat`](scripts/launch_mod_manager.bat) / [`scripts/launch_mod_manager.sh`](scripts/launch_mod_manager.sh) from a checkout.)*
-2. **Open it** from the Start menu or the desktop. Want to look around first? Open **BIONZ X Mod Manager (practice, no camera)** (portable zip: **Try without a camera**). It uses a pretend camera and changes nothing.
-3. **Follow the three steps on screen:** charge the battery, set `MENU → Setup → USB Connection` to **Auto**, turn Airplane Mode off and plug in the camera. The app finds it by itself. Keep **Recommended**, click **Install on my camera**, and click **Yes** if Windows asks for permission.
-4. **Done:** on the camera, press `MENU` and open the **Mods** tab. **Restore camera to stock** in the app undoes everything it saved on the camera. The extra screens (single mods, SD card sync, tools) are under **Show advanced options**.
+1. **Install Python (one time):** Download [Python 3.11+](https://www.python.org/downloads/) and check **"Add python.exe to PATH"** during setup (or open a prebuilt `BionzX-Mod-Manager.exe` release if you have one).
+2. **Launch the app:** Double-click [`scripts/launch_mod_manager.bat`](scripts/launch_mod_manager.bat) (macOS/Linux: run [`scripts/launch_mod_manager.sh`](scripts/launch_mod_manager.sh)). Wait a few seconds for the **BIONZ X Mod Manager** window to open.
+3. **Download the mod pack:** If prompted at the top, click **Download Official Release** (or **Tools & Setup → Download / Prepare Tools**).
+4. **Plug in your camera:** On the camera, set `MENU → Setup → USB Connection` to **Mass Storage**, connect via USB, and click **Scan Camera**.
+5. **Choose mods & click Install:** Switch the mods you want **ON**, click **1-Click Install to Camera**, and follow the prompt. Unplug the cable and open `MENU → Mods` on your camera!
 
 > [!NOTE]
 > **Safe & reversible:** Runtime mods run in temporary camera memory (**RAM**) only — they make **zero writes** to internal firmware flash. Turning the camera off restores completely stock Sony software. *(Important: always toggle **Arrivederci** OFF in `MENU → Mods` before powering off.)*
@@ -46,6 +47,7 @@ All listed cameras share Sony's **BIONZ X (`CXD90045`)** processor ([platform ov
 | **`ILCE-6400`** | **Verified (Hardware + Emulator)** | Full QEMU & Unicorn emulation, Mod Loader v2, MenuTouchFull, Arrivederci, Film Sims |
 | **`ILCE-6400A`** | **Verified (QEMU + SD Auto-Boot)** | 4-core QEMU stock UI boot, Mod Loader v2 + 10 `.mod` packages, FAT32/exFAT SD auto-boot ([`mods/ilce_6400a/`](mods/ilce_6400a/README.md)) |
 | **`ILCE-6100`** | **Verified (Hardware Mods)** | PhotonBin 6MP and MLV2 SD-boot/SMNU ([E9104](docs/evidence/9104-a6100-photonbin-6mp-port.md)); Picture Profile unlock is QEMU-only ([E9101](docs/evidence/9101-a6100-picture-profile-gate.md)); the emulator Mod Loader port is offline ([E9103](docs/evidence/9103-a6100-mod-loader-port.md)) |
+| **`ILCE-6700`** | **Research only (partition capture)** | BIONZ XR (`CXD90057`): ten partitions absent from the 2.00 update were read from the running camera ([E9201](docs/evidence/9201-a6700-camera-partition-capture-via-jiritsu.md)); its kernel boots on a new QEMU machine up to the first unmodelled driver ([E9202](docs/evidence/9202-a6700-qemu-first-boot.md)); no UI or debugger yet |
 | **`ZV-E10`** | **Verified (RAM Touch Mod)** | Full Main Menu + 12-tile Fn touch on physical hardware via direct RAM injection ([ZV-E10 guide](tools/native_camera/zve10/README.md)) |
 | **`ILCE-6600` · `ILCE-7C` · `ILCE-7M3` · `ILCE-7RM4A`** | **Reference Profiles** | Firmware symbols & USB IDs mapped offline; ready for contributors to verify mods |
 
@@ -87,7 +89,7 @@ python -m unittest discover -s tests -q
 
 This project never reports fake "compatibility percentages." Every claim is backed by a dated evidence file and tracked against the **2091 tests** recorded in the integrated offline suite (2026-11-18, [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md); skip counts are tracked honestly and never counted as passes). Latest synced milestone: **[E9105](docs/evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md)**.
 
-![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=f41299aee29a)
+![Research status: demonstrated results and remaining boundaries](docs/images/research-status.svg?v=37533166a461)
 
 [Daily automated test suite growth: 2091 tests across 32 days](docs/images/test-growth.svg)
 

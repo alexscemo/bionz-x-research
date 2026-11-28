@@ -14,7 +14,12 @@ from src.a6400.execution.capped_log import CappedLog
 from src.a6400.execution.guest_checkpoint import save_checkpoint
 from src.a6400.execution.guest_uipc import GuestUipc
 from src.a6400.execution.interpreter_probe import InterpreterProbe
-from test_guest_checkpoint import MockProbe
+try:
+    from tests.test_guest_checkpoint import MockProbe
+except ModuleNotFoundError as exc:
+    if exc.name not in ("tests", "tests.test_guest_checkpoint"):
+        raise
+    from test_guest_checkpoint import MockProbe
 from tools.camera_link import BootLogger
 
 

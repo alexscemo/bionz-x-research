@@ -302,8 +302,16 @@ class TcpExchange:
 
 
 @contextlib.contextmanager
-def connect(transport='auto', host=None, port=4640):
-    """Prefer TCP when requested, WinUSB bulk transport, then ext-command."""
+def connect(transport='auto', host=None, port=4640, socket_path=None):
+    """Prefer QEMU DWC3 socket or TCP when requested, then WinUSB, then ext-command."""
+    if transport == 'qemu' or (transport == 'auto' and socket_path):
+        target_sock = socket_path or os.environ.get('A6400_DWC3_SOCKET')
+        if not target_sock:
+            raise ValueError('QEMU transport requires --socket or A6400_DWC3_SOCKET')
+        from tools.research.qemu_debugger_adapter import open_qemu_exchange
+        with open_qemu_exchange(target_sock) as (exchange, _details):
+            yield Debugger(exchange)
+        return
     if transport == 'tcp' or (transport == 'auto' and host):
         target_host = host or os.environ.get('A6400_DEBUG_HOST')
         if not target_host:
@@ -479,12 +487,14 @@ def recover_to_msc(output=None, timeout=30, transport='auto'):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--transport',choices=('auto','extcmd','winusb','tcp'),default='auto',
-                        help='auto prefers --host TCP, then E0402 WinUSB bulk, then ext-command')
+    parser.add_argument('--transport',choices=('auto','extcmd','winusb','tcp','qemu'),default='auto',
+                        help='auto prefers --socket QEMU or --host TCP, then E0402 WinUSB bulk, then ext-command')
     parser.add_argument('--host',default=None,
                         help='Camera IP/hostname for TCP transport (or set A6400_DEBUG_HOST)')
     parser.add_argument('--port',type=int,default=4640,
                         help='TCP debug port (default: 4640)')
+    parser.add_argument('--socket',default=None,
+                        help='QEMU cxd90045-dwc3 unix socket path (or set A6400_DWC3_SOCKET)')
     sub=parser.add_subparsers(dest='operation',required=True)
     for name in ('info','ps','stop','ping'):
         sub.add_parser(name)
@@ -510,13 +520,13 @@ def main():
     if args.operation=='recover':
         receipt = recover_to_msc(args.output, args.timeout, args.transport) if args.to_msc else None
         if receipt is None:
-            with connect(args.transport, host=args.host, port=args.port) as debugger:
+            with connect(args.transport, host=args.host, port=args.port, socket_path=args.socket) as debugger:
                 text = debugger.recover()
             print(text, end='')
             return 0
         print(json.dumps(receipt, indent=2))
         return 0 if receipt['result']=='msc_recovered' else 2
-    with connect(args.transport, host=args.host, port=args.port) as debugger:
+    with connect(args.transport, host=args.host, port=args.port, socket_path=args.socket) as debugger:
         if args.operation=='ping':
             print(debugger.ping(), end='')
         elif args.operation in ('info','ps','stop','threads','usb-state'):

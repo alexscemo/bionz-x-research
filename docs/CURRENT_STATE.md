@@ -14,6 +14,27 @@ For the full documentation index see [docs/INDEX.md](INDEX.md). For the verified
 
 Historical 2026-10-18 and 2026-11-06 checkpoints are preserved in [docs/archives/](archives/).
 
+## av-cam.bin Phase 0 index and research map (2026-11-28 / E0759)
+
+[E0759](evidence/0759-avcam-phase0-index-shards-and-research-map.md) implements
+Phase 0 of the av-cam research plan: a flat `ORIL` scanner and SQLite map
+(`tools/research/avcam_image.py`, `avcam_indexer.py`), a ten-domain shard set
+(`avcam_domains.py`, `avcam_shards.py`), a fail-closed progress dashboard
+(`avcam_dashboard.py`), a pointer-flow string xref pass (`avcam_xrefs.py`) and a
+validated Ghidra raw import (`avcam_ghidra.py`,
+`tools/research/ghidra/AvcamOrilImport.java`). On `90d515cf...` it measures
+58,144 candidate functions, 301,722 call edges, 21,046 strings, 748 tags, 1,220
+MMIO pages and the 285 records at `0x645773c8`, resolves 10,837 function→string
+references over 7,625 strings (511/748 tags), and writes
+`artifacts/analysis/avcam-map/`. The Ghidra 12.1.4 receipt imports the flat image
+as `ARM:LE:32:v7` at `0x635c6000` with the eight measured blocks, creates 512
+bounded functions, decompiles 16 entry addresses and completes the existing
+`BoundedThumbProcedures` queries. The dashboard reads **0.00 %** because every
+item is `UNMAPPED`: Phase 0 filled denominators, not evidence.
+[docs/AVCAM_RESEARCH_MAP.md](AVCAM_RESEARCH_MAP.md) is the map of the deep
+research still required per area (1A–1C, 2A–2F, 9R); no area is decompiled and
+no camera was accessed.
+
 ## WiFiSync camera-side mod (2026-11-24 / E0698)
 
 [E0698](evidence/0698-wifisync-camera-side-mod.md) implements the camera half of

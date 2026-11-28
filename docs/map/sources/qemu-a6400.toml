@@ -88,6 +88,7 @@ records = [
   "E0749",
   "E0750",
   "E0744",
+  "E0759",
 ]
 
 [[entity]]
@@ -335,6 +336,34 @@ entities = ["qemu.handover"]
 status = "verified-offline"
 text = "Custom OS (kexec) prerequisites complete in emulation: CXD4115 watchdog is default-on at 0xF2402000, MISCREG 0xF2915040 SWRESET/XRSTREQ + DDR-A/DDR-B self-refresh + SRAM GPIO P10.5 (cfg.poff=10,5) model warm reset and power-off (pmic-reset=on), and handover_guard G13 verifies outer-L2 (PL310 at 0xF8002000) teardown (SCTLR.C==0 before L2 clean+inv via full way-mask 0x7FC or index-by-way 0x7F8 + poll==0, zero lockdown/debug hazards, CACHE_SYNC 0x730, CTRL=0 after sync, and post-disable DSB)."
 evidence = ["E0706", "E0715"]
+
+[[claim]]
+id = "C25"
+entities = ["qemu.board"]
+status = "verified-offline"
+text = "A contributor port adds a separate sony-a6000 machine for the ILCE-6000 (CXD90014, firmware 3.21) to the QEMU 11.1.3 tree. It boots only from the contributor's own NAND dump and matched the source QEMU 10.1.0 build screen for screen; it makes no CXD90045 claim, and its shared-model changes are opt-in properties whose defaults keep the a6400 behaviour."
+evidence = ["doc:external-a6000-emulator/README.md"]
+
+[[entity]]
+id = "qemu.avcam-map"
+kind = "tool"
+name = "av-cam.bin Phase 0 static index and domain shards"
+aliases = ["avcam_indexer", "avcam_map.sqlite", "avcam_progress.md", "S1A", "S2B"]
+summary = "Flat ORIL scanner for av-cam.bin, a shared SQLite map of functions/calls/literals/tags/MMIO/commands, ten editable domain shards, and a five-metric progress dashboard that fails closed when shards do not cover the index."
+
+[[claim]]
+id = "C26"
+entities = ["qemu.avcam-map", "qemu.avcam-sequencer"]
+status = "verified-offline"
+text = "Phase 0 of the av-cam research plan is implemented on ILCE-6400 av-cam.bin (90d515cf...): `python -m tools.research.avcam_indexer build` measures 8 regions (code 0x635c6000..0x63dd6000, bss 0x64046000..0x644c6000), 58,144 candidate functions (57,940 prologue starts), 301,722 call edges, 21,046 NUL-terminated non-code strings, 748 tags, 1,220 MMIO pages and the 285-record command table at 0x645773c8 in about a minute, then writes ten domain shards and a dashboard that reads 0.00 % because every item is UNMAPPED; 38 tests cover the parser, the pointer-flow xrefs, shard coverage, the Ghidra staging and the weighted arithmetic. No area is decompiled and no camera run was made."
+evidence = ["E0759"]
+
+[[claim]]
+id = "C27"
+entities = ["qemu.avcam-map", "qemu.avcam-sequencer"]
+status = "verified-offline"
+text = "The flat av-cam.bin imports into Ghidra 12.1.4 Headless as ARM:LE:32:v7 at base 0x635c6000 through BinaryLoader, with the loader block replaced by the eight measured regions (code executable, rodata read-only, data/bss read-write), 512 bounded Thumb functions created and 16 entry addresses decompiled by address; the receipt checks language, base, source SHA-256, block layout and decompilation (all PASS), and the existing BoundedThumbProcedures script completed both raw-image queries (0x6395103a, 0x6375160a) with zero flows outside their bounds. A pointer-flow string pass resolves 10,837 function-to-string references over 7,625 strings (167 direct literal, 10,437 PIC base register, 233 indexed table), covering 511 of 748 tags; 13,421 strings have no resolved code reference and need interprocedural typing."
+evidence = ["E0759"]
 
 [[frontier]]
 id = "F01"

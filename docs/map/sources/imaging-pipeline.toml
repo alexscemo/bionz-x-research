@@ -40,6 +40,8 @@ records = [
   "E0754",
   "E0755",
   "E0756",
+  "E0757",
+  "E0758",
   "E0739",
   "E0741",
   "E9105",
@@ -235,6 +237,20 @@ entities = ["img.recording-paths"]
 status = "verified-offline"
 text = "Unlocking ExlHelper output_aspect = 0 (3:2) on stock unbinned IMX284 Mode 16/17 (6000x3376 @ 24p/25p, FE <= 3445 avoiding E0728 Lost CAMOUT_V) and Mode 15 (4896x2760 @ 30p) invokes Sony's 0x6376E17C / 0x63CE2232 horizontal crop to extract 5064x3376 (17.09 MP 5.1K) and 4140x2760 (11.43 MP 4.1K) supersampled into 3240x2160 (validated by 0x63D67224 height == 2160 and MprLibCore::EncOpen .text +0x87025A/+0x870266 / +0x870696/+0x8706A2), while diffing all 13 IMX284 reglist columns isolates reg 0x0001 = 0x41 (16:9 window in cols 6,7,9,10,11) vs 0x40 (full-gate 3:2 continuous in cols 3,4,12, including Mode 10 0x44 1996x1332 unity capacitive averaging)."
 evidence = ["E0728", "E0741"]
+
+[[claim]]
+id = "C21"
+entities = ["img.recording-paths"]
+status = "verified-physical"
+text = "OpenGateA1 MP4-header hooks now target the captured camera libmpr.so (bb31351c...): tkhd +0x8612AC and stsd +0x8615F4 (unique 12-byte stock patterns, E0756 shift -0xF480; reference VAs 0x079A52AC / 0x079A55F4). The copied prologues are position-independent except tkhd's cbnz, whose taken path (return 4) the hook reproduces; build opengate-a1-build-2 (16f7c974...) passes the Unicorn test. Live (E0757): the stock bytes are at both addresses in im.elf and the mod applies (337 sites, 16 words, both hooks) and restores cleanly, but recording never called the hooked functions and the output stayed 16:9 because the id-0 output descriptors remain 3840x2160."
+evidence = ["E0756", "E0757"]
+
+[[claim]]
+id = "C22"
+entities = ["img.recording-paths"]
+status = "verified-physical"
+text = "Codec10 (mods/codec10, tools/codec10) implements a >8-bit Bayer/gray codec (14->10/12-bit minifloat curve, pack/Rice/BFL modes, crash-safe .c10 container) and verifies Cortex-A5 (no NEON, AT_HWCAP 0x1E0D7, ~520 MHz) performance on live ILCE-6400: 3-thread 1080p pack-mf runs in 25.2 ms wall (62.22 MB/s @ 24p, verify PASS), while fused BFL runs in 58.0 ms wall (38.29 MB/s, 1.625x smaller, verify PASS); 13/13 WSL tests match the Python reference bit-exactly, and the >8-bit frame tap remains open."
+evidence = ["E0758"]
 
 [[frontier]]
 id = "F01"

@@ -81,6 +81,24 @@ BUILTIN_RUNTIME_MODS: tuple[BuiltinModSpec, ...] = (
         ),
     ),
     BuiltinModSpec(
+        id="rear_lcd_60fps",
+        title="Rear LCD 60fps (High Quality)",
+        filename="RearLcd60fps.mod",
+        summary="Unlocks 59.94 fps (60 fps) Live-View on the rear LCD while keeping Display Quality = High on EVF.",
+        details=(
+            "Hooks Backup_read (libbackup.so+0x1204) to override BK4 0x01071489 (NoAdapter High Rear LCD EE "
+            "FrameRate) from 30 fps (0x02) to 60 fps (0x01) in RAM without touching Backup.bin, EVF High "
+            "Quality (1996x800), or LA-EA mount-adapter paths, and applies live on ON/OFF when Rear LCD is active."
+        ),
+        status="usable",
+        target_note="ILCE-6400 (FW 2.00) · Unicorn Verified",
+        candidate_paths=(
+            "bundled_mods/RearLcd60fps.mod",
+            "mods/rear_lcd_60fps/RearLcd60fps.mod",
+        ),
+        artifact_globs=("artifacts/tests/rlcd60-ilce6400*/RearLcd60fps.mod",),
+    ),
+    BuiltinModSpec(
         id="mods_tab_look",
         title="Mods Tab Icon (ModsTabLook)",
         filename="ModsTabLook.mod",
@@ -101,13 +119,14 @@ BUILTIN_RUNTIME_MODS: tuple[BuiltinModSpec, ...] = (
         id="open_gate_sensor",
         title="Open Gate 3:2 (Sensor Stage)",
         filename="OpenGateSensor.mod",
-        summary="Experimental 5400x3600 3:2 sensor readout on 4K 24p/25p while keeping the stock 3840x2160 encoder.",
+        summary="3-tier 3:2 sensor gate (5.1K True 4K 5064x3376, 6K Reg01 6000x4000, or Full-FOV 1996x1332) into stock 3840x2160 / 1920x1080.",
         details=(
-            "Patches sensor mode 16/17 records and 24p/25p timings only, leaving libmpr and DMM stock. "
-            "Verifies sensor lock before testing the full 3240x2160 canvas build."
+            "SMOD v2 + SMNU submenu sensor stage: defaults to 5.1K True 4K (unbinned Mode 16/17 5064x3376 @ 24p/25p "
+            "& Mode 15 4140x2760 @ 30p with FE <= 3445), plus experimental 6K Reg01 Full (reg 0x0001=0x40 + 6000x4000 "
+            "+ S-Ele crash guard) and Full-FOV 2K (Mode 10 1996x1332), leaving DMM/VPI/DVENC/libmpr stock."
         ),
         status="experimental",
-        target_note="ILCE-6400 (FW 2.00) · Offline-Verified Only",
+        target_note="ILCE-6400 (FW 2.00) · QEMU/Unicorn Verified",
         candidate_paths=(
             "bundled_mods/OpenGateSensor.mod",
             "mods/open_gate/OpenGateSensor.mod",
@@ -115,21 +134,22 @@ BUILTIN_RUNTIME_MODS: tuple[BuiltinModSpec, ...] = (
         exclusive_group="open_gate",
         requires_ack=True,
         warning=(
-            "Experimental, offline-verified only. Retargets 4K 24p/25p readout to 5400x3600 3:2 "
-            "while keeping stock 3840x2160 encoder canvas. Test this stage before Full."
+            "Emulator-verified (Unicorn + live sony-a6400 QEMU). Defaults to 5.1K True 4K (5064x3376 "
+            "unbinned 3:2 in stock 16:9 container). Test this stage before Full."
         ),
     ),
     BuiltinModSpec(
         id="open_gate_32",
-        title="Open Gate 3:2 (Full 3240x2160 Canvas)",
+        title="Open Gate 3:2 (5.1K / 6K / Full-FOV -> 3240x2160 + Submenu)",
         filename="OpenGate32.mod",
-        summary="Experimental 5400x3600 3:2 sensor readout plus libmpr/DMM 4K canvas retargeted to 3240x2160.",
+        summary="3-tier 3:2 Open Gate Movie recording (5.1K True 4K 5064x3376, 6K Reg01 6000x4000, Full-FOV 2K) -> 3240x2160 / 1620x1080.",
         details=(
-            "Full SMOD v2 build patching sensor timings plus libmpr resolution record 15 and three 4K DMM "
-            "entries. Restores exact stock words on OFF."
+            "SMOD v2 + 4-row SMNU submenu mod: defaults to 5.1K True 4K (17.1 MP 5064x3376 @ 24p/25p & 11.4 MP "
+            "4140x2760 @ 30p supersampled into 3240x2160 with stock FE <= 3445), plus 6K Reg01 Full (reg 0x0001=0x40 "
+            "+ 6000x4000 + S-Ele crash guard) and Full-FOV 2K (Mode 10 1996x1332), synchronized across DMM/VPI/DVENC/libmpr."
         ),
         status="experimental",
-        target_note="ILCE-6400 (FW 2.00) · Offline-Verified Only",
+        target_note="ILCE-6400 (FW 2.00) · QEMU/Unicorn Verified",
         candidate_paths=(
             "bundled_mods/OpenGate32.mod",
             "mods/open_gate/OpenGate32.mod",
@@ -137,8 +157,8 @@ BUILTIN_RUNTIME_MODS: tuple[BuiltinModSpec, ...] = (
         exclusive_group="open_gate",
         requires_ack=True,
         warning=(
-            "Experimental, offline-verified only. Retargets sensor to 5400x3600 3:2 plus libmpr/DMM "
-            "4K canvas to 3240x2160. Do not use for unrepeatable work; verify Sensor Stage first."
+            "Emulator-verified (Unicorn + live sony-a6400 QEMU). Defaults to 5.1K True 4K (5064x3376 -> "
+            "3240x2160 3:2). Verify Sensor Stage first."
         ),
     ),
 )
@@ -205,16 +225,36 @@ BUILTIN_RUNTIME_MODS_ILCE6400A: tuple[BuiltinModSpec, ...] = (
         artifact_globs=("artifacts/tests/mods-ilce6400a-*/mtl/ModsTabLook.mod",),
     ),
     BuiltinModSpec(
+        id="rear_lcd_60fps",
+        title="Rear LCD 60fps (High Quality)",
+        filename="RearLcd60fps.mod",
+        summary="Unlocks 59.94 fps (60 fps) Live-View on the rear LCD while keeping Display Quality = High on EVF.",
+        details=(
+            "Relocatable SMOD v2 port for ILCE-6400A (FW 1.01): hooks Backup_read (libbackup.so+0x1204) to "
+            "override BK4 0x01071489 (NoAdapter High Rear LCD EE FrameRate) from 30 fps (0x02) to 60 fps "
+            "(0x01) in RAM without touching Backup.bin, EVF High Quality, or LA-EA adapter paths, and applies "
+            "live on ON/OFF when Rear LCD is active."
+        ),
+        status="usable",
+        target_note="ILCE-6400A (FW 1.01) · Unicorn Verified",
+        candidate_paths=(
+            "bundled_mods/ilce_6400a/RearLcd60fps.mod",
+            "mods/ilce_6400a/RearLcd60fps.mod",
+        ),
+        artifact_globs=("artifacts/tests/rlcd60-ilce6400a*/RearLcd60fps.mod",),
+    ),
+    BuiltinModSpec(
         id="open_gate_sensor",
         title="Open Gate 3:2 (Sensor Stage)",
         filename="OpenGateSensor.mod",
-        summary="Experimental 5400x3600 3:2 sensor readout on 4K 24p/25p while keeping the stock 3840x2160 encoder.",
+        summary="3-tier 3:2 sensor gate (5.1K True 4K 5064x3376, 6K Reg01 6000x4000, or Full-FOV 1996x1332) into stock 3840x2160 / 1920x1080.",
         details=(
-            "Patches ILCE-6400A 1.01 sensor mode 16/17 records (0x03e27de0/0x03e27e2c) and 24p/25p timings "
-            "(0x03e2833c/0x03e28504) only, leaving libmpr and DMM stock."
+            "ILCE-6400A 1.01 SMOD v2 + SMNU sensor stage: defaults to 5.1K True 4K (unbinned Mode 16/17 5064x3376 "
+            "@ 24p/25p & Mode 15 4140x2760 @ 30p with FE <= 3445), plus experimental 6K Reg01 Full (reg 0x0001=0x40 "
+            "+ 6000x4000 + S-Ele crash guard) and Full-FOV 2K (Mode 10 1996x1332), leaving DMM/VPI/DVENC/libmpr stock."
         ),
         status="experimental",
-        target_note="ILCE-6400A (FW 1.01) · Offline/QEMU Verified",
+        target_note="ILCE-6400A (FW 1.01) · Unicorn Verified",
         candidate_paths=(
             "bundled_mods/ilce_6400a/OpenGateSensor.mod",
             "mods/ilce_6400a/OpenGateSensor.mod",
@@ -222,21 +262,22 @@ BUILTIN_RUNTIME_MODS_ILCE6400A: tuple[BuiltinModSpec, ...] = (
         exclusive_group="open_gate",
         requires_ack=True,
         warning=(
-            "Experimental, emulator-verified only. Retargets 4K 24p/25p readout to 5400x3600 3:2 "
-            "while keeping stock 3840x2160 encoder canvas. Test this stage before Full."
+            "Emulator-verified. Defaults to 5.1K True 4K (5064x3376 unbinned 3:2 in stock 16:9 container, "
+            "avoiding E0728 Lost CAMOUT_V). Test first."
         ),
     ),
     BuiltinModSpec(
         id="open_gate_32",
-        title="Open Gate 3:2 (Full 3240x2160 Canvas)",
+        title="Open Gate 3:2 (5.1K / 6K / Full-FOV -> 3240x2160 + Submenu)",
         filename="OpenGate32.mod",
-        summary="Experimental 5400x3600 3:2 sensor readout plus libmpr/DMM/VPI/VENC 4K canvas retargeted to 3240x2160.",
+        summary="3-tier 3:2 Open Gate Movie recording (5.1K True 4K 5064x3376, 6K Reg01 6000x4000, Full-FOV 2K) -> 3240x2160 / 1620x1080.",
         details=(
-            "Full SMOD v2 port for ILCE-6400A 1.01 patching sensor timings, DMM/VPI/VENC 4K tables, "
-            "and runtime-located libmpr.so 4K resolution records. Restores exact stock words on OFF."
+            "Full SMOD v2 + 4-row SMNU submenu port for ILCE-6400A 1.01: defaults to 5.1K True 4K (5064x3376 "
+            "@ 24p/25p & 4140x2760 @ 30p -> 3240x2160), plus 6K Reg01 Full (reg 0x0001=0x40 + 6000x4000 + S-Ele "
+            "crash guard) and Full-FOV 2K (Mode 10 1996x1332), synchronized across DMM/VPI/DVENC/libmpr."
         ),
         status="experimental",
-        target_note="ILCE-6400A (FW 1.01) · Offline/QEMU Verified",
+        target_note="ILCE-6400A (FW 1.01) · Unicorn Verified",
         candidate_paths=(
             "bundled_mods/ilce_6400a/OpenGate32.mod",
             "mods/ilce_6400a/OpenGate32.mod",
@@ -244,8 +285,8 @@ BUILTIN_RUNTIME_MODS_ILCE6400A: tuple[BuiltinModSpec, ...] = (
         exclusive_group="open_gate",
         requires_ack=True,
         warning=(
-            "Experimental, emulator-verified only. Retargets sensor to 5400x3600 3:2 plus libmpr/DMM "
-            "4K canvas to 3240x2160. Verify Sensor Stage first."
+            "Emulator-verified. Defaults to 5.1K True 4K (5064x3376 -> 3240x2160 3:2) and restores stock on OFF. "
+            "Verify Sensor Stage first."
         ),
     ),
     BuiltinModSpec(

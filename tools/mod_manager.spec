@@ -22,6 +22,7 @@ datas = [
     (str(ARRIVEDERCI_PATH), "bundled_mods"),
 ]
 for optional_mod in (
+    ROOT / "mods" / "rear_lcd_60fps" / "RearLcd60fps.mod",
     ROOT / "mods" / "open_gate" / "OpenGateSensor.mod",
     ROOT / "mods" / "open_gate" / "OpenGate32.mod",
 ):

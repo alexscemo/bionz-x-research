@@ -79,7 +79,6 @@ records = [
   "E0734",
   "E0736",
   "E0743",
-  "external-a6000-emulator/*",
   "E0751",
   "E0737",
   "E0745",
@@ -336,13 +335,6 @@ entities = ["qemu.handover"]
 status = "verified-offline"
 text = "Custom OS (kexec) prerequisites complete in emulation: CXD4115 watchdog is default-on at 0xF2402000, MISCREG 0xF2915040 SWRESET/XRSTREQ + DDR-A/DDR-B self-refresh + SRAM GPIO P10.5 (cfg.poff=10,5) model warm reset and power-off (pmic-reset=on), and handover_guard G13 verifies outer-L2 (PL310 at 0xF8002000) teardown (SCTLR.C==0 before L2 clean+inv via full way-mask 0x7FC or index-by-way 0x7F8 + poll==0, zero lockdown/debug hazards, CACHE_SYNC 0x730, CTRL=0 after sync, and post-disable DSB)."
 evidence = ["E0706", "E0715"]
-
-[[claim]]
-id = "C25"
-entities = ["qemu.board"]
-status = "verified-offline"
-text = "A contributor port adds a separate sony-a6000 machine for the ILCE-6000 (CXD90014, firmware 3.21) to the QEMU 11.1.3 tree. It boots from the owner's own NAND dump and, since 2026-11-28, from a NAND built from Sony's public updater alone (no per-unit calibration, psd.bin or updater core). The dump boot matched the source QEMU 10.1.0 build screen for screen; it makes no CXD90045 claim, and its shared-model changes are opt-in properties whose defaults keep the a6400 behaviour."
-evidence = ["doc:external-a6000-emulator/README.md"]
 
 [[frontier]]
 id = "F01"

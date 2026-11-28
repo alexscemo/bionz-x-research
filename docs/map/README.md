@@ -18,6 +18,7 @@ unassigned file. Each page ends with a record index extracted from the files the
 | L3 user space: original im.elf under InterpreterProbe | [l3-userspace.md](l3-userspace.md) |
 | L2 full-system kernel boot (UnicornMachine) | [l2-kernel-boot.md](l2-kernel-boot.md) |
 | QEMU sony-a6400 machine | [qemu-a6400.md](qemu-a6400.md) |
+| ILCE-6000 (CXD90014) sony-a6000 emulator | [a6000-emulator.md](a6000-emulator.md) |
 | USB composite UVC/PTP on the physical camera (before EP0 runs) | [usb-composite.md](usb-composite.md) |
 | USB / DWC3 EP0 control path (Track B UVC/PTP) | [usb-ep0.md](usb-ep0.md) |
 | USB stack inside the emulators | [usb-emulated.md](usb-emulated.md) |

@@ -4,7 +4,7 @@
 
 - **Scope:** The QEMU sony-a6400 board: captured four-core boot, av-cam and CamCore sequencing, SIO/sub-micro, display/rear panel, Ydet/CamPig, live-view frame, contributor scores, Custom OS handover guards and DMA engines.
 - **Evidence span:** see record index; last reviewed 2026-11-26.
-- **Deep review:** 64 of 104 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 64 of 103 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -44,7 +44,6 @@ Current knowledge:
 - **C21** `OFFLINE` QEMU reaches the a6400 shooting screen and the step-32 wait from two public Sony updaters alone (the a6400 2019 package plus ulogio.bin from the ZV-E10 package), without the author's eMMC capture or any guest patch. ([E0665](../evidence/0665-qemu-boots-from-the-public-updater.md))
 - **C22** `OFFLINE` Opt-in CXD90045 peripherals (peripherals=on, or individual touchscreen=on, bcm4339=on, hdmi-cec=on, audio-io=on, emount-lens=...) wire the FocalTech 0x20 I2C0 capacitive touch IC + GPIO P0.12 IRQ 133 + VPH LCD pointer handler (delivering paired MenuTouchFull.mod tab taps and horizontal swipes through original i2c.ko, av-cam.bin, and libObj.so I-TpMain via rear_panel.py /touch), BCM4339 SDIO Wi-Fi at mmc1 (0xF0301000, IRQ 221) and Bluetooth H4 HCI/.hcd on uart3 (/dev/ttyBT), HDMI TX (0xF2A40000 EDID/HPD/TMDS -> VPH Console 1) and CEC (0xF3C10000 virtual TV), AudioIp (0xF3420000..0xF3428FFF DMA rings + synthetic PCM mic), and Sony E-mount BL lens motors (UART1 + PL080 + P1.4), parameterized across all 8 registered camera bodies (sony-a6400, sony-a6400a, sony-zve10, sony-a6100, sony-a6600, sony-a7c, sony-a7m3, sony-a7rm4a). ([E0700](../evidence/0700-qemu-touchscreen-peripherals-and-multimodel.md))
 - **C23** `OFFLINE` Opt-in QEMU codec, storage, sensor, and MMIO models retire all remaining E0705 unmodelled MMIO pairs (0 distinct unmodelled lines in live full-peripheral boot), replace plain ZERO/read-back clock/reset/PBL windows with stateful 0x10-stride STAT/SET/CLR banks (clkrst-model=on: 0xF280/0xF290/0xF2A0..0xF2A32, ZMA0/RC0/SA4), advance av-cam naturally past step 26 to step 42 (0x0102) without GATE_FORCE_PROBE or ENTRY_FORCE_PROBE via stateful sub-micro lens-rail latching, fix 256-byte SPI Slot-C selection to retire ILCE-6400A 0x63909ba8 ('S-Ele Refresh ng') and reach sustained bars live-view with IDT_CAM, mount 4 GiB UHS-I U3 SDR104 SDHC cards via CMD11 + SCR[33] CMD23 + CMD19 tuning + mmc0-vendor (mmca10: p1), wire sub-micro Slot A[29] BIT(6) HDMI HPD, correlate P2S Ch 0/1 bursts with 13-column IMX284 mode tables (Column 3, 1996x570), and implement baseline 4:2:2/4:2:0 JPEG decode (op=0x11), ECS encode (op=0x1B), RC0 UYVY resize, VPH UYVY RGB888 scanout, ARW 2.3 cRAW2 (0xF3030000), and SFRS/DVENC movie HLE. ([E0705](../evidence/0705-qemu-dwc3-gadget-default-on-boot-score.md), [E0706](../evidence/0706-qemu-watchdog-default-on-boot-score.md), [E0715](../evidence/0715-qemu-f01-playback-capture-uhs-mmio-and-kexec-prereqs.md))
-- **C25** `OFFLINE` A contributor port adds a separate sony-a6000 machine for the ILCE-6000 (CXD90014, firmware 3.21) to the QEMU 11.1.3 tree. It boots from the owner's own NAND dump and, since 2026-11-28, from a NAND built from Sony's public updater alone (no per-unit calibration, psd.bin or updater core). The dump boot matched the source QEMU 10.1.0 build screen for screen; it makes no CXD90045 claim, and its shared-model changes are opt-in properties whose defaults keep the a6400 behaviour. ([README](../evidence/external-a6000-emulator/README.md))
 
 ### <a id="qemu-avcam-sequencer"></a>av-cam mode sequencer and CamCore
 
@@ -121,7 +120,7 @@ Do not rely on:
 
 - ~~The LIRO ram section filled through 0xF30A is a separate sub-core firmware image.~~ **R01** `RETRACTED` ([E0642](../evidence/0642-a6400-f30a-fill-engine-and-liro-ram-section.md)); see C13: The LIRO ram section copied by the work DMA is av-cam's own initialised RW data (1,878 references from av-cam code), not a sub-core image.
 
-## Record index (104 files)
+## Record index (103 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -230,4 +229,3 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0749](../evidence/0749-qemu-bcm4339-wl-magic.md) | 2026-11-27 | QEMU BCM4339 `WLC_GET_MAGIC` reply lets the WiFiSync AP script pass `wl bands` |  |  |
 | [E0750](../evidence/0750-qemu-bcm4339-chanspec-state.md) | 2026-11-27 | BCM4339 keeps the chanspec set through WLC_SET_VAR |  |  |
 | [E0751](../evidence/0751-qemu-touch-int-repeat.md) | 2026-11-27 | Touch INT repeats while a touch report is unread |  |  |
-| [README.md](../evidence/external-a6000-emulator/README.md) | 2026-11-27 | External ILCE-6000 emulator receipt |  |  |

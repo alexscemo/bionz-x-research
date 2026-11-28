@@ -162,12 +162,22 @@ struct Bcm4339SdioState {
     /* Function 2 SDPCM / BCDC frame queue */
     uint8_t f2_rx[BCM4339_F2_QUEUE_MAX];
     uint32_t f2_rx_len;
+    uint32_t f2_rx_pos;
     uint8_t sdpcm_tx_max_seq;
     uint8_t sdpcm_rx_seq;
+    uint8_t sdpcm_tx_credit;
 
     /* 802.11 data plane bridged to QEMU netdev */
     NICState *nic;
     NICConf conf;
+
+    /*
+     * WLC_SET_VAR/GET_VAR "chanspec": the four bytes the driver supplies after
+     * the NUL-terminated iovar name, kept verbatim so a read-back answers with
+     * the value the driver set (wlioctl.h BCM_SET_VAR/BCM_GET_VAR contract).
+     */
+    uint32_t chanspec;
+    bool chanspec_valid;
 
     /* Telemetry */
     uint64_t cmd5_count;
@@ -179,36 +189,73 @@ struct Bcm4339SdioState {
     uint64_t rx_packets;
 };
 
-/* SOCI_AI EROM table describing ChipCommon, SDIO, ARM CR4, D11, and SOCRAM */
+/*
+ * SOCI_AI enumeration ROM: ChipCommon, SDIO, ARM CR4 and D11.
+ *
+ * The encoding follows the AI EROM contract the guest driver itself parses in
+ * bcmdhd.ko (ai_scan -> get_erom_ent/get_asd) and the aidmp.h descriptor
+ * definitions: ER_TAG = 0xE, ER_CI = 0, ER_MP = 2, ER_ADD = 4, ER_VALID = 1,
+ * ER_END = 0xE.  A component is CIA (designer/part/class + valid), CIB
+ * (rev/NSW/NMW/NSP/NMP + valid), one master-port descriptor per NMP, then the
+ * address descriptors: first the slave register space, then NMW master
+ * wrappers (type 3) and NSW slave wrappers (type 2).  The old table used a
+ * made-up 4-word entry (CIB 0x113 => NSP = 0 and tag bit 1 set), which
+ * bcmdhd's ai_scan rejects at the very first CIB.
+ */
+#define BCM_EROM_ER_VALID   0x00000001u
+#define BCM_EROM_ER_CI      0x00000000u
+#define BCM_EROM_ER_MP      0x00000002u
+#define BCM_EROM_ER_ADD     0x00000004u
+#define BCM_EROM_ER_END     0x0000000eu
+#define BCM_EROM_CIA(mfg, cid) \
+    (((uint32_t)(mfg) << 20) | ((uint32_t)(cid) << 8) | BCM_EROM_ER_VALID)
+#define BCM_EROM_CIB(rev, nmp, nsp, nmw, nsw) \
+    (((uint32_t)(rev) << 24) | ((uint32_t)(nsw) << 19) | \
+     ((uint32_t)(nmw) << 14) | ((uint32_t)(nsp) << 9) | \
+     ((uint32_t)(nmp) << 4) | BCM_EROM_ER_VALID)
+#define BCM_EROM_MP() \
+    (BCM_EROM_ER_VALID | BCM_EROM_ER_MP)
+#define BCM_EROM_ASD(addr, sp, st, sz) \
+    (((uint32_t)(addr) & 0xfffff000u) | (((uint32_t)(sp) & 0xfu) << 8) | \
+     (((uint32_t)(st) & 0x3u) << 6) | (((uint32_t)(sz) & 0x3u) << 4) | \
+     BCM_EROM_ER_ADD | BCM_EROM_ER_VALID)
+#define BCM_EROM_AD_ST_SLAVE 0x0u
+#define BCM_EROM_AD_ST_MWRAP 0x3u
+#define BCM_EROM_AD_SZ_4K    0x0u
+
+#define BCM_EROM_MFG_BRCM 0x4bfu  /* aidmp.h MFGID_BRCM */
+
 static const uint32_t bcm4339_erom[] = {
-    /* 0: ChipCommon (0x800) @ 0x18000000, wrapper @ 0x18100000 */
-    (0x4bf << 20) | (0x800 << 8) | 0x01,
-    (0x01 << 8) | (0x01 << 4) | 0x03,
-    0x18000000u | 0x05u,              /* slave port 0: 4K @ 0x18000000 */
-    0x18100000u | (1u << 6) | 0x05u,  /* master wrapper: 4K @ 0x18100000 */
+    /* ChipCommon (0x800) rev 4 @ 0x18000000, master wrapper 0x18100000 */
+    BCM_EROM_CIA(BCM_EROM_MFG_BRCM, 0x800),
+    BCM_EROM_CIB(4, 1, 1, 1, 0),
+    BCM_EROM_MP(),
+    BCM_EROM_ASD(0x18000000u, 0, BCM_EROM_AD_ST_SLAVE, BCM_EROM_AD_SZ_4K),
+    BCM_EROM_ASD(0x18100000u, 0, BCM_EROM_AD_ST_MWRAP, BCM_EROM_AD_SZ_4K),
 
-    /* 1: SDIO Device (0x829) @ 0x18001000, wrapper @ 0x18101000 */
-    (0x4bf << 20) | (0x829 << 8) | 0x01,
-    (0x01 << 8) | (0x01 << 4) | 0x03,
-    0x18001000u | 0x05u,
-    0x18101000u | (1u << 6) | 0x05u,
+    /* SDIO Device (0x829) @ 0x18001000, master wrapper 0x18101000 */
+    BCM_EROM_CIA(BCM_EROM_MFG_BRCM, 0x829),
+    BCM_EROM_CIB(0, 1, 1, 1, 0),
+    BCM_EROM_MP(),
+    BCM_EROM_ASD(0x18001000u, 0, BCM_EROM_AD_ST_SLAVE, BCM_EROM_AD_SZ_4K),
+    BCM_EROM_ASD(0x18101000u, 0, BCM_EROM_AD_ST_MWRAP, BCM_EROM_AD_SZ_4K),
 
-    /* 2: ARM CR4 (0x83E) @ 0x18002000 + TCM @ 0x00000000, wrapper 0x18102000 */
-    (0x4bf << 20) | (0x83e << 8) | 0x01,
-    (0x01 << 8) | (0x02 << 4) | 0x03,
-    0x18002000u | 0x05u,
-    0x00000000u | (2u << 4) | 0x0du,  /* region size encoded in next word */
-    BCM4339_TCM_SIZE,
-    0x18102000u | (1u << 6) | 0x05u,
+    /* ARM CR4 (0x83e) @ 0x18002000, master wrapper 0x18102000 */
+    BCM_EROM_CIA(BCM_EROM_MFG_BRCM, 0x83e),
+    BCM_EROM_CIB(0, 1, 1, 1, 0),
+    BCM_EROM_MP(),
+    BCM_EROM_ASD(0x18002000u, 0, BCM_EROM_AD_ST_SLAVE, BCM_EROM_AD_SZ_4K),
+    BCM_EROM_ASD(0x18102000u, 0, BCM_EROM_AD_ST_MWRAP, BCM_EROM_AD_SZ_4K),
 
-    /* 3: 802.11ac D11 MAC (0x812) @ 0x18003000, wrapper @ 0x18103000 */
-    (0x4bf << 20) | (0x812 << 8) | 0x01,
-    (0x01 << 8) | (0x01 << 4) | 0x03,
-    0x18003000u | 0x05u,
-    0x18103000u | (1u << 6) | 0x05u,
+    /* 802.11ac D11 MAC (0x812) @ 0x18003000, master wrapper 0x18103000 */
+    BCM_EROM_CIA(BCM_EROM_MFG_BRCM, 0x812),
+    BCM_EROM_CIB(0, 1, 1, 1, 0),
+    BCM_EROM_MP(),
+    BCM_EROM_ASD(0x18003000u, 0, BCM_EROM_AD_ST_SLAVE, BCM_EROM_AD_SZ_4K),
+    BCM_EROM_ASD(0x18103000u, 0, BCM_EROM_AD_ST_MWRAP, BCM_EROM_AD_SZ_4K),
 
     /* End of EROM */
-    0x0000000fu,
+    (BCM_EROM_ER_END | BCM_EROM_ER_VALID),
 };
 
 static void bcm4339_sdio_update_irq(Bcm4339SdioState *s)
@@ -476,6 +523,8 @@ static void bcm4339_handle_f2_write(Bcm4339SdioState *s, const uint8_t *buf,
         return;
     }
 
+    s->sdpcm_tx_credit = (uint8_t)(buf[4] + s->sdpcm_tx_max_seq);
+
     if (chan == 2) { /* SDPCM_DATA_CHANNEL: 4-byte BCDC header + Ethernet frame */
         if ((uint32_t)hdr_len + 4u > frm_len) {
             return;
@@ -507,9 +556,17 @@ static void bcm4339_handle_f2_write(Bcm4339SdioState *s, const uint8_t *buf,
     uint32_t resp_pay_len = MIN(cdc_len, (uint32_t)sizeof(resp_pay));
     memset(resp_pay, 0, sizeof(resp_pay));
 
-    if (cdc_cmd == 1) { /* WLC_GET_VERSION */
-        stl_le_p(resp_pay, 12);
+    if (cdc_cmd == 0) { /* WLC_GET_MAGIC: WLC_IOCTL_MAGIC, public wlioctl.h */
+        stl_le_p(resp_pay, 0x14e46c77u);
         resp_pay_len = MAX(resp_pay_len, 4u);
+    } else if (cdc_cmd == 1) { /* WLC_GET_VERSION */
+        stl_le_p(resp_pay, 2);
+        resp_pay_len = MAX(resp_pay_len, 4u);
+    } else if (cdc_cmd == 140 && cdc_len >= 12u) { /* WLC_GET_BANDLIST */
+        stl_le_p(resp_pay, 2);
+        stl_le_p(resp_pay + 4, 1);
+        stl_le_p(resp_pay + 8, 2);
+        resp_pay_len = 12;
     } else if (cdc_cmd == 262 && pay_in_len > 0) { /* WLC_GET_VAR */
         if (memcmp(payload, "cur_etheraddr",
                    MIN(pay_in_len, (uint32_t)sizeof("cur_etheraddr"))) == 0) {
@@ -521,7 +578,34 @@ static void bcm4339_handle_f2_write(Bcm4339SdioState *s, const uint8_t *buf,
             static const char ver[] = "BCM4339 QEMU SDIO 6.37.32\n";
             memcpy(resp_pay, ver, sizeof(ver));
             resp_pay_len = sizeof(ver);
+        } else if (pay_in_len >= sizeof("chanspec") &&
+                   memcmp(payload, "chanspec", sizeof("chanspec")) == 0) {
+            /* Read back the value the driver set (0 = never set). */
+            stl_le_p(resp_pay, s->chanspec_valid ? s->chanspec : 0);
+            resp_pay_len = 4;
+        } else if (pay_in_len >= 9 && memcmp(payload, "chanspecs", 9) == 0) {
+            /*
+             * wl_uint32_list { count; element[count]; } of 16-bit 11ac
+             * chanspecs.  wl_construct_reginfo accepts band 5G = 0xc000,
+             * BW_20 = 0x1000 and channels > 33; the channels listed are the
+             * four the AP script offers (36/40/44/48), an emulator
+             * assumption.  Encoding: bcmwifi_channels.h for the 11ac d11.
+             */
+            static const uint8_t chans5g[] = { 36, 40, 44, 48 };
+            uint32_t n = sizeof(chans5g);
+            for (uint32_t i = 0; i < n; i++) {
+                stl_le_p(resp_pay + 4 + 4 * i,
+                         0xc000u | 0x1000u | chans5g[i]);
+            }
+            stl_le_p(resp_pay, n);
+            resp_pay_len = 4 + 4 * n;
         }
+    } else if (cdc_cmd == 263 &&
+               pay_in_len >= sizeof("chanspec") + 4u &&
+               memcmp(payload, "chanspec", sizeof("chanspec")) == 0) {
+        /* WLC_SET_VAR: remember the 4-byte chanspec that follows the name. */
+        s->chanspec = ldl_le_p(payload + sizeof("chanspec"));
+        s->chanspec_valid = true;
     }
 
     uint16_t total = (uint16_t)(12 + 16 + resp_pay_len);
@@ -534,7 +618,7 @@ static void bcm4339_handle_f2_write(Bcm4339SdioState *s, const uint8_t *buf,
         s->f2_rx[6] = 0;
         s->f2_rx[7] = 12; /* data offset */
         s->f2_rx[8] = 0;
-        s->f2_rx[9] = s->sdpcm_tx_max_seq;
+        s->f2_rx[9] = s->sdpcm_tx_credit;
 
         stl_le_p(&s->f2_rx[12], cdc_cmd);
         stl_le_p(&s->f2_rx[16], resp_pay_len);
@@ -544,6 +628,7 @@ static void bcm4339_handle_f2_write(Bcm4339SdioState *s, const uint8_t *buf,
         memcpy(&s->f2_rx[28], resp_pay, resp_pay_len);
 
         s->f2_rx_len = total;
+        s->f2_rx_pos = 0;
         s->sdio_intstatus |= 0x00000040u; /* I_HMB_FRAME_IND */
         s->bcdc_ioctls++;
     }
@@ -570,11 +655,17 @@ static void bcm4339_exec_cmd53_buf(Bcm4339SdioState *s, bool is_write,
         }
     } else {
         if (fn == 2) {
+            uint32_t avail = (s->f2_rx_len > s->f2_rx_pos) ?
+                             (s->f2_rx_len - s->f2_rx_pos) : 0;
+            uint32_t copy = MIN(total, avail);
             memset(buf, 0, total);
-            if (s->f2_rx_len > 0) {
-                uint32_t copy = MIN(total, s->f2_rx_len);
-                memcpy(buf, s->f2_rx, copy);
+            if (copy) {
+                memcpy(buf, s->f2_rx + s->f2_rx_pos, copy);
+                s->f2_rx_pos += copy;
+            }
+            if (s->f2_rx_len > 0 && s->f2_rx_pos >= s->f2_rx_len) {
                 s->f2_rx_len = 0;
+                s->f2_rx_pos = 0;
                 s->sdio_intstatus &= ~0x00000040u;
                 if (s->nic) {
                     qemu_flush_queued_packets(qemu_get_queue(s->nic));
@@ -1114,9 +1205,13 @@ static void bcm4339_sdio_reset(DeviceState *dev)
         s->ai_resetctrl[i] = 0;
     }
     s->pmu_ctl = 0;
+    s->chanspec = 0;
+    s->chanspec_valid = false;
     s->f2_rx_len = 0;
+    s->f2_rx_pos = 0;
     s->sdpcm_tx_max_seq = 8;
     s->sdpcm_rx_seq = 0;
+    s->sdpcm_tx_credit = s->sdpcm_tx_max_seq;
     if (s->tcm) {
         memset(s->tcm, 0, BCM4339_TCM_SIZE);
     }
@@ -1151,7 +1246,7 @@ static ssize_t bcm4339_net_receive(NetClientState *nc, const uint8_t *buf,
     s->f2_rx[6] = 0;
     s->f2_rx[7] = 12; /* data offset */
     s->f2_rx[8] = 0;
-    s->f2_rx[9] = s->sdpcm_tx_max_seq;
+    s->f2_rx[9] = s->sdpcm_tx_credit;
 
     /* 4-byte BCDC data header (version=2 << 4 = 0x20, dataOffset=0) */
     s->f2_rx[12] = 0x20;

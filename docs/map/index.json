@@ -591,13 +591,25 @@
         "Open Gate 3:2",
         "ZIMA_AVC",
         "AIF",
-        "SET_RAW_EXTERNAL_OUTPUT"
+        "SET_RAW_EXTERNAL_OUTPUT",
+        "rec_fmt_tbl",
+        "0x63E11750",
+        "recording-format id"
       ],
       "anchor": "imaging-pipeline.md#img-recording-paths",
       "active_claims": [
         "C06",
         "C07",
-        "C17"
+        "C17",
+        "C18",
+        "C19",
+        "C20",
+        "C21",
+        "C22",
+        "C23",
+        "C24",
+        "C25",
+        "C26"
       ],
       "inactive_claims": []
     },
@@ -11109,6 +11121,101 @@
         "status": "verified-offline"
       }
     ],
+    "E0729": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C18",
+        "file": "0729-a6400-open-gate-rec-format-id-contract-and-a12.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C19",
+        "file": "0729-a6400-open-gate-rec-format-id-contract-and-a12.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C20",
+        "file": "0729-a6400-open-gate-rec-format-id-contract-and-a12.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "frontier",
+        "id": "F04",
+        "file": "0729-a6400-open-gate-rec-format-id-contract-and-a12.md"
+      }
+    ],
+    "E0730": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C21",
+        "file": "0730-a6400-open-gate-a12-to-a19-dual-pipe-live.md",
+        "status": "verified-physical"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "frontier",
+        "id": "F04",
+        "file": "0730-a6400-open-gate-a12-to-a19-dual-pipe-live.md"
+      }
+    ],
+    "E0731": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C22",
+        "file": "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C23",
+        "file": "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C24",
+        "file": "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C25",
+        "file": "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "claim",
+        "id": "C26",
+        "file": "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md",
+        "status": "verified-offline"
+      },
+      {
+        "area": "imaging-pipeline",
+        "kind": "frontier",
+        "id": "F04",
+        "file": "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md"
+      }
+    ],
+    "E0732": [
+      {
+        "area": "imaging-pipeline",
+        "kind": "frontier",
+        "id": "F01",
+        "file": "0732-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md"
+      }
+    ],
     "E9001": [
       {
         "area": "l3-userspace",
@@ -13588,6 +13695,18 @@
       "imaging-pipeline"
     ],
     "0728-a6400-open-gate-f3851-mmio-live.md": [
+      "imaging-pipeline"
+    ],
+    "0729-a6400-open-gate-rec-format-id-contract-and-a12.md": [
+      "imaging-pipeline"
+    ],
+    "0730-a6400-open-gate-a12-to-a19-dual-pipe-live.md": [
+      "imaging-pipeline"
+    ],
+    "0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md": [
+      "imaging-pipeline"
+    ],
+    "0732-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md": [
       "imaging-pipeline"
     ],
     "9001-l3-grm-osd-unit-4092e-refusal-and-newselect-timer-fix.md": [

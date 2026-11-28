@@ -1,10 +1,12 @@
 """Camera detection, install planning, 1-click deployment, and receipt engine."""
 from __future__ import annotations
 
+import atexit
 from contextlib import contextmanager
 from datetime import datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 import shlex
 import struct
@@ -23,6 +25,8 @@ from tools.research.reload_mod import IM_PID, REQ as RELOAD_REQ, RESULT as RELOA
 from tools.research.reload_mod import hook_bytes, parse_result, parse_smod_v2
 from tools.setup_usb_debugger import build_onboarding_bundle, detect_msc_camera
 
+from . import driver_broker, usb_driver
+from .ledger import KIND_DEBUGGER, KIND_TWEAK, CameraLedger, b64, unb64
 from .smod import parse_smod, validate_mod_filename
 from .tools_bundle import (
     ensure_pmca,
@@ -57,6 +61,19 @@ TARGET_MLV2_LAYOUTS: dict[str, dict[str, Any]] = {
 }
 GUARD_REMOTE = "/tmp_bt/mlv2_guard"
 REQ_REMOTE = "/tmp_bt/mlv2.req"
+PRELOAD_REMOTE = "/etc/ld.so.preload"
+SENSER_ABSENT_MARKER = "Senser file control error 130"
+
+
+def _senser_file_absent(cam: Any, path: str) -> bool:
+    """True when a Senser read reports the file as absent (error 130)."""
+    try:
+        cam.readFile(path)
+    except Exception as exc:
+        if SENSER_ABSENT_MARKER in str(exc):
+            return True
+        raise
+    return False
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -80,6 +97,83 @@ class LiveCameraTransport:
     def __init__(self, root: Path, data_dir: Path):
         self.root = Path(root)
         self.data_dir = Path(data_dir)
+        self._broker: driver_broker.BrokerClient | None = None
+        self.last_driver_swap: dict[str, object] = {}
+
+    def _get_broker(self) -> driver_broker.BrokerClient:
+        if self._broker is None:
+            self._broker = driver_broker.BrokerClient(self.data_dir)
+            atexit.register(self.close)
+        return self._broker
+
+    def close(self) -> None:
+        """Stop the elevated broker; it restores any mass-storage driver it still holds."""
+        if self._broker is not None:
+            self._broker.close()
+
+    @contextmanager
+    def _driver_swap(self) -> Iterator[None]:
+        """Temporarily bind WinUSB for one Senser session, then give the MSC device back to Windows.
+
+        Only runs on Windows with a verified bundled helper. When the broker cannot start
+        (UAC declined, no helper), the session proceeds unchanged and ``run_senser`` falls back
+        to the ``DriverMissing`` dialog.
+        """
+        if os.name != "nt" or not usb_driver.helper_status()["verified"]:
+            yield
+            return
+        records = usb_driver.scan_sony_usb()
+        msc_pids = sorted(
+            {c["pid"] for c in (usb_driver.classify_device(r) for r in records)
+             if c["role"] == "mass_storage" and c["needs_driver"] and c["eligible"]}
+        )
+        senser_ready = any(p.pid == 0x0336 for p in usb_driver.our_driver_packages()) or any(
+            r.pid in usb_driver.SENSER_PIDS and r.service.lower() in usb_driver.LIBUSB_SERVICES for r in records
+        )
+        self.last_driver_swap = {"msc_pids": msc_pids, "senser_preinstalled": senser_ready}
+        if not msc_pids and senser_ready:
+            yield
+            return
+        bound: list[int] = []
+        try:
+            broker = self._get_broker()
+            if not senser_ready:
+                broker.call("bind", pid=0x0336)
+            for pid in msc_pids:
+                broker.call("bind", pid=pid)
+                bound.append(pid)
+        except driver_broker.BrokerUnavailable as exc:
+            self.last_driver_swap["error"] = str(exc)
+            yield
+            return
+        except Exception:
+            for pid in bound:
+                self._restore_quietly(pid)
+            raise
+        try:
+            yield
+        finally:
+            for pid in bound:
+                self._restore_quietly(pid)
+
+    def _restore_quietly(self, pid: int) -> None:
+        try:
+            self._get_broker().call("restore", pid=pid)
+            self.last_driver_swap.setdefault("restored", []).append(pid)  # type: ignore[union-attr]
+        except Exception as exc:  # the startup check offers a manual restore
+            self.last_driver_swap["restore_error"] = f"{type(exc).__name__}: {exc}"
+
+    def switch_to_msc(self) -> list[dict[str, object]]:
+        """Ask a camera in MTP/PC Remote mode to re-enumerate as mass storage (Sony PTP 0x9282)."""
+        ensure_pmca(root=self.root, data_dir=self.data_dir)
+        attempts = cd.request_msc_switch()
+        if any(a.get("sent") for a in attempts):
+            cd.wait_for_msc(timeout=20)
+        return attempts
+
+    def restore_windows_drivers(self) -> object:
+        """Remove every WinUSB package this app installed (one UAC prompt via the broker)."""
+        return self._get_broker().call("restore_all")
 
     @contextmanager
     def debugger_session(self) -> Iterator[Any]:
@@ -94,13 +188,32 @@ class LiveCameraTransport:
         ensure_pmca(root=self.root, data_dir=self.data_dir)
         from pmca.commands.usb import senserShellCommand
 
+        completed: dict[str, bool] = {"ran": False}
+
+        def _tracked(cam: Any) -> None:
+            completed["ran"] = True
+            callback(cam)
+
+        failure: Exception | None = None
         try:
-            senserShellCommand(driverName="libusb", complete=callback)
+            with self._driver_swap():
+                senserShellCommand(driverName="libusb", complete=_tracked)
         except Exception as exc:
-            raise RuntimeError(
-                f"Senser USB operation failed ({exc}). "
-                "Ensure libusb driver is available if switching to service mode."
-            ) from exc
+            if completed["ran"]:
+                raise
+            failure = exc
+        if completed["ran"]:
+            return
+        # PMCA prints and returns (no exception) when the camera is not reachable through
+        # libusb, so a session that never reached the callback is a failure, not success.
+        blockers = usb_driver.blocking_devices(usb_driver.scan_sony_usb())
+        detail = f"{type(failure).__name__}: {failure}" if failure else "Senser session did not complete"
+        if blockers:
+            raise usb_driver.DriverMissing(blockers, detail=detail) from failure
+        raise RuntimeError(
+            f"Senser USB operation failed ({detail}). Set the camera's USB Connection mode to "
+            "'Auto' (not permanent Mass Storage), reconnect, and retry."
+        ) from failure
 
     def query_tweaks(self, cam: Any) -> list[dict[str, object]]:
         ensure_pmca(root=self.root, data_dir=self.data_dir)
@@ -716,6 +829,7 @@ class CameraService:
         emit: Callable[[str, str, str], None],
         wait_for_power_cycle_cb: Callable[[Callable[[], bool], threading.Event | None], bool] | None,
         cancel_event: threading.Event | None,
+        ledger_group: str | None = None,
     ) -> dict[str, object]:
         identity = self.transport.detect_msc_identity()
         model_name = identity.get("model_name") or ""
@@ -768,10 +882,21 @@ class CameraService:
 
                 old_root = dnu.ROOT
                 dnu.ROOT = payload_root
+                ledger = CameraLedger(self.data_dir, identity)
+                ledger.ensure_snapshot(preload=previous_preload, preload_existed=preload_existed)
                 try:
                     upload_and_verify_debugger(cam, spec, previous_preload, dest, manifest)
                 finally:
                     dnu.ROOT = old_root
+                after_path = dest / "ld.so.preload.after"
+                ledger.append(
+                    KIND_DEBUGGER,
+                    ledger_group or datetime.now().isoformat(timespec="seconds"),
+                    {"preload_b64": b64(previous_preload), "preload_existed": preload_existed},
+                    {"preload_b64": b64(after_path.read_bytes()) if after_path.is_file() else None},
+                    remote_files=["/setting/a6400_usb_debugd.elf", "/setting/usb_debug_launcher.so"],
+                    manifest_dir=str(dest),
+                )
                 outcome["branch"] = "supported"
                 outcome["manifest_dir"] = str(dest)
                 return
@@ -1081,11 +1206,23 @@ class CameraService:
             emit("tweaks", "running", f"Applying {len(desired_map)} PMCA tweak(s) via Senser...")
             tweak_result: dict[str, object] = {}
 
+            identity = self.transport.detect_msc_identity()
+            ledger = CameraLedger(self.data_dir, identity)
+
             def _apply_senser(cam: Any) -> None:
+                before = {str(t["id"]): bool(t["enabled"]) for t in self.transport.query_tweaks(cam)}
+                ledger.ensure_snapshot(tweaks=before)
+                tweak_result["before"] = before
                 tweak_result["readback"] = self.transport.apply_tweaks(cam, desired_map)
 
             self.transport.run_senser(_apply_senser)
             receipt["tweaks"] = tweak_result["readback"]
+            before_map = tweak_result.get("before") or {}
+            for row in tweak_result["readback"]:
+                tid = str(row["id"])
+                if tid in before_map and before_map[tid] != bool(row["enabled"]):
+                    ledger.append(KIND_TWEAK, str(receipt["timestamp"]), before_map[tid], bool(row["enabled"]),
+                                  tweak_id=tid)
             emit("tweaks", "done", "PMCA firmware tweaks applied and verified by read-back.")
 
         if plan.get("needs_debugger_bootstrap"):
@@ -1093,6 +1230,7 @@ class CameraService:
                 emit=emit,
                 wait_for_power_cycle_cb=wait_for_power_cycle_cb,
                 cancel_event=cancel_event,
+                ledger_group=str(receipt["timestamp"]),
             )
             receipt["bootstrap"] = boot_outcome
             if boot_outcome.get("branch") == "onboarding":
@@ -1112,6 +1250,98 @@ class CameraService:
         out_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
         receipt["receipt_path"] = str(out_path)
         emit("receipt", "done", f"Receipt saved to {out_path}")
+        return receipt
+
+    # ------------------------------------------------------------------
+    # Reversal: ledger-driven "Restore to stock" / "Undo last install"
+    # ------------------------------------------------------------------
+    def get_ledger(self) -> dict[str, object]:
+        identity = self.transport.detect_msc_identity()
+        return CameraLedger(self.data_dir, identity).summary()
+
+    def _write_restore_receipt(self, receipt: dict[str, object]) -> str:
+        out_path = _unique_receipt_path(self.data_dir / "receipts", "restore-receipt")
+        out_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+        receipt["receipt_path"] = str(out_path)
+        return str(out_path)
+
+    def restore_stock(
+        self,
+        *,
+        last_group_only: bool = False,
+        progress_cb: Callable[[dict[str, object]], None] | None = None,
+    ) -> dict[str, object]:
+        """Revert persistent camera changes recorded in the ledger, verified by read-back.
+
+        Tweaks go back to the value they had before the app first changed them. The debugger is
+        removed by restoring ``/etc/ld.so.preload`` (its exact pre-install bytes, or absent) before
+        deleting its ``/setting`` payloads, so the launcher is never preloaded without its files.
+        RAM-only runtime mods need no reversal: a power-cycle clears them.
+        """
+
+        def emit(step: str, status: str, message: str) -> None:
+            if progress_cb:
+                progress_cb({"step": step, "status": status, "message": message})
+
+        identity = self.transport.detect_msc_identity()
+        ledger = CameraLedger(self.data_dir, identity)
+        group = ledger.last_group() if last_group_only else None
+        entries = ledger.active(group=group)
+        receipt: dict[str, object] = {
+            "operation": "undo_last_install" if last_group_only else "restore_stock",
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "camera": ledger.identity,
+            "group": group,
+            "status": "nothing_to_restore",
+            "tweaks": None,
+            "debugger": None,
+        }
+        if not entries:
+            self._write_restore_receipt(receipt)
+            return receipt
+
+        # Earliest "before" per tweak wins: that is the state prior to any change by this app.
+        tweak_target: dict[str, bool] = {}
+        for e in entries:
+            if e["kind"] == KIND_TWEAK and str(e["tweak_id"]) not in tweak_target:
+                tweak_target[str(e["tweak_id"])] = bool(e["before"])
+        debugger_entries = [e for e in entries if e["kind"] == KIND_DEBUGGER]
+        result: dict[str, object] = {}
+
+        def _on_senser(cam: Any) -> None:
+            if tweak_target:
+                emit("restore", "running", f"Restoring {len(tweak_target)} firmware tweak(s)...")
+                result["tweaks"] = self.transport.apply_tweaks(cam, tweak_target)
+            if debugger_entries:
+                first = debugger_entries[0]
+                before_bytes = unb64(first["before"]["preload_b64"])
+                existed = bool(first["before"]["preload_existed"])
+                emit("restore", "running", "Removing the USB debugger (restoring /etc/ld.so.preload first)...")
+                if existed:
+                    cam.writeFile(PRELOAD_REMOTE, before_bytes)
+                    if cam.readFile(PRELOAD_REMOTE) != before_bytes:
+                        raise RuntimeError("/etc/ld.so.preload read-back does not match the pre-install bytes")
+                else:
+                    cam.deleteFile(PRELOAD_REMOTE)
+                    if not _senser_file_absent(cam, PRELOAD_REMOTE):
+                        raise RuntimeError("/etc/ld.so.preload still exists after delete")
+                removed = []
+                for path in first.get("remote_files") or []:
+                    if not _senser_file_absent(cam, path):
+                        cam.deleteFile(path)
+                    if not _senser_file_absent(cam, path):
+                        raise RuntimeError(f"{path} still exists after delete")
+                    removed.append(path)
+                result["debugger"] = {"preload_restored": existed, "preload_deleted": not existed, "removed": removed}
+
+        emit("restore", "running", "Entering service mode to restore stock state...")
+        self.transport.run_senser(_on_senser)
+        receipt["tweaks"] = result.get("tweaks")
+        receipt["debugger"] = result.get("debugger")
+        receipt["status"] = "restored"
+        out_path = self._write_restore_receipt(receipt)
+        ledger.mark_reverted([int(e["id"]) for e in entries], out_path)
+        emit("restore", "done", "Camera restored to its recorded stock state. Power-cycle it to finish.")
         return receipt
 
     def check_debugger_compatibility(

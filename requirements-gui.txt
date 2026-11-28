@@ -1,6 +1,7 @@
 # Optional Windows desktop GUI and standalone packaging dependencies.
 # Keep core requirements.txt minimal and offline CI unchanged.
-pywebview>=5.3,<7
+# 6.2+ exposes settings["WEBVIEW2_RUNTIME_PATH"] for the bundled Fixed Version runtime.
+pywebview==6.2.1
 pyusb==1.3.1
 libusb-package>=1.0.26
 pycryptodomex==3.24.2

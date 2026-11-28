@@ -4,7 +4,7 @@
 
 - **Scope:** av-cam CC 3D LUT and gamma, the Arrivederci/ARRI color work, debayer/PSF/detail stages, RAW develop, IMX284, Open Gate and high-bit-depth paths, AIF DMA, the RCRAW probes, and the candidate mobile GPU 36-exposure ARW roll pipelines (SpektraFilm and fotufilm-engine).
 - **Evidence span:** see record index; last reviewed 2026-11-24.
-- **Deep review:** 0 of 57 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
+- **Deep review:** 0 of 58 records read in full and checked claim by claim ([curation plan](CURATION_PLAN.md)); the rest are curated from titles, lead paragraphs and consolidated documents.
 - **Status legend:** PHYSICAL = observed on the camera/host; OFFLINE = disassembly, Unicorn or static proof; INFERENCE = argued from evidence, not observed directly; RETRACTED/REFUTED = do not rely on, kept to prevent re-derivation.
 
 The evidence records are authoritative; follow the links before acting on a claim.
@@ -21,7 +21,7 @@ The evidence records are authoritative; follow the links before acting on a clai
 
 - **State:** `open`
 - **Next:** Static proof (E9105) rules out both RCRAW_EN (FOPD/W0) and SyncGetPrcFlow/AIF0 W2 (CalcSdevOutSize <= 640x480) as full-sensor video RAW paths. Next: qualify SET_RAW_EXTERNAL_OUTPUT (0x63BEFFA0, 0x2044/0x2042 IPC, 0x00BF0274 gate) and IMX284/IDT 0xF3000200..0xF3000422 capture in Unicorn/QEMU and on real hardware.
-- **Evidence:** [E0634](../evidence/0634-a6400-hardware-rcraw-post-recording-check.md), [E0635](../evidence/0635-a6400-rcraw-fopd-vs-full-pipeline.md), [E0621](../evidence/0621-a6400-10bit-and-raw-video-paths.md), [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md)
+- **Evidence:** [E0634](../evidence/0634-a6400-hardware-rcraw-post-recording-check.md), [E0635](../evidence/0635-a6400-rcraw-fopd-vs-full-pipeline.md), [E0621](../evidence/0621-a6400-10bit-and-raw-video-paths.md), [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md), [E0732](../evidence/0732-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md)
 
 ### <a id="f02"></a>F02 - Android Vulkan SpektraFilm darkroom prototype in CinemaHUD
 
@@ -154,7 +154,7 @@ Current knowledge:
 
 Related: [av-cam CC 3D LUT, color matrix and EC gamma](#img-cc-lut), [Debayer, dcv_psf / spica and detail stages](#img-detail-psf), [CinemaHUD Android SpektraFilm engine (candidate)](#app-android-spektrafilm)
 
-## Record index (57 files)
+## Record index (58 files)
 
 Extracted from the files themselves: title, first date, and up to two lines that mention a correction, retraction or supersession. Every file under `docs/evidence/` belongs to at least one area.
 
@@ -216,4 +216,5 @@ Extracted from the files themselves: title, first date, and up to two lines that
 | [E0729](../evidence/0729-a6400-open-gate-rec-format-id-contract-and-a12.md) | 2026-11-27 | ILCE-6400 Open Gate: `rec_fmt_tbl` Id Contract, Per-Id Geometry Descriptors, and the Step `A12` Patch Rule |  | \| userspace `libmpr.so` -> message -> av-cam request struct \| **not verified, and the stated mechanism is refuted** (below) \| / coming from Linux user-space (`im.elf`) over UIPC" is **refuted as stated** for |
 | [E0730](../evidence/0730-a6400-open-gate-a12-to-a19-dual-pipe-live.md) | 2026-11-27 | ILCE-6400 Open Gate: Live `A12`–`A19` Dual-Pipe, `tbl_0x34` / `desc_0xAC` `.bss` Baseline, and `0x63761C64` Discovery |  |  |
 | [E0731](../evidence/0731-a6400-open-gate-round6-avlog-and-3200-3264-candidates.md) | 2026-11-27 | ILCE-6400 Open Gate Round 6: `avlog` Read Recipe, `pasp`/`tkhd` Findings, and the `3200`/`3264` Candidate Patch Sets |  | results and the `.bss` baseline). This record supersedes specific `E0729` statements, listed in / Correction to `E0729`:** the table *is* statically referenced. `0x6371B764` `add r3,pc` with |
+| [E0732](../evidence/0732-a6400-live-tcp-10bit-hevc-raw-and-craw2-ddr-check.md) | 2026-11-27 | Live `ILCE-6400` TCP Read-Only Check: HEVC / 10-Bit Absence, Movie vs. Still `CamPig` / `cRAW2` DDR Buffers, and `0xF3031164` Allocation |  |  |
 | [E9105](../evidence/9105-a6100-rcraw-aif-w2-and-fopd-gates.md) | 2026-11-26 | ILCE-6100 `RCRAW` / `AIF0 W2` (`0xF3002480`) and `S_SetFOPD` Gate Chain |  |  |

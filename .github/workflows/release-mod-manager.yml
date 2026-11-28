@@ -1,0 +1,166 @@
+name: Release BIONZ X Mod Manager
+
+on:
+  push:
+    tags:
+      - "mod-manager-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Windows x64 Setup + Portable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $v = "0.0.0"
+          if ("$env:GITHUB_REF_NAME" -match '^mod-manager-v(\d+\.\d+\.\d+)$') { $v = $Matches[1] }
+          "value=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Build libwdi wdi-simple.exe (WinUSB helper, pinned commit)
+        shell: pwsh
+        run: .\installer\build_wdi_simple.ps1 -OutDir build\libwdi\out
+
+      - name: Sign wdi-simple.exe (skipped without a certificate secret)
+        shell: pwsh
+        env:
+          SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
+          SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
+        run: .\installer\sign_files.ps1 -Path build\libwdi\out\wdi-simple.exe -UpdateManifest build\libwdi\out\manifest.json
+
+      - name: Build frozen Mod Manager
+        shell: pwsh
+        run: .\scripts\build_mod_manager_exe.ps1 -WdiSimpleDir build\libwdi\out -Version ${{ steps.version.outputs.value }}
+
+      - name: Audit native dependencies (only bundled or in-box Windows DLLs)
+        shell: pwsh
+        run: .\installer\audit_dependencies.ps1 -Path dist\BionzX-Mod-Manager -NoVcRuntime @("wdi-simple.exe") -Report "$env:RUNNER_TEMP\dependency-audit.json"
+
+      - name: Size gate (the app folder must stay small)
+        shell: pwsh
+        run: |
+          $bytes = (Get-ChildItem dist\BionzX-Mod-Manager -Recurse -File | Measure-Object Length -Sum).Sum
+          $mb = [math]::Round($bytes / 1MB, 1)
+          Write-Host "App folder: $mb MB"
+          if ($mb -gt 60) { throw "App folder is $mb MB (limit 60 MB); something large was bundled by mistake." }
+
+      - name: Offline self-test and window smoke test (outbound network blocked for the app)
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path dist\BionzX-Mod-Manager\BionzX-Mod-Manager.exe).Path
+          New-NetFirewallRule -DisplayName "BionzX offline test" -Program $exe -Direction Outbound -Action Block | Out-Null
+          try {
+            $report = Join-Path $env:RUNNER_TEMP "self-test.json"
+            $p = Start-Process -FilePath $exe -ArgumentList @("--self-test", "--self-test-out", "`"$report`"") -Wait -PassThru
+            if (Test-Path $report) { Get-Content $report }
+            if ($p.ExitCode -ne 0) { throw "Frozen self-test failed with exit code $($p.ExitCode)" }
+            $smoke = Join-Path $env:RUNNER_TEMP "smoke-ui.json"
+            $p = Start-Process -FilePath $exe -ArgumentList @("--smoke-ui", "`"$smoke`"") -PassThru
+            if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "Window smoke test hung" }
+            if (Test-Path $smoke) { Get-Content $smoke }
+            if ($p.ExitCode -ne 0) { throw "Window smoke test failed with exit code $($p.ExitCode)" }
+          } finally {
+            Remove-NetFirewallRule -DisplayName "BionzX offline test*" -ErrorAction SilentlyContinue
+          }
+
+      - name: Sign BionzX-Mod-Manager.exe (skipped without a certificate secret)
+        shell: pwsh
+        env:
+          SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
+          SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
+        run: .\installer\sign_files.ps1 -Path dist\BionzX-Mod-Manager\BionzX-Mod-Manager.exe
+
+      - name: Build Setup.exe (Inno Setup 6)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          }
+          & $iscc "/DAppVersion=${{ steps.version.outputs.value }}" "/DSourceDir=..\dist\BionzX-Mod-Manager" installer\BionzX-Mod-Manager.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      - name: Sign Setup.exe (skipped without a certificate secret)
+        shell: pwsh
+        env:
+          SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
+          SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
+        run: .\installer\sign_files.ps1 -Path dist\BionzX-Mod-Manager-Setup.exe
+
+      - name: Package portable zip and checksums
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist\BionzX-Mod-Manager -DestinationPath dist\BionzX-Mod-Manager-win64-portable.zip -Force
+          $lines = foreach ($f in @("dist\BionzX-Mod-Manager-Setup.exe", "dist\BionzX-Mod-Manager-win64-portable.zip")) {
+            "{0}  {1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant(), (Split-Path $f -Leaf)
+          }
+          [System.IO.File]::WriteAllLines("dist\SHA256SUMS.txt", $lines)
+          Get-Content dist\SHA256SUMS.txt
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BionzX-Mod-Manager-win64
+          if-no-files-found: error
+          path: |
+            dist/BionzX-Mod-Manager-Setup.exe
+            dist/BionzX-Mod-Manager-win64-portable.zip
+            dist/SHA256SUMS.txt
+
+  release:
+    name: Create GitHub Release
+    needs: [build-windows]
+    if: startsWith(github.ref, 'refs/tags/mod-manager-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          notes="$RUNNER_TEMP/mod-manager-release-notes.md"
+          cat >"$notes" <<'EOF'
+          **BIONZ X Mod Manager** for Windows 10 (1803+) / 11 x64. Small (about 15 MB), standalone and offline: no Python, pip, Zadig, Visual C++ redistributable or internet connection needed. The window uses the WebView2 runtime or Microsoft Edge that Windows already includes.
+
+          - `BionzX-Mod-Manager-Setup.exe`: double-click, approve the administrator prompt, click **Install**. Setup also sets up the camera's service-mode USB driver (WinUSB for `054C:0336`) and opens the app.
+          - `BionzX-Mod-Manager-win64-portable.zip`: unzip and run `BionzX-Mod-Manager.exe` without installing.
+          - If a PC has no WebView2 runtime, the app opens in a Microsoft Edge app window instead (nothing is installed).
+
+          ### Camera USB driver
+          Service mode needs WinUSB on the camera's mass-storage device and on its service-mode device. When it is missing, the app opens **Camera USB Driver**, which lists the devices and binds WinUSB with the bundled libwdi `wdi-simple.exe` (LGPL-3.0, built from a pinned commit; its SHA-256 is checked before every run). The app asks for administrator approval once per session for the temporary storage-driver swap and writes a receipt for every driver change. While WinUSB is bound, the camera does not appear as a drive in Explorer; use a card reader for SD Card Sync.
+
+          ### Notes
+          - Set the camera's **USB Connection** to **Auto**, not permanent Mass Storage.
+          - Binaries are **unsigned**; SmartScreen may prompt on first launch (*More info -> Run anyway*).
+          - Do not use the Rust `pmca-console serviceshell` for this; it stops with "key material ... not set up". The Mod Manager uses the Python Sony-PMCA-RE Senser path.
+          - Unsupported bodies (for example ILCE-6100) get a read-only onboarding bundle; nothing is written to the camera.
+          - Verify downloads against `SHA256SUMS.txt`.
+          EOF
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "BIONZ X Mod Manager $GITHUB_REF_NAME" \
+            --notes-file "$notes" \
+            release/BionzX-Mod-Manager-Setup.exe \
+            release/BionzX-Mod-Manager-win64-portable.zip \
+            release/SHA256SUMS.txt

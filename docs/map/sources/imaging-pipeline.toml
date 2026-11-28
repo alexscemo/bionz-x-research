@@ -28,6 +28,7 @@ records = [
   "E0689",
   "E0720",
   "E0721",
+  "E0732",
   "E0722",
   "E0723",
   "E0724",
@@ -286,7 +287,7 @@ id = "F01"
 title = "From RCRAW enable to an actual RAW/high-bit-depth recording"
 state = "open"
 entities = ["img.rcraw", "img.recording-paths"]
-evidence = ["E0634", "E0635", "E0621", "E9105"]
+evidence = ["E0634", "E0635", "E0621", "E9105", "E0732"]
 next = "Static proof (E9105) rules out both RCRAW_EN (FOPD/W0) and SyncGetPrcFlow/AIF0 W2 (CalcSdevOutSize <= 640x480) as full-sensor video RAW paths. Next: qualify SET_RAW_EXTERNAL_OUTPUT (0x63BEFFA0, 0x2044/0x2042 IPC, 0x00BF0274 gate) and IMX284/IDT 0xF3000200..0xF3000422 capture in Unicorn/QEMU and on real hardware."
 
 [[frontier]]
